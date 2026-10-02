@@ -7,7 +7,7 @@
   "creativestations.editor.tab.enchants": "Enchantments",
   "creativestations.editor.tab.items": "Search all items",
   "creativestations.editor.pick": "Click an item in your inventory, or search with the compass tab",
-  "creativestations.editor.tab.name": "Name and lore (use & for colours)",
+  "creativestations.editor.tab.name": "Name and lore (use & for colours, e.g. &6gold)",
   "creativestations.editor.input": "Click to clear the item",
   "creativestations.editor.remove": "Remove",
   "creativestations.editor.max": " (max %s)"
