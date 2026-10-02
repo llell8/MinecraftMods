@@ -6,5 +6,13 @@
   "creativestations.station.loom": "Loom",
   "creativestations.station.stonecutter": "Stonecutter",
   "creativestations.station.cartography": "Cartography Table",
-  "creativestations.station.grindstone": "Grindstone"
+  "creativestations.station.grindstone": "Grindstone",
+  "creativestations.editor.title": "Item Editor",
+  "creativestations.editor.tooltip": "Edit held item: enchantments, name, lore",
+  "creativestations.editor.name": "Name (& for colours)",
+  "creativestations.editor.lore": "Lore line",
+  "creativestations.editor.enchantments": "Enchantments (any level)",
+  "creativestations.editor.apply": "Apply",
+  "creativestations.editor.cancel": "Cancel",
+  "creativestations.editor.empty": "Hold an item in your hotbar first (click to close)"
 }

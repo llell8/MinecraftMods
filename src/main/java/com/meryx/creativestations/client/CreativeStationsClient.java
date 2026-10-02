@@ -6,6 +6,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
@@ -19,6 +20,8 @@ import net.minecraft.client.gui.screens.inventory.LoomScreen;
 import net.minecraft.client.gui.screens.inventory.SmithingScreen;
 import net.minecraft.client.gui.screens.inventory.StonecutterScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /**
  * A column of item-icon buttons beside the creative inventory and beside every station screen,
@@ -80,6 +83,19 @@ public class CreativeStationsClient implements ClientModInitializer {
             // Draw the station's item on top of its button
             ScreenEvents.afterRender(screen).register((s, graphics, mouseX, mouseY, tickDelta) ->
                     graphics.renderItem(station.icon(), x + 2, y + 2));
+        }
+
+        // The item editor sits under the stations, on the creative inventory only
+        if (current == null) {
+            int y = top + Station.values().length * (SIZE + GAP) + 4;
+            Button editor = Button.builder(Component.empty(),
+                            b -> Minecraft.getInstance().setScreen(new ItemEditorScreen(screen)))
+                    .bounds(x, y, SIZE, SIZE)
+                    .tooltip(Tooltip.create(Component.translatable("creativestations.editor.tooltip")))
+                    .build();
+            Screens.getButtons(screen).add(editor);
+            ScreenEvents.afterRender(screen).register((s, graphics, mouseX, mouseY, tickDelta) ->
+                    graphics.renderItem(new ItemStack(Items.ENCHANTED_BOOK), x + 2, y + 2));
         }
     }
 }
