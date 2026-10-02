@@ -113,8 +113,8 @@ public class CreativeAnvilScreen extends Screen {
     private record Cell(int x, int y, Supplier<ItemStack> stack) {
     }
 
-    /** One enchantment row: the remove button, the level box, and the "add" button used on the last row. */
-    private record Row(Button remove, EditBox level, Button add) {
+    /** One enchantment row: remove button and level box, plus the add and choose buttons used on the last row. */
+    private record Row(Button remove, EditBox level, Button add, Button choose) {
     }
 
     private final Screen parent;
@@ -125,6 +125,9 @@ public class CreativeAnvilScreen extends Screen {
     private final List<Row> rows = new ArrayList<>();
     private final List<Button> pickButtons = new ArrayList<>();
     private List<Holder.Reference<Enchantment>> candidates = new ArrayList<>();
+    /** The enchantment chosen on the add row, and the level typed next to it. */
+    private Holder.Reference<Enchantment> pending;
+    private String pendingLevel = "1";
 
     private ItemStack working = ItemStack.EMPTY;
     /** Inventory-menu slot the item came from. */
@@ -180,6 +183,8 @@ public class CreativeAnvilScreen extends Screen {
         }
         pickerOpen = false;
         rowScroll = 0;
+        pending = null;
+        ensurePending();
         rebuildWidgets();
     }
 
@@ -197,22 +202,50 @@ public class CreativeAnvilScreen extends Screen {
         return new ArrayList<>(levels.keySet());
     }
 
-    private void openPicker() {
+    private void updateCandidates() {
         candidates = new ArrayList<>();
         for (Holder.Reference<Enchantment> holder : allEnchantments) {
             if (!levels.containsKey(holder)) {
                 candidates.add(holder);
             }
         }
-        pickScroll = 0;
+    }
+
+    /** Makes sure the add row has a sensible enchantment chosen. */
+    private void ensurePending() {
+        updateCandidates();
+        if (pending == null || levels.containsKey(pending)) {
+            pending = candidates.isEmpty() ? null : candidates.get(0);
+            pendingLevel = pending == null ? "1" : String.valueOf(pending.value().getMaxLevel());
+        }
+    }
+
+    private void openPicker() {
+        updateCandidates();
+        if (candidates.isEmpty()) {
+            return;
+        }
+        int index = candidates.indexOf(pending);
+        pickScroll = Math.max(0, Math.min(Math.max(0, candidates.size() - PICK_ROWS), index));
         pickerOpen = true;
         refresh();
     }
 
-    private void addEnchantment(Holder<Enchantment> holder) {
-        levels.put(holder, holder.value().getMaxLevel());
+    private void choose(Holder.Reference<Enchantment> holder) {
+        pending = holder;
+        pendingLevel = String.valueOf(holder.value().getMaxLevel());
         pickerOpen = false;
-        // Scroll so the new row is visible
+        refresh();
+    }
+
+    private void addPending() {
+        if (pending == null) {
+            return;
+        }
+        int level = pendingLevel.isEmpty() ? 1 : Integer.parseInt(pendingLevel);
+        levels.put(pending, Math.max(1, Math.min(MAX_LEVEL, level)));
+        ensurePending();
+        // Scroll so the add row stays visible
         rowScroll = Math.max(0, levels.size() + 1 - ROWS);
         refresh();
     }
@@ -247,10 +280,14 @@ public class CreativeAnvilScreen extends Screen {
 
     private void apply() {
         ItemStack result = buildResult();
-        if (!result.isEmpty() && sourceSlot >= 0) {
-            minecraft.gameMode.handleCreativeModeItemAdd(result, sourceSlot);
-            onClose();
+        if (result.isEmpty() || sourceSlot < 0) {
+            return;
         }
+        // Tell the server, and update our own copy (the server doesn't echo creative slot changes back)
+        minecraft.gameMode.handleCreativeModeItemAdd(result, sourceSlot);
+        minecraft.player.inventoryMenu.getSlot(sourceSlot).set(result);
+        // Like a real anvil: taking the output empties the input, and the menu stays open
+        clearSelection();
     }
 
     /** '&' colour codes, and no forced italics. */
@@ -397,23 +434,29 @@ public class CreativeAnvilScreen extends Screen {
             level.setMaxLength(3);
             level.setFilter(s -> s.matches("\\d*"));
             level.setResponder(value -> {
-                Holder<Enchantment> holder = appliedAt(row);
-                if (updating || holder == null || value.isEmpty()) {
+                if (updating) {
                     return;
                 }
-                levels.put(holder, Math.max(1, Math.min(MAX_LEVEL, Integer.parseInt(value))));
+                Holder<Enchantment> holder = appliedAt(row);
+                if (holder != null && !value.isEmpty()) {
+                    levels.put(holder, Math.max(1, Math.min(MAX_LEVEL, Integer.parseInt(value))));
+                } else if (holder == null && isAddRow(row)) {
+                    pendingLevel = value;
+                }
             });
             addRenderableWidget(level);
 
-            Button add = hit(LX, y, LW, ROW_H, this::openPicker, Component.translatable("creativestations.editor.add"));
-            rows.add(new Row(remove, level, add));
+            Button add = hit(LX + 3, y + 3, 14, 14, this::addPending, Component.translatable("creativestations.editor.add"));
+            Button choose = hit(NAME_X - 2, y + 3, LEVEL_X - NAME_X - 1, 14, this::openPicker,
+                    Component.translatable("creativestations.editor.choose"));
+            rows.add(new Row(remove, level, add, choose));
         }
         for (int i = 0; i < PICK_ROWS; i++) {
             final int row = i;
             pickButtons.add(hit(LX, LY + i * PICK_H, LW, PICK_H, () -> {
                 int index = pickScroll + row;
                 if (index < candidates.size()) {
-                    addEnchantment(candidates.get(index));
+                    choose(candidates.get(index));
                 }
             }, null));
         }
@@ -459,15 +502,15 @@ public class CreativeAnvilScreen extends Screen {
             Row row = rows.get(r);
             Holder<Enchantment> holder = appliedAt(r);
             boolean shown = holder != null && !pickerOpen;
+            boolean addRow = !pickerOpen && isAddRow(r);
             row.remove().visible = shown;
-            row.level().visible = shown;
-            if (shown) {
-                String value = String.valueOf(levels.get(holder));
-                if (!row.level().getValue().equals(value)) {
-                    row.level().setValue(value);
-                }
+            row.level().visible = shown || (addRow && pending != null);
+            String value = shown ? String.valueOf(levels.get(holder)) : addRow ? pendingLevel : "";
+            if (!row.level().getValue().equals(value)) {
+                row.level().setValue(value);
             }
-            row.add().visible = !pickerOpen && isAddRow(r);
+            row.add().visible = addRow && pending != null;
+            row.choose().visible = addRow && pending != null;
         }
         for (int i = 0; i < pickButtons.size(); i++) {
             pickButtons.get(i).visible = pickerOpen && pickScroll + i < candidates.size();
@@ -587,8 +630,19 @@ public class CreativeAnvilScreen extends Screen {
                     if (appliedAt(r) != null) {
                         bevel(g, LX + 3, y + 3, 14, 14, RED, RED_LIGHT, RED_DARK);
                         bevel(g, LEVEL_X, y + 3, LEVEL_W, 14, TAN, TAN_LIGHT, TAN_DARK);
-                    } else if (isAddRow(r)) {
+                    } else if (isAddRow(r) && pending != null) {
                         bevel(g, LX + 3, y + 3, 14, 14, BLUE, BLUE_LIGHT, BLUE_DARK);
+                        // The dropdown box showing which enchantment will be added
+                        int bx = NAME_X - 2;
+                        int bw = LEVEL_X - NAME_X - 1;
+                        boolean hover = over(mouseX, mouseY, bx, y + 3, bw, 14);
+                        fill(g, bx, y + 3, bw, 14, hover ? 0xFFD0D0D0 : PANEL_EDGE);
+                        fill(g, bx + 1, y + 4, bw - 2, 12, 0xFF3A352B);
+                        int ax = bx + bw - 9;
+                        for (int i = 0; i < 4; i++) {
+                            fill(g, ax + i, y + 8 + i, 7 - 2 * i, 1, 0xFFC0B8A4);
+                        }
+                        bevel(g, LEVEL_X, y + 3, LEVEL_W, 14, TAN, TAN_LIGHT, TAN_DARK);
                     }
                 }
             }
@@ -623,8 +677,12 @@ public class CreativeAnvilScreen extends Screen {
                     text(g, "x", LX + 8, y + 6, 0xFFFFFFFF);
                     text(g, fit(holder.value().description().getString(), NAME_W), NAME_X, y + 6, 0xFFFFFFFF);
                 } else if (isAddRow(r)) {
-                    text(g, "+", LX + 8, y + 6, 0xFFFFFFFF);
-                    text(g, fit(Component.translatable("creativestations.editor.add").getString(), NAME_W + LEVEL_W), NAME_X, y + 6, 0xFF9C9686);
+                    if (pending != null) {
+                        text(g, "+", LX + 8, y + 6, 0xFFFFFFFF);
+                        text(g, fit(pending.value().description().getString(), LEVEL_X - NAME_X - 14), NAME_X + 1, y + 6, 0xFF9C9686);
+                    } else {
+                        text(g, Component.translatable("creativestations.editor.all").getString(), LX + 4, y + 6, 0xFF9C9686);
+                    }
                 }
             }
         } else if (has && pickerOpen) {
@@ -635,7 +693,7 @@ public class CreativeAnvilScreen extends Screen {
                     fill(g, LX + 2, y + 1, LW - 4, PICK_H - 2, 0xFF000000);
                 }
                 Holder.Reference<Enchantment> holder = candidates.get(pickScroll + i);
-                text(g, fit(holder.value().description().getString(), LW - 8), LX + 4, y + 2, 0xFFFFFFFF);
+                text(g, fit(holder.value().description().getString(), LW - 8), LX + 4, y + 2, holder == pending ? 0xFFFFFF55 : 0xFFFFFFFF);
             }
         } else if (!has) {
             int y = LY + 6;

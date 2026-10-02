@@ -5,8 +5,10 @@
   "creativestations.editor.tab.enchants": "Enchantments",
   "creativestations.editor.input": "Click to clear",
   "creativestations.editor.remove": "Remove",
-  "creativestations.editor.add": "Add enchantment",
+  "creativestations.editor.add": "Add this enchantment",
   "creativestations.editor.lore": "Lore...",
   "creativestations.editor.pick": "Click an item in your inventory to edit it",
-  "creativestations.editor.help": "First line is the name, the lines below are lore. Use & for colours and styles: &c red, &6 gold, &a green, &b aqua, &9 blue, &d pink, &l bold, &o italic, &n underline, &r reset."
+  "creativestations.editor.help": "First line is the name, the lines below are lore. Use & for colours and styles: &c red, &6 gold, &a green, &b aqua, &9 blue, &d pink, &l bold, &o italic, &n underline, &r reset.",
+  "creativestations.editor.choose": "Choose an enchantment",
+  "creativestations.editor.all": "All enchantments added"
 }
