@@ -1,10 +1,10 @@
 {
-  "creativestations.station.crafting": "Crafting",
-  "creativestations.station.smithing": "Smithing",
+  "creativestations.station.crafting": "Crafting Table",
+  "creativestations.station.smithing": "Smithing Table",
   "creativestations.station.anvil": "Anvil",
-  "creativestations.station.enchanting": "Enchant",
-  "creativestations.station.crafting.tooltip": "Open a crafting table",
-  "creativestations.station.smithing.tooltip": "Open a smithing table",
-  "creativestations.station.anvil.tooltip": "Open an anvil",
-  "creativestations.station.enchanting.tooltip": "Open an enchanting table (no bookshelves)"
+  "creativestations.station.enchanting": "Enchanting Table (no bookshelves)",
+  "creativestations.station.loom": "Loom",
+  "creativestations.station.stonecutter": "Stonecutter",
+  "creativestations.station.cartography": "Cartography Table",
+  "creativestations.station.grindstone": "Grindstone"
 }
