@@ -1,0 +1,10 @@
+{
+  "creativestations.station.crafting": "Crafting",
+  "creativestations.station.smithing": "Smithing",
+  "creativestations.station.anvil": "Anvil",
+  "creativestations.station.enchanting": "Enchant",
+  "creativestations.station.crafting.tooltip": "Open a crafting table",
+  "creativestations.station.smithing.tooltip": "Open a smithing table",
+  "creativestations.station.anvil.tooltip": "Open an anvil",
+  "creativestations.station.enchanting.tooltip": "Open an enchanting table (no bookshelves)"
+}

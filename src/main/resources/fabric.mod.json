@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "creativestations",
+  "version": "${version}",
+  "name": "Creative Stations",
+  "description": "Open the crafting table, smithing table, anvil and enchanting table straight from the creative inventory.",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.meryx.creativestations.CreativeStations"],
+    "client": ["com.meryx.creativestations.client.CreativeStationsClient"]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
