@@ -1,5 +1,7 @@
 name: build
 on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,3 +17,15 @@ jobs:
         with:
           name: creativestations-jar
           path: build/libs/*.jar
+      # Also publish the plain mod jar on the Releases page (tag "latest"), easier to download than a zip
+      - name: Publish latest release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest build
+          prerelease: true
+          make_latest: true
+          body: "Automatic build of ${{ github.sha }}. Download the jar without -sources."
+          files: |
+            build/libs/*.jar
