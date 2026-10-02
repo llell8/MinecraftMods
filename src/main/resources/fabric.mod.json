@@ -2,14 +2,13 @@
   "schemaVersion": 1,
   "id": "creativestations",
   "version": "${version}",
-  "name": "Creative Stations",
-  "description": "Open the crafting table, smithing table, anvil and enchanting table straight from the creative inventory.",
+  "name": "Creative Anvil",
+  "description": "A creative-mode anvil: edit enchantments (any level), name and lore of any item.",
   "authors": [],
   "contact": {},
   "license": "All-Rights-Reserved",
-  "environment": "*",
+  "environment": "client",
   "entrypoints": {
-    "main": ["com.meryx.creativestations.CreativeStations"],
     "client": ["com.meryx.creativestations.client.CreativeStationsClient"]
   },
   "depends": {

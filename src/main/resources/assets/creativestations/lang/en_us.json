@@ -1,18 +1,14 @@
 {
-  "creativestations.station.crafting": "Crafting Table",
-  "creativestations.station.smithing": "Smithing Table",
-  "creativestations.station.anvil": "Anvil",
-  "creativestations.station.enchanting": "Enchanting Table (no bookshelves)",
-  "creativestations.station.loom": "Loom",
-  "creativestations.station.stonecutter": "Stonecutter",
-  "creativestations.station.cartography": "Cartography Table",
-  "creativestations.station.grindstone": "Grindstone",
-  "creativestations.editor.title": "Item Editor",
-  "creativestations.editor.tooltip": "Edit held item: enchantments, name, lore",
-  "creativestations.editor.name": "Name (& for colours)",
+  "creativestations.editor.title": "Creative Anvil",
+  "creativestations.editor.tooltip": "Creative Anvil: edit enchantments, name and lore",
+  "creativestations.editor.name": "Name",
   "creativestations.editor.lore": "Lore line",
-  "creativestations.editor.enchantments": "Enchantments (any level)",
+  "creativestations.editor.search": "Search items...",
   "creativestations.editor.apply": "Apply",
   "creativestations.editor.cancel": "Cancel",
-  "creativestations.editor.empty": "Hold an item in your hotbar first (click to close)"
+  "creativestations.editor.tab.enchants": "Enchants",
+  "creativestations.editor.tab.items": "Items",
+  "creativestations.editor.tab.inventory": "Inventory",
+  "creativestations.editor.pick": "Pick an item from the Items or Inventory tab",
+  "creativestations.editor.colors": "Use & for colour codes"
 }
