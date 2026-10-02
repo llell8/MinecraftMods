@@ -45,20 +45,29 @@ public class CreativeAnvilScreen extends Screen {
     private static final Identifier BUTTON_HIGHLIGHTED = Identifier.withDefaultNamespace("widget/button_highlighted");
     private static final Identifier BUTTON_DISABLED = Identifier.withDefaultNamespace("widget/button_disabled");
 
-    // Overall size: a vanilla-width window with a taller editing area above the inventory
-    private static final int PW = 176;
+    // Overall size: wider than vanilla so enchantment names fit, inventory centred underneath
+    private static final int PW = 230;
     private static final int TOP_H = 116;
     private static final int PH = TOP_H + 90;
 
     // The list on the right
     private static final int LX = 51;
     private static final int LY = 16;
-    private static final int LW = 102;
+    private static final int LW = PW - LX - 23;
+    private static final int TRACK_X = LX + LW + 2;
+    /** Left edge of the 9x4 inventory slots (the slot border, items sit one pixel in). */
+    private static final int INV_X = (PW - 162) / 2;
     private static final int ROW_H = 18;
     private static final int ROWS = 5;
     private static final int LH = ROWS * ROW_H;
-    private static final int GRID_COLS = 5;
+    private static final int GRID_COLS = 8;
     private static final int GRID_ROWS = 4;
+
+    // Enchantment row columns: x | name | - level +
+    private static final int PLUS_X = LX + LW - 11;
+    private static final int LEVEL_X = PLUS_X - 19;
+    private static final int MINUS_X = LEVEL_X - 11;
+    private static final int NAME_W = MINUS_X - (LX + 15) - 2;
 
     private static final int LORE_LINES = 4;
     private static final int MAX_LEVEL = 255;
@@ -270,7 +279,7 @@ public class CreativeAnvilScreen extends Screen {
         for (int i = 0; i < 36; i++) {
             ItemStack stack = inv.getItem(i);
             int menuSlot = i < 9 ? 36 + i : i;
-            int x = 8 + (i % 9) * 18;
+            int x = INV_X + 1 + (i % 9) * 18;
             int y = i < 9 ? TOP_H + 66 : TOP_H + 8 + ((i - 9) / 9) * 18;
             addCell(x, y, stack, () -> select(stack, menuSlot), false);
         }
@@ -287,14 +296,16 @@ public class CreativeAnvilScreen extends Screen {
             int y = LY + row * ROW_H;
             Component fullName = holder.value().description();
 
-            hit(LX + 1, y + 1, 12, 16, () -> setLevel(holder, 0),
-                    Component.translatable("creativestations.editor.remove"));
-            hit(LX + 15, y + 1, 48, 16, () -> setLevel(holder, level > 0 ? 0 : 1),
+            if (level > 0) {
+                hit(LX + 1, y + 1, 12, 16, () -> setLevel(holder, 0),
+                        Component.translatable("creativestations.editor.remove"));
+            }
+            hit(LX + 15, y + 1, NAME_W, 16, () -> setLevel(holder, level > 0 ? 0 : 1),
                     Component.empty().append(fullName).append(Component.translatable("creativestations.editor.max", holder.value().getMaxLevel())));
             addRenderableWidget(Button.builder(Component.literal("-"), b -> setLevel(holder, level - 1))
-                    .bounds(px + LX + 64, py + y + 1, 10, 16).build());
+                    .bounds(px + MINUS_X, py + y + 1, 10, 16).build());
             addRenderableWidget(Button.builder(Component.literal("+"), b -> setLevel(holder, level + 1))
-                    .bounds(px + LX + 92, py + y + 1, 10, 16).build());
+                    .bounds(px + PLUS_X, py + y + 1, 10, 16).build());
         }
     }
 
@@ -416,6 +427,27 @@ public class CreativeAnvilScreen extends Screen {
         fill(g, x + 1, y + 1, w - 2, h - 2, color);
     }
 
+    /** Draws the anvil texture's 4px border around a window of any size. */
+    private void frame(GuiGraphics g) {
+        int c = 4;
+        int tw = 176;
+        int th = 166;
+        int x2 = px + PW - c;
+        int y2 = py + PH - c;
+        // Corners
+        g.blit(RenderPipelines.GUI_TEXTURED, ANVIL_TEXTURE, px, py, 0, 0, c, c, 256, 256);
+        g.blit(RenderPipelines.GUI_TEXTURED, ANVIL_TEXTURE, x2, py, tw - c, 0, c, c, 256, 256);
+        g.blit(RenderPipelines.GUI_TEXTURED, ANVIL_TEXTURE, px, y2, 0, th - c, c, c, 256, 256);
+        g.blit(RenderPipelines.GUI_TEXTURED, ANVIL_TEXTURE, x2, y2, tw - c, th - c, c, c, 256, 256);
+        // Edges, stretched from a single pixel row/column
+        g.blit(RenderPipelines.GUI_TEXTURED, ANVIL_TEXTURE, px + c, py, c, 0, PW - 2 * c, c, 1, c, 256, 256);
+        g.blit(RenderPipelines.GUI_TEXTURED, ANVIL_TEXTURE, px + c, y2, c, th - c, PW - 2 * c, c, 1, c, 256, 256);
+        g.blit(RenderPipelines.GUI_TEXTURED, ANVIL_TEXTURE, px, py + c, 0, c, c, PH - 2 * c, c, 1, 256, 256);
+        g.blit(RenderPipelines.GUI_TEXTURED, ANVIL_TEXTURE, x2, py + c, tw - c, c, c, PH - 2 * c, c, 1, 256, 256);
+        // Body
+        g.fill(px + c, py + c, x2, y2, 0xFFC6C6C6);
+    }
+
     /** A vanilla inventory slot: dark top-left, white bottom-right. */
     private void slot(GuiGraphics g, int x, int y) {
         fill(g, x, y, 18, 18, 0xFF373737);
@@ -435,10 +467,9 @@ public class CreativeAnvilScreen extends Screen {
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float delta) {
         super.renderBackground(g, mouseX, mouseY, delta);
 
-        // Window: the vanilla anvil's top edge, a stretched plain row for the taller middle, and its inventory half
-        g.blit(RenderPipelines.GUI_TEXTURED, ANVIL_TEXTURE, px, py, 0, 0, PW, 14, 256, 256);
-        g.blit(RenderPipelines.GUI_TEXTURED, ANVIL_TEXTURE, px, py + 14, 0, 78, PW, TOP_H - 14, PW, 1, 256, 256);
-        g.blit(RenderPipelines.GUI_TEXTURED, ANVIL_TEXTURE, px, py + TOP_H, 0, 76, PW, 90, 256, 256);
+        // Window: the vanilla anvil's frame (corners and stretched edges), then its inventory slots, centred
+        frame(g);
+        g.blit(RenderPipelines.GUI_TEXTURED, ANVIL_TEXTURE, px + INV_X, py + TOP_H + 7, 7, 83, 162, 76, 256, 256);
 
         // Input -> arrow -> output
         slot(g, 7, 16);
@@ -469,10 +500,8 @@ public class CreativeAnvilScreen extends Screen {
                 int y = LY + row * ROW_H;
                 if (on) {
                     bevel(g, LX + 1, y + 1, 12, 16, RED, RED_LIGHT, RED_DARK);
-                } else {
-                    bevel(g, LX + 1, y + 1, 12, 16, OFF, TAN_DARK, LIST_BORDER);
                 }
-                bevel(g, LX + 75, y + 1, 16, 16, on ? TAN : TAN_DARK, TAN_LIGHT, LIST_BORDER);
+                bevel(g, LEVEL_X, y + 1, 18, 16, on ? TAN : TAN_DARK, on ? TAN_LIGHT : OFF, LIST_BORDER);
             }
         }
         for (Cell cell : cells) {
@@ -482,7 +511,7 @@ public class CreativeAnvilScreen extends Screen {
         }
 
         // Scrollbar: an inset track with the creative inventory's scroller
-        int trackX = 155;
+        int trackX = TRACK_X;
         fill(g, trackX - 1, LY - 1, 14, LH + 2, 0xFF373737);
         fill(g, trackX, LY, 13, LH + 1, 0xFFFFFFFF);
         fill(g, trackX, LY, 12, LH, 0xFF8B8B8B);
@@ -503,7 +532,7 @@ public class CreativeAnvilScreen extends Screen {
         g.blitSprite(RenderPipelines.GUI_TEXTURED, canScroll ? SCROLLER : SCROLLER_DISABLED, px + trackX, py + thumbY, 12, 15);
 
         text(g, title.getString(), 8, 6, LABEL, false);
-        g.drawString(font, Component.translatable("container.inventory"), px + 8, py + TOP_H - 4, LABEL, false);
+        g.drawString(font, Component.translatable("container.inventory"), px + INV_X + 1, py + TOP_H - 4, LABEL, false);
     }
 
     @Override
@@ -516,10 +545,13 @@ public class CreativeAnvilScreen extends Screen {
                 Holder.Reference<Enchantment> holder = allEnchantments.get(enchantScroll + row);
                 int level = levels.getOrDefault(holder, 0);
                 int y = LY + row * ROW_H;
-                centred(g, "x", LX + 1, y + 1, 12, 16, level > 0 ? 0xFFFFFFFF : 0xFFA89A84);
-                String label = font.plainSubstrByWidth(holder.value().description().getString(), 48);
+                if (level > 0) {
+                    centred(g, "x", LX + 1, y + 1, 12, 16, 0xFFFFFFFF);
+                }
+                String full = holder.value().description().getString();
+                String label = font.width(full) <= NAME_W ? full : font.plainSubstrByWidth(full, NAME_W - font.width("..")) + "..";
                 text(g, label, LX + 15, y + 5, level > 0 ? 0xFFFFFFFF : 0xFFB0A590, true);
-                centred(g, String.valueOf(level), LX + 75, y + 1, 16, 16, level > 0 ? 0xFF3B2F20 : 0xFF5E5240);
+                centred(g, level > 0 ? String.valueOf(level) : "-", LEVEL_X, y + 1, 18, 16, level > 0 ? 0xFF3B2F20 : 0xFF8A7C62);
             }
         } else if (tab == Tab.ENCHANTS || (tab == Tab.NAME && working.isEmpty())) {
             Component hint = Component.translatable("creativestations.editor.pick");
