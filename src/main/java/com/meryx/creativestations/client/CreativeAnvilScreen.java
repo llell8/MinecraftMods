@@ -1,6 +1,5 @@
 package com.meryx.creativestations.client;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -12,11 +11,9 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -30,66 +27,78 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * The Creative Anvil. Built from vanilla art: the anvil's frame, inventory and rename field, the creative
- * scroller and vanilla buttons. Pick any item (from your inventory or by searching every item) and edit its
- * enchantments (any level), name and lore; click the output slot to apply.
- * Uses the creative "set slot" packet, so it works on any server where you're in creative.
+ * The Creative Anvil. Click an item in your inventory to load it, edit its enchantments (any level) or its
+ * name and lore, then click the output slot to apply. Uses the creative "set slot" packet, so it works on
+ * any server where you're in creative.
  */
 public class CreativeAnvilScreen extends Screen {
     private static final Identifier ANVIL_TEXTURE = Identifier.withDefaultNamespace("textures/gui/container/anvil.png");
-    private static final Identifier TEXT_FIELD = Identifier.withDefaultNamespace("container/anvil/text_field");
-    private static final Identifier TEXT_FIELD_DISABLED = Identifier.withDefaultNamespace("container/anvil/text_field_disabled");
     private static final Identifier SCROLLER = Identifier.withDefaultNamespace("container/creative_inventory/scroller");
     private static final Identifier SCROLLER_DISABLED = Identifier.withDefaultNamespace("container/creative_inventory/scroller_disabled");
-    private static final Identifier BUTTON = Identifier.withDefaultNamespace("widget/button");
-    private static final Identifier BUTTON_HIGHLIGHTED = Identifier.withDefaultNamespace("widget/button_highlighted");
-    private static final Identifier BUTTON_DISABLED = Identifier.withDefaultNamespace("widget/button_disabled");
 
-    // Window: wider than vanilla so enchantment names fit, inventory centred underneath
-    private static final int PW = 230;
-    private static final int TOP_H = 116;
+    // Window
+    private static final int PW = 196;
+    private static final int TOP_H = 84;
     private static final int PH = TOP_H + 90;
     private static final int INV_X = (PW - 162) / 2;
 
-    // The list on the right, and its scrollbar
-    private static final int LX = 51;
+    // Left column: input, arrow, output; then the tabs
+    private static final int SLOT_X = 7;
+    private static final int INPUT_Y = 16;
+    private static final int OUTPUT_Y = 58;
+    private static final int TAB_X = 30;
+    private static final int TAB_SIZE = 20;
+
+    // The panel and its scrollbar
+    private static final int LX = 54;
     private static final int LY = 16;
-    private static final int LW = PW - LX - 23;
-    private static final int ROW_H = 18;
-    private static final int ROWS = 5;
-    private static final int LH = ROWS * ROW_H;
-    private static final int TRACK_X = LX + LW + 3;
+    private static final int TRACK_X = PW - 7 - 12;
+    private static final int LW = TRACK_X - 3 - LX;
+    private static final int LH = 60;
     private static final int SCROLLER_H = 15;
 
-    // Enchantment row columns: x | name | - level +
-    private static final int PLUS_X = LX + LW - 13;
-    private static final int LEVEL_X = PLUS_X - 21;
-    private static final int MINUS_X = LEVEL_X - 13;
-    private static final int NAME_X = LX + 16;
-    private static final int NAME_W = MINUS_X - NAME_X - 3;
+    // Enchantment rows
+    private static final int ROW_H = 20;
+    private static final int ROWS = LH / ROW_H;
+    private static final int LEVEL_W = 24;
+    private static final int LEVEL_X = LX + LW - LEVEL_W - 2;
+    private static final int NAME_X = LX + 20;
+    private static final int NAME_W = LEVEL_X - NAME_X - 3;
 
-    // Item search grid
-    private static final int GRID_COLS = 8;
-    private static final int GRID_ROWS = 4;
-    private static final int GRID_X = LX + (LW - GRID_COLS * 18) / 2;
+    // Enchantment dropdown
+    private static final int PICK_H = 12;
+    private static final int PICK_ROWS = LH / PICK_H;
 
+    // Name and lore text area
+    private static final int LINE_H = 11;
     private static final int LORE_LINES = 4;
+
     private static final int MAX_LEVEL = 255;
 
+    // Colours, matched to the look of the screenshots
     private static final int LABEL = 0xFF404040;
-    private static final int ROW_A = 0xFF8B8B8B;
-    private static final int ROW_B = 0xFF808080;
-    private static final int ROW_ON = 0xFF9E9E9E;
+    private static final int PANEL = 0xFF57503F;
+    private static final int PANEL_EDGE = 0xFF2B271F;
+    private static final int DROPDOWN = 0xFF2E2A23;
+    private static final int RED = 0xFFD8603E;
+    private static final int RED_LIGHT = 0xFFF28B66;
+    private static final int RED_DARK = 0xFF8E3A22;
+    private static final int TAN = 0xFFC2A878;
+    private static final int TAN_LIGHT = 0xFFE0CDA0;
+    private static final int TAN_DARK = 0xFF8C744C;
+    private static final int BLUE = 0xFF6E8BC0;
+    private static final int BLUE_LIGHT = 0xFFA8C0E8;
+    private static final int BLUE_DARK = 0xFF3B4E77;
+    private static final int BLUE_ON = 0xFF9DB6E2;
+    private static final int LORE_COLOR = 0xFFAA55FF;
 
     private enum Tab {
-        ENCHANTS(Items.ENCHANTED_BOOK, "creativestations.editor.tab.enchants"),
-        NAME(Items.NAME_TAG, "creativestations.editor.tab.name"),
-        ITEMS(Items.COMPASS, "creativestations.editor.tab.items");
+        NAME(Items.OAK_SIGN, "creativestations.editor.tab.name"),
+        ENCHANTS(Items.ENCHANTED_BOOK, "creativestations.editor.tab.enchants");
 
         final Item icon;
         final String key;
@@ -100,12 +109,12 @@ public class CreativeAnvilScreen extends Screen {
         }
     }
 
-    /** A clickable item slot. {@code x, y} is where the item is drawn; its 18x18 slot sits one pixel up and left. */
-    private record Cell(int x, int y, Supplier<ItemStack> stack, boolean drawSlot) {
+    /** A clickable inventory slot. {@code x, y} is where the item is drawn. */
+    private record Cell(int x, int y, Supplier<ItemStack> stack) {
     }
 
-    /** The widgets of one enchantment row; which enchantment they show depends on the scroll position. */
-    private record Row(Button remove, Button name, Button minus, Button plus) {
+    /** One enchantment row: the remove button, the level box, and the "add" button used on the last row. */
+    private record Row(Button remove, EditBox level, Button add) {
     }
 
     private final Screen parent;
@@ -114,17 +123,19 @@ public class CreativeAnvilScreen extends Screen {
     private final String[] lore = new String[LORE_LINES];
     private final List<Cell> cells = new ArrayList<>();
     private final List<Row> rows = new ArrayList<>();
-    private List<ItemStack> searchResults = new ArrayList<>();
+    private final List<Button> pickButtons = new ArrayList<>();
+    private List<Holder.Reference<Enchantment>> candidates = new ArrayList<>();
 
     private ItemStack working = ItemStack.EMPTY;
-    /** Inventory-menu slot the item came from, or -1 if it was picked from search (goes to a free slot). */
+    /** Inventory-menu slot the item came from. */
     private int sourceSlot = -1;
     private String name = "";
-    private String query = "";
     private Tab tab = Tab.ENCHANTS;
-    private int enchantScroll;
-    private int itemScroll;
+    private boolean pickerOpen;
+    private int rowScroll;
+    private int pickScroll;
     private boolean draggingScroller;
+    private boolean updating;
     private int px;
     private int py;
 
@@ -135,7 +146,6 @@ public class CreativeAnvilScreen extends Screen {
         Minecraft.getInstance().level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT)
                 .listElements().forEach(allEnchantments::add);
         allEnchantments.sort(Comparator.comparing(h -> h.value().description().getString()));
-        updateSearch();
     }
 
     // ---- Editing ----
@@ -144,7 +154,13 @@ public class CreativeAnvilScreen extends Screen {
         return working.is(Items.ENCHANTED_BOOK) ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS;
     }
 
-    /** Loads an item into the editor and resets the fields from its data. */
+    /** The item's name without any custom name, e.g. "Netherite Sword". */
+    private String defaultName() {
+        ItemStack plain = working.copy();
+        plain.remove(DataComponents.CUSTOM_NAME);
+        return plain.getHoverName().getString();
+    }
+
     private void select(ItemStack stack, int slot) {
         if (stack.isEmpty()) {
             return;
@@ -157,15 +173,13 @@ public class CreativeAnvilScreen extends Screen {
             levels.put(holder, existing.getLevel(holder));
         }
         Component customName = working.get(DataComponents.CUSTOM_NAME);
-        name = customName == null ? "" : customName.getString();
+        name = customName == null ? defaultName() : customName.getString();
         ItemLore itemLore = working.get(DataComponents.LORE);
         for (int i = 0; i < LORE_LINES; i++) {
             lore[i] = itemLore != null && i < itemLore.lines().size() ? itemLore.lines().get(i).getString() : "";
         }
-        if (tab == Tab.ITEMS) {
-            tab = Tab.ENCHANTS;
-        }
-        enchantScroll = 0;
+        pickerOpen = false;
+        rowScroll = 0;
         rebuildWidgets();
     }
 
@@ -175,36 +189,34 @@ public class CreativeAnvilScreen extends Screen {
         levels.clear();
         name = "";
         Arrays.fill(lore, "");
+        pickerOpen = false;
         rebuildWidgets();
     }
 
-    private void updateSearch() {
-        String q = query.toLowerCase(Locale.ROOT).trim();
-        searchResults = new ArrayList<>();
-        for (Item item : BuiltInRegistries.ITEM) {
-            if (item == Items.AIR) {
-                continue;
-            }
-            ItemStack stack = item.getDefaultInstance();
-            if (q.isEmpty() || stack.getHoverName().getString().toLowerCase(Locale.ROOT).contains(q)
-                    || BuiltInRegistries.ITEM.getKey(item).getPath().contains(q.replace(' ', '_'))) {
-                searchResults.add(stack);
-            }
-        }
-        itemScroll = 0;
+    private List<Holder<Enchantment>> applied() {
+        return new ArrayList<>(levels.keySet());
     }
 
-    private void setLevel(Holder<Enchantment> holder, int level) {
-        level = Math.max(0, Math.min(MAX_LEVEL, level));
-        if (level == 0) {
-            levels.remove(holder);
-        } else {
-            levels.put(holder, level);
+    private void openPicker() {
+        candidates = new ArrayList<>();
+        for (Holder.Reference<Enchantment> holder : allEnchantments) {
+            if (!levels.containsKey(holder)) {
+                candidates.add(holder);
+            }
         }
-        refreshRows();
+        pickScroll = 0;
+        pickerOpen = true;
+        refresh();
     }
 
-    /** What the item will look like once applied. */
+    private void addEnchantment(Holder<Enchantment> holder) {
+        levels.put(holder, holder.value().getMaxLevel());
+        pickerOpen = false;
+        // Scroll so the new row is visible
+        rowScroll = Math.max(0, levels.size() + 1 - ROWS);
+        refresh();
+    }
+
     private ItemStack buildResult() {
         if (working.isEmpty()) {
             return ItemStack.EMPTY;
@@ -214,7 +226,7 @@ public class CreativeAnvilScreen extends Screen {
         levels.forEach(enchants::set);
         result.set(enchantComponent(), enchants.toImmutable());
 
-        if (name.isBlank()) {
+        if (name.isBlank() || name.equals(defaultName())) {
             result.remove(DataComponents.CUSTOM_NAME);
         } else {
             result.set(DataComponents.CUSTOM_NAME, styled(name));
@@ -235,18 +247,10 @@ public class CreativeAnvilScreen extends Screen {
 
     private void apply() {
         ItemStack result = buildResult();
-        if (result.isEmpty()) {
-            return;
+        if (!result.isEmpty() && sourceSlot >= 0) {
+            minecraft.gameMode.handleCreativeModeItemAdd(result, sourceSlot);
+            onClose();
         }
-        int target = sourceSlot;
-        if (target < 0) {
-            Inventory inv = minecraft.player.getInventory();
-            int free = inv.getFreeSlot();
-            int index = free >= 0 ? free : inv.getSelectedSlot();
-            target = index < 9 ? 36 + index : index;
-        }
-        minecraft.gameMode.handleCreativeModeItemAdd(result, target);
-        onClose();
     }
 
     /** '&' colour codes, and no forced italics. */
@@ -257,37 +261,34 @@ public class CreativeAnvilScreen extends Screen {
     // ---- Scrolling ----
 
     private int scrollTotal() {
-        return switch (tab) {
-            case ENCHANTS -> working.isEmpty() ? 0 : allEnchantments.size();
-            case ITEMS -> (searchResults.size() + GRID_COLS - 1) / GRID_COLS;
-            case NAME -> 0;
-        };
+        if (tab != Tab.ENCHANTS || working.isEmpty()) {
+            return 0;
+        }
+        return pickerOpen ? candidates.size() : levels.size() + 1;
     }
 
     private int scrollVisible() {
-        return tab == Tab.ITEMS ? GRID_ROWS : ROWS;
+        return pickerOpen ? PICK_ROWS : ROWS;
     }
 
     private int scrollPos() {
-        return tab == Tab.ITEMS ? itemScroll : enchantScroll;
+        return pickerOpen ? pickScroll : rowScroll;
     }
 
     private void setScroll(int value) {
-        int max = Math.max(0, scrollTotal() - scrollVisible());
-        value = Math.max(0, Math.min(max, value));
-        if (tab == Tab.ITEMS) {
-            itemScroll = value;
+        value = Math.max(0, Math.min(Math.max(0, scrollTotal() - scrollVisible()), value));
+        if (pickerOpen) {
+            pickScroll = value;
         } else {
-            enchantScroll = value;
+            rowScroll = value;
         }
-        refreshRows();
+        refresh();
     }
 
     private boolean canScroll() {
         return scrollTotal() > scrollVisible();
     }
 
-    /** Moves the scroller so its middle follows the mouse. */
     private void scrollToMouse(double mouseY) {
         double fraction = (mouseY - (py + LY) - SCROLLER_H / 2.0) / (LH - SCROLLER_H);
         fraction = Math.max(0, Math.min(1, fraction));
@@ -309,6 +310,11 @@ public class CreativeAnvilScreen extends Screen {
             draggingScroller = true;
             scrollToMouse(click.y());
             return true;
+        }
+        // Clicking outside the dropdown closes it
+        if (pickerOpen && !over(click.x(), click.y(), LX, LY, LW, LH)) {
+            pickerOpen = false;
+            refresh();
         }
         return super.mouseClicked(click, doubled);
     }
@@ -336,153 +342,158 @@ public class CreativeAnvilScreen extends Screen {
         py = Math.max(2, (height - PH) / 2);
         cells.clear();
         rows.clear();
+        pickButtons.clear();
         boolean has = !working.isEmpty();
 
-        // Input slot (click to clear) and output slot (click to apply)
-        hit(7, 16, 18, 18, () -> {
+        hit(SLOT_X, INPUT_Y, 18, 18, () -> {
             if (!working.isEmpty()) {
                 clearSelection();
             }
         }, Component.translatable("creativestations.editor.input"));
-        hit(7, 56, 18, 18, this::apply, null);
+        hit(SLOT_X, OUTPUT_Y, 18, 18, this::apply, null);
 
         for (Tab t : Tab.values()) {
-            hit(28, 16 + t.ordinal() * 24, 22, 22, () -> {
+            hit(TAB_X, LY + t.ordinal() * (TAB_SIZE + 2), TAB_SIZE, TAB_SIZE, () -> {
                 tab = t;
+                pickerOpen = false;
                 rebuildWidgets();
             }, Component.translatable(t.key));
         }
 
-        switch (tab) {
-            case ENCHANTS -> initEnchants(has);
-            case NAME -> initName(has);
-            case ITEMS -> initItems();
+        if (has && tab == Tab.ENCHANTS) {
+            initEnchants();
+        } else if (has && tab == Tab.NAME) {
+            initName();
         }
 
-        // Inventory, in the vanilla slot positions
         Inventory inv = minecraft.player.getInventory();
         for (int i = 0; i < 36; i++) {
             final int index = i;
             int menuSlot = i < 9 ? 36 + i : i;
             int x = INV_X + 1 + (i % 9) * 18;
             int y = i < 9 ? TOP_H + 66 : TOP_H + 8 + ((i - 9) / 9) * 18;
-            addCell(x, y, () -> inv.getItem(index), stack -> select(stack, menuSlot), false);
+            hit(x - 1, y - 1, 18, 18, () -> select(inv.getItem(index), menuSlot), null);
+            cells.add(new Cell(x, y, () -> inv.getItem(index)));
         }
-        refreshRows();
+        refresh();
     }
 
-    private void initEnchants(boolean has) {
-        if (!has) {
-            return;
-        }
+    private void initEnchants() {
         for (int r = 0; r < ROWS; r++) {
             final int row = r;
-            int y = py + LY + r * ROW_H + 1;
-            Button remove = Button.builder(Component.literal("x").withStyle(ChatFormatting.RED),
-                    b -> holderAt(row, h -> setLevel(h, 0))).bounds(px + LX + 2, y, 12, 16).build();
-            remove.setTooltip(Tooltip.create(Component.translatable("creativestations.editor.remove")));
-            Button nameHit = Button.builder(Component.empty(),
-                    b -> holderAt(row, h -> setLevel(h, levels.containsKey(h) ? 0 : 1))).bounds(px + NAME_X - 1, y, NAME_W + 2, 16).build();
-            nameHit.setAlpha(0.0F);
-            Button minus = Button.builder(Component.literal("-"),
-                    b -> holderAt(row, h -> setLevel(h, levels.getOrDefault(h, 0) - 1))).bounds(px + MINUS_X, y, 12, 16).build();
-            Button plus = Button.builder(Component.literal("+"),
-                    b -> holderAt(row, h -> setLevel(h, levels.getOrDefault(h, 0) + 1))).bounds(px + PLUS_X, y, 12, 16).build();
-            addRenderableWidget(remove);
-            addRenderableWidget(nameHit);
-            addRenderableWidget(minus);
-            addRenderableWidget(plus);
-            rows.add(new Row(remove, nameHit, minus, plus));
+            int y = LY + r * ROW_H;
+            Button remove = hit(LX + 3, y + 3, 14, 14, () -> {
+                Holder<Enchantment> holder = appliedAt(row);
+                if (holder != null) {
+                    levels.remove(holder);
+                    rowScroll = Math.max(0, Math.min(rowScroll, levels.size() + 1 - ROWS));
+                    refresh();
+                }
+            }, Component.translatable("creativestations.editor.remove"));
+
+            EditBox level = new EditBox(font, px + LEVEL_X + 3, py + y + 6, LEVEL_W - 4, 10, Component.empty());
+            level.setBordered(false);
+            level.setTextColor(0xFFFFFFFF);
+            level.setMaxLength(3);
+            level.setFilter(s -> s.matches("\\d*"));
+            level.setResponder(value -> {
+                Holder<Enchantment> holder = appliedAt(row);
+                if (updating || holder == null || value.isEmpty()) {
+                    return;
+                }
+                levels.put(holder, Math.max(1, Math.min(MAX_LEVEL, Integer.parseInt(value))));
+            });
+            addRenderableWidget(level);
+
+            Button add = hit(LX, y, LW, ROW_H, this::openPicker, Component.translatable("creativestations.editor.add"));
+            rows.add(new Row(remove, level, add));
+        }
+        for (int i = 0; i < PICK_ROWS; i++) {
+            final int row = i;
+            pickButtons.add(hit(LX, LY + i * PICK_H, LW, PICK_H, () -> {
+                int index = pickScroll + row;
+                if (index < candidates.size()) {
+                    addEnchantment(candidates.get(index));
+                }
+            }, null));
         }
     }
 
-    private Holder.Reference<Enchantment> holderAt(int row) {
-        int index = enchantScroll + row;
-        return index < allEnchantments.size() ? allEnchantments.get(index) : null;
-    }
-
-    private void holderAt(int row, java.util.function.Consumer<Holder<Enchantment>> action) {
-        Holder.Reference<Enchantment> holder = holderAt(row);
-        if (holder != null) {
-            action.accept(holder);
+    private void initName() {
+        for (int i = 0; i <= LORE_LINES; i++) {
+            final int line = i - 1;
+            boolean isName = i == 0;
+            EditBox box = new EditBox(font, px + LX + 4, py + LY + 4 + i * LINE_H, LW - 8, 10, Component.empty());
+            box.setBordered(false);
+            box.setTextColor(isName ? 0xFFFFFFFF : LORE_COLOR);
+            box.setMaxLength(isName ? 100 : 200);
+            box.setValue(isName ? name : lore[line]);
+            if (i == 1) {
+                box.setHint(Component.translatable("creativestations.editor.lore"));
+            }
+            box.setResponder(value -> {
+                if (isName) {
+                    name = value;
+                } else {
+                    lore[line] = value;
+                }
+            });
+            addRenderableWidget(box);
         }
     }
 
-    /** Updates the row widgets after scrolling or a level change, without recreating them. */
-    private void refreshRows() {
+    private Holder<Enchantment> appliedAt(int row) {
+        List<Holder<Enchantment>> applied = applied();
+        int index = rowScroll + row;
+        return index < applied.size() ? applied.get(index) : null;
+    }
+
+    private boolean isAddRow(int row) {
+        return rowScroll + row == levels.size();
+    }
+
+    /** Shows and fills the right widgets for the current scroll position, without recreating them. */
+    private void refresh() {
+        updating = true;
         for (int r = 0; r < rows.size(); r++) {
             Row row = rows.get(r);
-            Holder.Reference<Enchantment> holder = holderAt(r);
-            boolean shown = holder != null;
-            int level = shown ? levels.getOrDefault(holder, 0) : 0;
-            row.remove().visible = shown && level > 0;
-            row.name().visible = shown;
-            row.minus().visible = shown;
-            row.plus().visible = shown;
-            row.minus().active = level > 0;
-            row.plus().active = level < MAX_LEVEL;
+            Holder<Enchantment> holder = appliedAt(r);
+            boolean shown = holder != null && !pickerOpen;
+            row.remove().visible = shown;
+            row.level().visible = shown;
             if (shown) {
-                row.name().setTooltip(Tooltip.create(Component.empty().append(holder.value().description())
-                        .append(Component.translatable("creativestations.editor.max", holder.value().getMaxLevel()))));
+                String value = String.valueOf(levels.get(holder));
+                if (!row.level().getValue().equals(value)) {
+                    row.level().setValue(value);
+                }
             }
+            row.add().visible = !pickerOpen && isAddRow(r);
         }
-    }
-
-    /** A borderless text box sitting on the vanilla anvil's rename field, like the real anvil. */
-    private EditBox textField(int row, String value, Component hint, int maxLength, boolean editable) {
-        EditBox box = new EditBox(font, px + LX + 5, py + LY + row * ROW_H + 5, LW - 10, 12, hint);
-        box.setBordered(false);
-        box.setTextColor(0xFFFFFFFF);
-        box.setMaxLength(maxLength);
-        box.setValue(value);
-        box.setHint(hint);
-        box.setEditable(editable);
-        box.active = editable;
-        addRenderableWidget(box);
-        return box;
-    }
-
-    private void initName(boolean has) {
-        textField(0, name, Component.translatable("creativestations.editor.name"), 100, has)
-                .setResponder(value -> name = value);
-        for (int i = 0; i < LORE_LINES; i++) {
-            final int line = i;
-            textField(i + 1, lore[i], Component.translatable("creativestations.editor.lore"), 200, has)
-                    .setResponder(value -> lore[line] = value);
+        for (int i = 0; i < pickButtons.size(); i++) {
+            pickButtons.get(i).visible = pickerOpen && pickScroll + i < candidates.size();
         }
-    }
-
-    private void initItems() {
-        EditBox search = textField(0, query, Component.translatable("creativestations.editor.search"), 50, true);
-        search.setResponder(value -> {
-            query = value;
-            updateSearch();
-        });
-        for (int r = 0; r < GRID_ROWS; r++) {
-            for (int c = 0; c < GRID_COLS; c++) {
-                final int offset = r * GRID_COLS + c;
-                Supplier<ItemStack> stack = () -> {
-                    int index = itemScroll * GRID_COLS + offset;
-                    return index < searchResults.size() ? searchResults.get(index) : ItemStack.EMPTY;
-                };
-                addCell(GRID_X + 1 + c * 18, LY + ROW_H + 1 + r * 18, stack, s -> select(s, -1), true);
-            }
-        }
+        updating = false;
     }
 
     /** An invisible button over an area (relative to the window), so vanilla handles clicks and tooltips. */
-    private void hit(int x, int y, int w, int h, Runnable action, Component tooltip) {
+    private Button hit(int x, int y, int w, int h, Runnable action, Component tooltip) {
         Button button = Button.builder(Component.empty(), b -> action.run()).bounds(px + x, py + y, w, h).build();
         button.setAlpha(0.0F);
         if (tooltip != null) {
             button.setTooltip(Tooltip.create(tooltip));
         }
         addRenderableWidget(button);
+        return button;
     }
 
-    private void addCell(int x, int y, Supplier<ItemStack> stack, java.util.function.Consumer<ItemStack> onClick, boolean drawSlot) {
-        hit(x - 1, y - 1, 18, 18, () -> onClick.accept(stack.get()), null);
-        cells.add(new Cell(x, y, stack, drawSlot));
+    @Override
+    public void onClose() {
+        if (pickerOpen) {
+            pickerOpen = false;
+            refresh();
+            return;
+        }
+        minecraft.setScreen(parent);
     }
 
     // ---- Drawing ----
@@ -495,11 +506,26 @@ public class CreativeAnvilScreen extends Screen {
         g.fill(px + x, py + y, px + x + w, py + y + h, color);
     }
 
-    /** A vanilla-style inset: dark top-left edge, white bottom-right edge. */
-    private void inset(GuiGraphics g, int x, int y, int w, int h, int color) {
-        fill(g, x, y, w, h, 0xFF373737);
-        fill(g, x + 1, y + 1, w - 1, h - 1, 0xFFFFFFFF);
+    /** A raised box: light top-left edge, dark bottom-right edge. */
+    private void bevel(GuiGraphics g, int x, int y, int w, int h, int color, int light, int dark) {
+        fill(g, x, y, w, h, dark);
+        fill(g, x, y, w - 1, h - 1, light);
         fill(g, x + 1, y + 1, w - 2, h - 2, color);
+    }
+
+    /** A vanilla inventory slot: dark top-left edge, white bottom-right edge. */
+    private void slot(GuiGraphics g, int x, int y) {
+        fill(g, x, y, 18, 18, 0xFF373737);
+        fill(g, x + 1, y + 1, 17, 17, 0xFFFFFFFF);
+        fill(g, x + 1, y + 1, 16, 16, 0xFF8B8B8B);
+    }
+
+    private void text(GuiGraphics g, String s, int x, int y, int color) {
+        g.drawString(font, s, px + x, py + y, color, true);
+    }
+
+    private String fit(String s, int width) {
+        return font.width(s) <= width ? s : font.plainSubstrByWidth(s, width - font.width("..")) + "..";
     }
 
     /** Draws the anvil texture's 4px border around a window of any size. */
@@ -525,102 +551,122 @@ public class CreativeAnvilScreen extends Screen {
         super.renderBackground(g, mouseX, mouseY, delta);
         frame(g);
         g.blit(RenderPipelines.GUI_TEXTURED, ANVIL_TEXTURE, px + INV_X, py + TOP_H + 7, 7, 83, 162, 76, 256, 256);
-        g.drawString(font, title, px + 8, py + 6, LABEL, false);
+        g.drawString(font, title, px + 8, py + 5, LABEL, false);
         g.drawString(font, Component.translatable("container.inventory"), px + INV_X + 1, py + TOP_H - 4, LABEL, false);
 
         // Input -> arrow -> output
-        inset(g, 7, 16, 18, 18, 0xFF8B8B8B);
+        slot(g, SLOT_X, INPUT_Y);
         int arrow = 0xFF8B8B8B;
-        fill(g, 13, 37, 6, 9, arrow);
+        fill(g, SLOT_X + 6, INPUT_Y + 21, 6, 11, arrow);
         for (int i = 0; i < 6; i++) {
-            fill(g, 10 + i, 46 + i, 12 - 2 * i, 1, arrow);
+            fill(g, SLOT_X + 3 + i, INPUT_Y + 32 + i, 12 - 2 * i, 1, arrow);
         }
-        inset(g, 7, 56, 18, 18, 0xFF8B8B8B);
+        slot(g, SLOT_X, OUTPUT_Y);
 
-        // Tabs on vanilla button sprites
+        // Tabs: blue squares, the selected one lighter
         for (Tab t : Tab.values()) {
-            int y = 16 + t.ordinal() * 24;
-            Identifier sprite = t == tab ? BUTTON_DISABLED : over(mouseX, mouseY, 28, y, 22, 22) ? BUTTON_HIGHLIGHTED : BUTTON;
-            g.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, px + 28, py + y, 22, 22);
+            int y = LY + t.ordinal() * (TAB_SIZE + 2);
+            boolean on = t == tab;
+            boolean hovered = over(mouseX, mouseY, TAB_X, y, TAB_SIZE, TAB_SIZE);
+            bevel(g, TAB_X, y, TAB_SIZE, TAB_SIZE, on || hovered ? BLUE_ON : BLUE, on ? 0xFFFFFFFF : BLUE_LIGHT, BLUE_DARK);
         }
 
-        // The list: an inset panel with grey rows
-        inset(g, LX - 1, LY - 1, LW + 2, LH + 2, ROW_A);
-        if (tab == Tab.ENCHANTS && !working.isEmpty()) {
-            for (int r = 0; r < ROWS; r++) {
-                Holder.Reference<Enchantment> holder = holderAt(r);
-                if (holder == null) {
-                    break;
+        // Panel
+        fill(g, LX - 1, LY - 1, LW + 2, LH + 2, PANEL_EDGE);
+        boolean has = !working.isEmpty();
+        if (has && tab == Tab.NAME) {
+            fill(g, LX - 1, LY - 1, LW + 2, LH + 2, 0xFFA0A0A0);
+            fill(g, LX, LY, LW, LH, 0xFF000000);
+        } else if (has && pickerOpen) {
+            fill(g, LX, LY, LW, LH, DROPDOWN);
+        } else {
+            fill(g, LX, LY, LW, LH, PANEL);
+            if (has && tab == Tab.ENCHANTS) {
+                for (int r = 0; r < ROWS; r++) {
+                    int y = LY + r * ROW_H;
+                    if (appliedAt(r) != null) {
+                        bevel(g, LX + 3, y + 3, 14, 14, RED, RED_LIGHT, RED_DARK);
+                        bevel(g, LEVEL_X, y + 3, LEVEL_W, 14, TAN, TAN_LIGHT, TAN_DARK);
+                    } else if (isAddRow(r)) {
+                        bevel(g, LX + 3, y + 3, 14, 14, BLUE, BLUE_LIGHT, BLUE_DARK);
+                    }
                 }
-                boolean on = levels.containsKey(holder);
-                fill(g, LX, LY + r * ROW_H, LW, ROW_H, on ? ROW_ON : r % 2 == 0 ? ROW_A : ROW_B);
-                inset(g, LEVEL_X, LY + r * ROW_H + 1, 20, 16, 0xFF000000);
-            }
-        } else if (tab == Tab.NAME || tab == Tab.ITEMS) {
-            int fields = tab == Tab.NAME ? LORE_LINES + 1 : 1;
-            boolean editable = tab == Tab.ITEMS || !working.isEmpty();
-            for (int i = 0; i < fields; i++) {
-                g.blitSprite(RenderPipelines.GUI_TEXTURED, editable ? TEXT_FIELD : TEXT_FIELD_DISABLED,
-                        px + LX + 1, py + LY + i * ROW_H + 1, LW - 2, 16);
-            }
-        }
-        for (Cell cell : cells) {
-            if (cell.drawSlot()) {
-                inset(g, cell.x() - 1, cell.y() - 1, 18, 18, 0xFF8B8B8B);
             }
         }
 
-        // Scrollbar track and the creative inventory's scroller
-        inset(g, TRACK_X - 1, LY - 1, 14, LH + 2, 0xFF8B8B8B);
+        // Scrollbar
+        fill(g, TRACK_X - 1, LY - 1, 14, LH + 2, 0xFF373737);
+        fill(g, TRACK_X, LY, 13, LH + 1, 0xFFFFFFFF);
+        fill(g, TRACK_X, LY, 12, LH, 0xFF8B8B8B);
         int total = scrollTotal();
         int visible = scrollVisible();
         boolean scrollable = total > visible;
         int thumbY = scrollable ? LY + (LH - SCROLLER_H) * scrollPos() / (total - visible) : LY;
         g.blitSprite(RenderPipelines.GUI_TEXTURED, scrollable ? SCROLLER : SCROLLER_DISABLED, px + TRACK_X, py + thumbY, 12, SCROLLER_H);
+
+        // "?" help, next to the name editor
+        if (tab == Tab.NAME) {
+            bevel(g, TRACK_X - 13, 3, 11, 11, TAN, TAN_LIGHT, TAN_DARK);
+        }
     }
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float delta) {
         super.render(g, mouseX, mouseY, delta);
+        boolean has = !working.isEmpty();
 
-        // Enchantment names and levels
-        if (tab == Tab.ENCHANTS && !working.isEmpty()) {
+        if (has && tab == Tab.ENCHANTS && !pickerOpen) {
             for (int r = 0; r < ROWS; r++) {
-                Holder.Reference<Enchantment> holder = holderAt(r);
-                if (holder == null) {
-                    break;
+                int y = LY + r * ROW_H;
+                Holder<Enchantment> holder = appliedAt(r);
+                if (holder != null) {
+                    text(g, "x", LX + 8, y + 6, 0xFFFFFFFF);
+                    text(g, fit(holder.value().description().getString(), NAME_W), NAME_X, y + 6, 0xFFFFFFFF);
+                } else if (isAddRow(r)) {
+                    text(g, "+", LX + 8, y + 6, 0xFFFFFFFF);
+                    text(g, fit(Component.translatable("creativestations.editor.add").getString(), NAME_W + LEVEL_W), NAME_X, y + 6, 0xFF9C9686);
                 }
-                int level = levels.getOrDefault(holder, 0);
-                int y = py + LY + r * ROW_H;
-                String full = holder.value().description().getString();
-                String label = font.width(full) <= NAME_W ? full : font.plainSubstrByWidth(full, NAME_W - font.width("..")) + "..";
-                g.drawString(font, label, px + NAME_X, y + 5, level > 0 ? 0xFFFFFF55 : 0xFFFFFFFF, true);
-                String lvl = level > 0 ? String.valueOf(level) : "-";
-                g.drawString(font, lvl, px + LEVEL_X + (20 - font.width(lvl)) / 2, y + 5, level > 0 ? 0xFFFFFFFF : 0xFF808080, false);
             }
-        } else if (working.isEmpty() && tab != Tab.ITEMS) {
-            List<FormattedCharSequence> lines = font.split(Component.translatable("creativestations.editor.pick"), LW - 10);
-            int y = py + LY + (tab == Tab.NAME ? ROW_H * 5 - 10 * lines.size() - 2 : 30);
-            for (int i = 0; i < lines.size(); i++) {
-                g.drawString(font, lines.get(i), px + LX + 5, y + i * 10, 0xFFFFFFFF, true);
+        } else if (has && pickerOpen) {
+            for (int i = 0; i < PICK_ROWS && pickScroll + i < candidates.size(); i++) {
+                int y = LY + i * PICK_H;
+                if (over(mouseX, mouseY, LX, y, LW, PICK_H)) {
+                    fill(g, LX + 1, y, LW - 2, PICK_H, 0xFFD0D0D0);
+                    fill(g, LX + 2, y + 1, LW - 4, PICK_H - 2, 0xFF000000);
+                }
+                Holder.Reference<Enchantment> holder = candidates.get(pickScroll + i);
+                text(g, fit(holder.value().description().getString(), LW - 8), LX + 4, y + 2, 0xFFFFFFFF);
+            }
+        } else if (!has) {
+            int y = LY + 6;
+            for (var line : font.split(Component.translatable("creativestations.editor.pick"), LW - 8)) {
+                g.drawString(font, line, px + LX + 4, py + y, 0xFFE0DAC8, true);
+                y += 10;
             }
         }
 
         for (Tab t : Tab.values()) {
-            g.renderItem(new ItemStack(t.icon), px + 31, py + 19 + t.ordinal() * 24);
+            g.renderItem(new ItemStack(t.icon), px + TAB_X + 2, py + LY + 2 + t.ordinal() * (TAB_SIZE + 2));
         }
 
-        // Input, output and every item slot
+        if (tab == Tab.NAME) {
+            text(g, "?", TRACK_X - 10, 5, 0xFFFFFFFF);
+            if (over(mouseX, mouseY, TRACK_X - 13, 3, 11, 11)) {
+                g.setTooltipForNextFrame(font, font.split(Component.translatable("creativestations.editor.help"), 200), mouseX, mouseY);
+            }
+        }
+
+        // Items: input, output, inventory
         ItemStack result = buildResult();
-        if (!working.isEmpty()) {
-            g.renderItem(working, px + 8, py + 17);
-            g.renderItem(result, px + 8, py + 57);
+        if (has) {
+            g.renderItem(working, px + SLOT_X + 1, py + INPUT_Y + 1);
+            g.renderItem(result, px + SLOT_X + 1, py + OUTPUT_Y + 1);
         }
         ItemStack hovered = ItemStack.EMPTY;
-        for (int y : new int[]{16, 56}) {
-            if (over(mouseX, mouseY, 7, y, 18, 18)) {
-                fill(g, 8, y + 1, 16, 16, 0x80FFFFFF);
-                hovered = y == 16 ? working : result;
+        for (int y : new int[]{INPUT_Y, OUTPUT_Y}) {
+            if (over(mouseX, mouseY, SLOT_X, y, 18, 18)) {
+                fill(g, SLOT_X + 1, y + 1, 16, 16, 0x80FFFFFF);
+                hovered = y == INPUT_Y ? working : result;
             }
         }
         for (Cell cell : cells) {
@@ -639,10 +685,5 @@ public class CreativeAnvilScreen extends Screen {
         if (!hovered.isEmpty()) {
             g.setTooltipForNextFrame(font, hovered, mouseX, mouseY);
         }
-    }
-
-    @Override
-    public void onClose() {
-        minecraft.setScreen(parent);
     }
 }

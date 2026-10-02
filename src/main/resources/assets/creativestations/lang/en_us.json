@@ -1,14 +1,12 @@
 {
-  "creativestations.editor.title": "Creative Anvil",
+  "creativestations.editor.title": "Anvil",
   "creativestations.editor.tooltip": "Creative Anvil: edit enchantments, name and lore",
-  "creativestations.editor.name": "Name",
-  "creativestations.editor.lore": "Lore line",
-  "creativestations.editor.search": "Search items...",
+  "creativestations.editor.tab.name": "Name and lore",
   "creativestations.editor.tab.enchants": "Enchantments",
-  "creativestations.editor.tab.items": "Search all items",
-  "creativestations.editor.pick": "Click an item in your inventory, or search with the compass tab",
-  "creativestations.editor.tab.name": "Name and lore (use & for colours, e.g. &6gold)",
-  "creativestations.editor.input": "Click to clear the item",
+  "creativestations.editor.input": "Click to clear",
   "creativestations.editor.remove": "Remove",
-  "creativestations.editor.max": " (max %s)"
+  "creativestations.editor.add": "Add enchantment",
+  "creativestations.editor.lore": "Lore...",
+  "creativestations.editor.pick": "Click an item in your inventory to edit it",
+  "creativestations.editor.help": "First line is the name, the lines below are lore. Use & for colours and styles: &c red, &6 gold, &a green, &b aqua, &9 blue, &d pink, &l bold, &o italic, &n underline, &r reset."
 }
