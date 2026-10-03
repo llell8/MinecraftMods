@@ -1,0 +1,28 @@
+{
+	"required": true,
+	"package": "com.hackclient.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"ClientPacketListenerMixin",
+		"GameRendererMixin",
+		"MinecraftAccessor",
+		"MinecraftMixin",
+		"MultiPlayerGameModeAccessor",
+		"MultiPlayerGameModeMixin",
+		"trades.DyedArmorForEmeraldsAccessor",
+		"trades.EmeraldForItemsAccessor",
+		"trades.EmeraldsForVillagerTypeItemAccessor",
+		"trades.EnchantBookForEmeraldsAccessor",
+		"trades.EnchantedItemForEmeraldsAccessor",
+		"trades.ItemsAndEmeraldsToItemsAccessor",
+		"trades.ItemsForEmeraldsAccessor",
+		"trades.TippedArrowForItemsAndEmeraldsAccessor",
+		"trades.TreasureMapForEmeraldsAccessor"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

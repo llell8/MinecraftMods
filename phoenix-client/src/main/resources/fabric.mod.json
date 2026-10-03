@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "hackclient",
+	"version": "${version}",
+	"name": "Phoenix Client",
+	"description": "Phoenix Client - a utility client for Minecraft 1.21.11.",
+	"authors": [
+		"Me!"
+	],
+	"license": "CC0-1.0",
+	"icon": "assets/hackclient/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"com.hackclient.HackClient"
+		]
+	},
+	"mixins": [
+		{
+			"config": "hackclient.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
