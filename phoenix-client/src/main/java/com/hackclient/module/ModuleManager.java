@@ -28,6 +28,7 @@ import com.hackclient.module.modules.player.NoFall;
 import com.hackclient.module.modules.render.ESP;
 import com.hackclient.module.modules.render.Fullbright;
 import com.hackclient.module.modules.render.NoHurtCam;
+import com.hackclient.module.modules.render.PlayerTracker;
 import com.hackclient.module.modules.render.Zoom;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
@@ -68,6 +69,7 @@ public class ModuleManager {
 		// Render
 		modules.add(new Fullbright());
 		modules.add(new ESP());
+		modules.add(new PlayerTracker());
 		modules.add(new Zoom());
 		modules.add(new NoHurtCam());
 		// Grinding
