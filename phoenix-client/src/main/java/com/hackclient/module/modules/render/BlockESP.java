@@ -10,6 +10,8 @@ import com.hackclient.setting.ModeSetting;
 import com.hackclient.setting.NumberSetting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -17,11 +19,9 @@ import java.util.List;
 
 /**
  * Meteor-style block ESP: 3D boxes around chosen blocks, visible through walls. Pick any blocks in the game in its settings.
- * The area around you is scanned a slice at a time, so it never freezes the game. Drawn by EspOverlay.
+ * The area around you is rescanned continuously, a few chunks per tick. Drawn by EspOverlay.
  */
 public class BlockESP extends Module {
-	private static final int CHECKS_PER_TICK = 60_000;
-
 	private final BlockListSetting blocks = blocks("Blocks",
 			"minecraft:diamond_ore", "minecraft:deepslate_diamond_ore", "minecraft:ancient_debris",
 			"minecraft:emerald_ore", "minecraft:deepslate_emerald_ore", "minecraft:spawner",
@@ -33,17 +33,21 @@ public class BlockESP extends Module {
 	private final NumberSetting lineWidth = number("Line width", 1.5, 0.5, 4, 1);
 	private final BoolSetting tracers = bool("Tracers", false);
 	private final BoolSetting customColor = bool("Custom colour", false);
-	private final ColorSetting color = color("Colour", 0xFF00FFFF);
+	// Picking a colour switches "Custom colour" on, so the picked colour is what you see
+	private final ColorSetting color = color("Colour", 0xFF00FFFF).onPicked(() -> customColor.set(true));
 
 	/** A found block and the colour to draw it in. */
 	public record Found(BlockPos pos, int color) {
 	}
 
+	private static final int CHUNKS_PER_TICK = 24;
+
 	private List<Found> found = new ArrayList<>();
 	private List<Found> scanning = new ArrayList<>();
 	private BlockPos scanCenter;
 	private int scanRadius;
-	private int cx, cy, cz; // scan cursor, relative to scanCenter
+	private int chunkRadius;
+	private int chunkIndex; // which chunk of the square around you we're on this pass
 	private boolean scanDone = true;
 
 	public BlockESP() {
@@ -57,6 +61,11 @@ public class BlockESP extends Module {
 		scanDone = true;
 	}
 
+	/**
+	 * Scans the chunks around you a few per tick. Each 16x16x16 section keeps a palette of the block
+	 * types in it, so sections that can't contain any picked block are skipped without looking at a
+	 * single block. That makes a full pass take a fraction of a second.
+	 */
 	@Override
 	public void onTick() {
 		if (mc.level == null || mc.player == null || blocks.isEmpty()) {
@@ -65,48 +74,57 @@ public class BlockESP extends Module {
 		}
 		if (scanDone) startScan();
 
-		int minY = mc.level.getMinY();
-		int maxY = mc.level.getMaxY();
-		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-		int budget = CHECKS_PER_TICK;
+		int side = chunkRadius * 2 + 1;
 		int limit = maxShown.get().intValue();
-
-		while (budget-- > 0 && !scanDone) {
-			int y = scanCenter.getY() + cy;
-			if (y >= minY && y <= maxY) {
-				pos.set(scanCenter.getX() + cx, y, scanCenter.getZ() + cz);
-				Block block = mc.level.getBlockState(pos).getBlock();
-				if (blocks.contains(block) && scanning.size() < limit) {
-					scanning.add(new Found(pos.immutable(), colorFor(block)));
-				}
-			}
-			advance();
+		for (int n = 0; n < CHUNKS_PER_TICK && !scanDone; n++) {
+			int cx = (scanCenter.getX() >> 4) - chunkRadius + chunkIndex % side;
+			int cz = (scanCenter.getZ() >> 4) - chunkRadius + chunkIndex / side;
+			if (mc.level.getChunkSource().hasChunk(cx, cz)) scanChunk(mc.level.getChunk(cx, cz), limit);
+			if (++chunkIndex >= side * side) scanDone = true;
 		}
 		if (scanDone) {
 			// Closest first, so "Max shown" keeps the nearest ones
 			scanning.sort((a, b) -> Double.compare(a.pos().distSqr(scanCenter), b.pos().distSqr(scanCenter)));
+			if (scanning.size() > limit) scanning = new ArrayList<>(scanning.subList(0, limit));
 			found = scanning;
 			scanning = new ArrayList<>();
+		}
+	}
+
+	private void scanChunk(LevelChunk chunk, int limit) {
+		LevelChunkSection[] sections = chunk.getSections();
+		int minY = scanCenter.getY() - scanRadius;
+		int maxY = scanCenter.getY() + scanRadius;
+		int baseX = chunk.getPos().getMinBlockX();
+		int baseZ = chunk.getPos().getMinBlockZ();
+		for (int i = 0; i < sections.length; i++) {
+			LevelChunkSection section = sections[i];
+			int sectionY = mc.level.getSectionYFromSectionIndex(i) << 4;
+			if (sectionY + 15 < minY || sectionY > maxY) continue;
+			if (section.hasOnlyAir() || !section.maybeHas(state -> blocks.contains(state.getBlock()))) continue;
+
+			for (int y = 0; y < 16; y++) {
+				for (int z = 0; z < 16; z++) {
+					for (int x = 0; x < 16; x++) {
+						Block block = section.getBlockState(x, y, z).getBlock();
+						if (!blocks.contains(block)) continue;
+						BlockPos pos = new BlockPos(baseX + x, sectionY + y, baseZ + z);
+						if (Math.abs(pos.getX() - scanCenter.getX()) > scanRadius || Math.abs(pos.getY() - scanCenter.getY()) > scanRadius
+								|| Math.abs(pos.getZ() - scanCenter.getZ()) > scanRadius) continue;
+						scanning.add(new Found(pos, colorFor(block)));
+						if (scanning.size() > limit * 4) return; // plenty; the closest are kept after sorting
+					}
+				}
+			}
 		}
 	}
 
 	private void startScan() {
 		scanCenter = mc.player.blockPosition();
 		scanRadius = range.get().intValue();
-		cx = -scanRadius;
-		cy = -scanRadius;
-		cz = -scanRadius;
+		chunkRadius = (scanRadius >> 4) + 1;
+		chunkIndex = 0;
 		scanDone = false;
-	}
-
-	private void advance() {
-		if (++cx > scanRadius) {
-			cx = -scanRadius;
-			if (++cz > scanRadius) {
-				cz = -scanRadius;
-				if (++cy > scanRadius) scanDone = true;
-			}
-		}
 	}
 
 	/** The block's map colour, so diamonds are cyan, gold is yellow, and so on. */

@@ -23,10 +23,11 @@ public class Tracers extends Module {
 	private final ModeSetting<Target> target = mode("Target", Target.BODY);
 	private final NumberSetting lineWidth = number("Line width", 1.5, 0.5, 4, 1);
 	private final BoolSetting distanceColors = bool("Distance colours", true);
-	private final ColorSetting playerColor = color("Players colour", 0xFFFFFFFF);
-	private final ColorSetting mobColor = color("Mobs colour", 0xFFFF1919);
-	private final ColorSetting animalColor = color("Animals colour", 0xFF19FF19);
-	private final ColorSetting itemColor = color("Items colour", 0xFFFFA500);
+	// Picking a colour switches off distance colours, so the picked colour is what you see
+	private final ColorSetting playerColor = color("Players colour", 0xFFFFFFFF).onPicked(() -> distanceColors.set(false));
+	private final ColorSetting mobColor = color("Mobs colour", 0xFFFF1919).onPicked(() -> distanceColors.set(false));
+	private final ColorSetting animalColor = color("Animals colour", 0xFF19FF19).onPicked(() -> distanceColors.set(false));
+	private final ColorSetting itemColor = color("Items colour", 0xFFFFA500).onPicked(() -> distanceColors.set(false));
 
 	public enum Target {
 		HEAD("Head"), BODY("Body"), FEET("Feet");

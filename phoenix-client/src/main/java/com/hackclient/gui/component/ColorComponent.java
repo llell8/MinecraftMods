@@ -47,7 +47,7 @@ public class ColorComponent extends Component {
 		saturation = s;
 		brightness = b;
 		int rgb = Mth.hsvToRgb(h, s, b) & 0x00FFFFFF;
-		setting.set((a << 24) | rgb);
+		setting.pick((a << 24) | rgb);
 		lastValue = setting.get();
 	}
 

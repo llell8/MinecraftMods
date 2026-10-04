@@ -49,12 +49,13 @@ public class ESP extends Module {
 	private final BoolSetting animals = bool("Animals", false);
 	private final BoolSetting items = bool("Items", false);
 
-	private final SettingGroup sgColors = group("Colours", false);
+	private final SettingGroup sgColors = group("Colours", true);
 	private final BoolSetting distanceColors = bool("Distance colours", false);
-	private final ColorSetting playerColor = color("Players", 0xFFFFFFFF);
-	private final ColorSetting mobColor = color("Mobs", 0xFFFF1919);
-	private final ColorSetting animalColor = color("Animals", 0xFF19FF19);
-	private final ColorSetting itemColor = color("Items", 0xFFFFA500);
+	// Picking a colour switches off distance colours, so the picked colour is what you see
+	private final ColorSetting playerColor = color("Players", 0xFFFFFFFF).onPicked(() -> distanceColors.set(false));
+	private final ColorSetting mobColor = color("Mobs", 0xFFFF1919).onPicked(() -> distanceColors.set(false));
+	private final ColorSetting animalColor = color("Animals", 0xFF19FF19).onPicked(() -> distanceColors.set(false));
+	private final ColorSetting itemColor = color("Items", 0xFFFFA500).onPicked(() -> distanceColors.set(false));
 
 	public ESP() {
 		super("ESP", "Highlights entities through walls.", Category.RENDER, GLFW.GLFW_KEY_UNKNOWN);
