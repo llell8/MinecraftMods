@@ -1,6 +1,7 @@
 package com.hackclient;
 
 import com.hackclient.config.Config;
+import com.hackclient.hud.EspOverlay;
 import com.hackclient.hud.ModuleListHud;
 import com.hackclient.hud.PlayerTrackerHud;
 import com.hackclient.hud.TradePreviewHud;
@@ -27,6 +28,8 @@ public class HackClient implements ClientModInitializer {
 
 		ClientTickEvents.END_CLIENT_TICK.register(moduleManager::onTick);
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> Config.save(moduleManager));
+		// The ESP overlay goes first so the HUD text draws on top of it
+		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "esp_overlay"), new EspOverlay());
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "module_list"), new ModuleListHud());
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "trade_preview"), new TradePreviewHud());
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "player_tracker"), new PlayerTrackerHud());

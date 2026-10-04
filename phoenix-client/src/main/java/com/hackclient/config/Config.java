@@ -9,6 +9,8 @@ import com.hackclient.HackClient;
 import com.hackclient.gui.GuiLayout;
 import com.hackclient.module.Module;
 import com.hackclient.module.ModuleManager;
+import com.google.gson.JsonArray;
+import com.hackclient.setting.BlockListSetting;
 import com.hackclient.setting.BoolSetting;
 import com.hackclient.setting.ModeSetting;
 import com.hackclient.setting.MultiSetting;
@@ -44,6 +46,11 @@ public final class Config {
 				else if (setting instanceof SlotsSetting slots) settings.addProperty(setting.getName(), slots.get());
 				else if (setting instanceof ModeSetting<?> mode) settings.addProperty(setting.getName(), mode.get().name());
 				else if (setting instanceof MultiSetting<?> multi) settings.addProperty(setting.getName(), multi.get());
+				else if (setting instanceof BlockListSetting blocks) {
+					JsonArray array = new JsonArray();
+					blocks.get().forEach(array::add);
+					settings.add(setting.getName(), array);
+				}
 			}
 			json.add("settings", settings);
 			root.add(module.getName(), json);
@@ -78,6 +85,11 @@ public final class Config {
 						else if (setting instanceof SlotsSetting slots) slots.set(value.getAsInt());
 						else if (setting instanceof ModeSetting<?> mode) mode.setByName(value.getAsString());
 						else if (setting instanceof MultiSetting<?> multi) multi.set(value.getAsInt());
+						else if (setting instanceof BlockListSetting blocks && value.isJsonArray()) {
+							java.util.Set<String> ids = new java.util.LinkedHashSet<>();
+							value.getAsJsonArray().forEach(e -> ids.add(e.getAsString()));
+							blocks.set(ids);
+						}
 					}
 				}
 				if (json.has("enabled")) module.setEnabled(json.get("enabled").getAsBoolean());

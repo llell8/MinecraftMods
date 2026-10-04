@@ -3,6 +3,7 @@ package com.hackclient.module.modules.combat;
 import com.hackclient.module.Category;
 import com.hackclient.module.Module;
 import com.hackclient.setting.NumberSetting;
+import com.hackclient.util.ElytraUtil;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -30,7 +31,9 @@ public class MaceKill extends Module {
 	/** @return true if a fake fall was sent (so Criticals doesn't also run) */
 	public boolean onAttack(Entity target) {
 		if (!(target instanceof LivingEntity)) return false;
-		if (!mc.player.getMainHandItem().is(Items.MACE) || mc.player.isFallFlying() || mc.player.isPassenger()) return false;
+		if (!mc.player.getMainHandItem().is(Items.MACE) || mc.player.isPassenger()) return false;
+		// Mid-glide smashes don't count, so stop gliding first
+		ElytraUtil.cancelGlide();
 
 		double fall = clearHeightAbove(height.get());
 		if (fall < 2) return false;

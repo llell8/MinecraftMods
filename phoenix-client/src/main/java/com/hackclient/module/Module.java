@@ -1,5 +1,6 @@
 package com.hackclient.module;
 
+import com.hackclient.setting.BlockListSetting;
 import com.hackclient.setting.BoolSetting;
 import com.hackclient.setting.ModeSetting;
 import com.hackclient.setting.MultiSetting;
@@ -60,6 +61,10 @@ public abstract class Module {
 
 	protected <E extends Enum<E>> MultiSetting<E> multi(String name, Class<E> type, int defaultMask) {
 		return add(new MultiSetting<>(name, type, defaultMask));
+	}
+
+	protected BlockListSetting blocks(String name, String... defaultIds) {
+		return add(new BlockListSetting(name, java.util.List.of(defaultIds)));
 	}
 
 	protected SlotsSetting slots(String name, int defaultMask) {

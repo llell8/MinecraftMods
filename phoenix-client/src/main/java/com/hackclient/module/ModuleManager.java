@@ -27,7 +27,9 @@ import com.hackclient.module.modules.player.FastPlace;
 import com.hackclient.module.modules.player.NoFall;
 import com.hackclient.module.modules.render.ESP;
 import com.hackclient.module.modules.render.Fullbright;
+import com.hackclient.module.modules.render.BlockESP;
 import com.hackclient.module.modules.render.NoHurtCam;
+import com.hackclient.module.modules.render.Tracers;
 import com.hackclient.module.modules.render.PlayerTracker;
 import com.hackclient.module.modules.render.Zoom;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -70,6 +72,8 @@ public class ModuleManager {
 		modules.add(new Fullbright());
 		modules.add(new ESP());
 		modules.add(new PlayerTracker());
+		modules.add(new BlockESP());
+		modules.add(new Tracers());
 		modules.add(new Zoom());
 		modules.add(new NoHurtCam());
 		// Grinding

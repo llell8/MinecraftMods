@@ -6,6 +6,7 @@ import com.hackclient.module.modules.combat.KillAura;
 import net.minecraft.client.DeltaTracker;
 import com.hackclient.module.modules.render.NoHurtCam;
 import com.hackclient.module.modules.render.Zoom;
+import com.hackclient.render.Projection;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.GameRenderer;
@@ -31,6 +32,8 @@ public class GameRendererMixin {
 	private void hackclient$getFov(Camera camera, float partialTick, boolean useFovSetting, CallbackInfoReturnable<Float> cir) {
 		Zoom zoom = HackClient.getModuleManager().getIfEnabled(Zoom.class);
 		if (zoom != null) cir.setReturnValue(zoom.modifyFov(cir.getReturnValueF()));
+		// Remember the world FOV for the ESP overlay's projection
+		if (useFovSetting) Projection.setFov(cir.getReturnValueF());
 	}
 
 	// NoHurtCam

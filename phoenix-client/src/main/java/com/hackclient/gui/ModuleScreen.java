@@ -1,5 +1,8 @@
 package com.hackclient.gui;
 
+import com.hackclient.gui.component.BlockListComponent;
+import com.hackclient.setting.BlockListSetting;
+
 import com.hackclient.gui.component.ActiveComponent;
 import com.hackclient.gui.component.BindComponent;
 import com.hackclient.gui.component.BoolComponent;
@@ -77,6 +80,7 @@ public class ModuleScreen extends ScaledScreen {
 		else if (setting instanceof SlotsSetting slots) component = new SlotsComponent(slots);
 		else if (setting instanceof ModeSetting<?> mode) component = new ModeComponent(mode);
 		else if (setting instanceof MultiSetting<?> multi) component = new MultiComponent(multi);
+		else if (setting instanceof BlockListSetting blocks) component = new BlockListComponent(blocks);
 		else return null;
 		return new ResettableComponent(component, setting);
 	}

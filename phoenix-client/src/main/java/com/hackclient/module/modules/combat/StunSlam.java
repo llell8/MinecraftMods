@@ -14,12 +14,13 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import com.hackclient.util.ElytraUtil;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Predicate;
 
 /**
- * Stun slam: when you hit someone who is blocking with a shield, hit them with an axe (disables the shield,
+ * Stun slam (also works mid-elytra-glide): when you hit someone who is blocking with a shield, hit them with an axe (disables the shield,
  * and since the hit was blocked they get no invulnerability frames), then with a mace in the same tick
  * so the smash attack lands in full. Both hits are sent back to back, then you swap back.
  *
@@ -30,6 +31,7 @@ public class StunSlam extends Module {
 	private final BoolSetting onlyShielding = bool("Only vs shields", true);
 	private final BoolSetting requireFalling = bool("Require falling", true);
 	private final NumberSetting minFall = number("Min fall distance", 1.5, 0, 10, 1);
+	private final BoolSetting useElytra = bool("Work while gliding", true);
 	private final BoolSetting swapBack = bool("Swap back", true);
 	private final SlotsSetting allowedSlots = slots("Use slots", SlotsSetting.ALL);
 
@@ -48,11 +50,13 @@ public class StunSlam extends Module {
 	public boolean onAttack(Entity target) {
 		if (running || !(target instanceof LivingEntity living)) return false;
 		if (onlyShielding.get() && !living.isBlocking()) return false;
-		if (mc.player.isFallFlying() || mc.player.isPassenger()) return false;
+		if (mc.player.isPassenger()) return false;
 
 		// The smash needs a fall, unless MaceKill is on to fake one
 		boolean maceKill = HackClient.getModuleManager().getIfEnabled(MaceKill.class) != null;
-		if (requireFalling.get() && !maceKill && mc.player.fallDistance < minFall.get()) return false;
+		boolean gliding = useElytra.get() && mc.player.isFallFlying();
+		if (!useElytra.get() && mc.player.isFallFlying()) return false;
+		if (requireFalling.get() && !maceKill && !gliding && mc.player.fallDistance < minFall.get()) return false;
 
 		int axe = findSlot(stack -> stack.is(ItemTags.AXES));
 		int mace = findSlot(stack -> stack.is(Items.MACE));
@@ -66,6 +70,8 @@ public class StunSlam extends Module {
 			inventory.setSelectedSlot(axe);
 			mc.gameMode.attack(mc.player, target);
 			inventory.setSelectedSlot(mace);
+			// Stop gliding right before the mace hit so the smash counts
+			if (gliding) ElytraUtil.cancelGlide();
 			mc.gameMode.attack(mc.player, target);
 		} finally {
 			running = false;

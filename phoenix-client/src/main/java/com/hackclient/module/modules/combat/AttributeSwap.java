@@ -8,6 +8,7 @@ import com.hackclient.setting.BoolSetting;
 import com.hackclient.setting.NumberSetting;
 import com.hackclient.setting.SettingGroup;
 import com.hackclient.setting.SlotsSetting;
+import com.hackclient.util.ElytraUtil;
 import com.hackclient.util.ItemUtil;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -53,6 +54,7 @@ public class AttributeSwap extends Module {
 	private final SettingGroup sgSmart = group("Smart picking");
 	private final BoolSetting shieldBreaker = bool("Axe vs shields", true);
 	private final BoolSetting maceWhenFalling = bool("Mace when falling", true);
+	private final BoolSetting maceFromElytra = bool("Mace from elytra", true);
 	private final BoolSetting useEnchants = bool("Count enchants", true);
 	private final NumberSetting minDurability = number("Min durability", 10, 0, 100, 0);
 
@@ -91,8 +93,10 @@ public class AttributeSwap extends Module {
 		if (previousSlot != -1 || !(target instanceof LivingEntity living) || !canSwapFrom()) return;
 
 		int best = smart.get() ? findBestSlot(living) : manualSlot();
-		if (best == -1 || best == mc.player.getInventory().getSelectedSlot()) return;
-		swapTo(best);
+		if (best != -1 && best != mc.player.getInventory().getSelectedSlot()) swapTo(best);
+
+		// Hitting with a mace mid-glide: stop gliding first so the smash counts
+		if (maceFromElytra.get() && mc.player.getMainHandItem().is(Items.MACE)) ElytraUtil.cancelGlide();
 	}
 
 	/** Called right after the attack packet is sent. With no delay we swap back before the server's next tick. */
@@ -198,7 +202,8 @@ public class AttributeSwap extends Module {
 		}
 
 		// Mace smash attacks scale with fall distance
-		boolean falling = mc.player.fallDistance > 1.5 && !mc.player.isFallFlying();
+		boolean falling = mc.player.fallDistance > 1.5 && !mc.player.isFallFlying()
+				|| maceFromElytra.get() && mc.player.isFallFlying();
 		boolean maceKill = HackClient.getModuleManager().getIfEnabled(MaceKill.class) != null;
 		if (maceWhenFalling.get() && (falling || maceKill)) {
 			int mace = findSlot(stack -> stack.is(Items.MACE));
