@@ -16,12 +16,13 @@ import net.minecraft.world.entity.player.Player;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Meteor-style entity ESP. Box: a 3D box around each entity, visible through walls. 2D: a flat
- * rectangle. Glow: Minecraft's glowing outline (hooked in MinecraftMixin). Boxes are drawn by EspOverlay.
+ * Meteor-style entity ESP. Outline: traces the entity's actual model, armour and all, through walls
+ * (Minecraft's glowing outline, in your colour; hooked in MinecraftMixin and EntityMixin).
+ * Box: a 3D box around each entity. 2D: a flat rectangle. Boxes are drawn by EspOverlay.
  */
 public class ESP extends Module {
 	public enum Mode {
-		BOX("Box"), FLAT("2D"), GLOW("Glow");
+		OUTLINE("Outline"), BOX("Box"), FLAT("2D");
 
 		private final String display;
 
@@ -36,7 +37,7 @@ public class ESP extends Module {
 	}
 
 	private final SettingGroup sgGeneral = group("General", true);
-	private final ModeSetting<Mode> mode = mode("Mode", Mode.BOX);
+	private final ModeSetting<Mode> mode = mode("Mode", Mode.OUTLINE);
 	private final ModeSetting<ShapeMode> shapeMode = mode("Shape", ShapeMode.BOTH);
 	private final NumberSetting fillOpacity = number("Fill opacity", 50, 0, 255, 0);
 	private final NumberSetting lineWidth = number("Line width", 1.5, 0.5, 4, 1);
@@ -68,14 +69,14 @@ public class ESP extends Module {
 		return false;
 	}
 
-	/** Used by MinecraftMixin: only in Glow mode. */
+	/** Used by MinecraftMixin and EntityMixin: only in Outline mode. */
 	public boolean shouldGlow(Entity entity) {
-		return mode.get() == Mode.GLOW && typeEnabled(entity);
+		return mode.get() == Mode.OUTLINE && typeEnabled(entity) && entity.distanceTo(mc.player) <= maxDistance.get();
 	}
 
 	/** Used by EspOverlay: Box and 2D modes. */
 	public boolean shouldDraw(Entity entity) {
-		return mode.get() != Mode.GLOW && typeEnabled(entity) && entity.distanceTo(mc.player) <= maxDistance.get();
+		return mode.get() != Mode.OUTLINE && typeEnabled(entity) && entity.distanceTo(mc.player) <= maxDistance.get();
 	}
 
 	public Mode mode() {

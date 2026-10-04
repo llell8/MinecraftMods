@@ -30,20 +30,21 @@ public class EspOverlay implements HudElement {
 		ESP esp = modules.getIfEnabled(ESP.class);
 		BlockESP blockEsp = modules.getIfEnabled(BlockESP.class);
 		Tracers tracers = modules.getIfEnabled(Tracers.class);
-		if ((esp == null || esp.mode() == ESP.Mode.GLOW) && blockEsp == null && tracers == null) return;
+		if ((esp == null || esp.mode() == ESP.Mode.OUTLINE) && blockEsp == null && tracers == null) return;
 
 		float scale = (float) mc.getWindow().getGuiScale();
 		int width = (int) Math.ceil(graphics.guiWidth() * scale);
 		int height = (int) Math.ceil(graphics.guiHeight() * scale);
 		float partialTick = tickCounter.getGameTimeDeltaPartialTick(true);
-		Projection projection = new Projection(partialTick, width, height);
+		Projection projection = Projection.forFrame(width, height);
+		if (projection == null) return;
 
 		graphics.pose().pushMatrix();
 		graphics.pose().scale(1 / scale, 1 / scale);
 		QuadBatch batch = new QuadBatch(graphics, width, height);
 
 		if (blockEsp != null) drawBlocks(batch, projection, blockEsp);
-		if (esp != null && esp.mode() != ESP.Mode.GLOW) drawEntities(batch, projection, esp, partialTick, mc);
+		if (esp != null && esp.mode() != ESP.Mode.OUTLINE) drawEntities(batch, projection, esp, partialTick, mc);
 		if (tracers != null) drawTracers(batch, projection, tracers, partialTick, mc);
 
 		batch.submit(graphics);

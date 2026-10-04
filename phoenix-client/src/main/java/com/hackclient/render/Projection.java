@@ -1,66 +1,62 @@
 package com.hackclient.render;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
+import org.joml.Vector4f;
 
 /**
- * Turns world positions into screen positions for the current frame, so ESP boxes and tracers can be
- * drawn on top of the game (visible through walls). Uses the player's eyes and view rotation (first
- * person), and the real FOV captured in GameRendererMixin (so sprinting and Zoom are accounted for).
+ * Turns world positions into screen positions using the exact camera position, view matrix and
+ * projection matrix the world was drawn with this frame (captured in LevelRendererMixin). So the
+ * overlay lines up perfectly with the world, including view bobbing, third person and FOV changes,
+ * while still being drawn on top (visible through walls).
  */
 public final class Projection {
 	private static final double NEAR = 0.05;
-	private static double fov = 70;
 
-	private final Vec3 eye;
-	private final double fx, fy, fz; // forward
-	private final double rx, rz;     // right (always horizontal)
-	private final double ux, uy, uz; // up
-	private final double tanHalf;
-	private final double aspect;
+	private static Vec3 capturedCamera;
+	private static final Matrix4f capturedView = new Matrix4f();
+	private static final Matrix4f capturedProjection = new Matrix4f();
+
+	private final Vec3 camera;
+	private final Matrix4f view;
+	private final Matrix4f projection;
 	public final double width;
 	public final double height;
 
-	/** Called from GameRendererMixin with the FOV the world is drawn with. */
-	public static void setFov(double value) {
-		fov = value;
+	/** Called from LevelRendererMixin every frame before the world is drawn. */
+	public static void capture(Vec3 cameraPos, Matrix4f viewMatrix, Matrix4f projectionMatrix) {
+		capturedCamera = cameraPos;
+		capturedView.set(viewMatrix);
+		capturedProjection.set(projectionMatrix);
 	}
 
-	public Projection(float partialTick, double width, double height) {
-		Minecraft mc = Minecraft.getInstance();
-		this.eye = mc.player.getEyePosition(partialTick);
-		double yaw = Math.toRadians(mc.player.getViewYRot(partialTick));
-		double pitch = Math.toRadians(mc.player.getViewXRot(partialTick));
+	/** @return a projection for this frame, or null before the world has been drawn once */
+	public static Projection forFrame(double width, double height) {
+		return capturedCamera == null ? null : new Projection(width, height);
+	}
 
-		fx = -Math.sin(yaw) * Math.cos(pitch);
-		fy = -Math.sin(pitch);
-		fz = Math.cos(yaw) * Math.cos(pitch);
-		rx = -Math.cos(yaw);
-		rz = -Math.sin(yaw);
-		// up = right x forward
-		ux = -rz * fy;
-		uy = rz * fx - rx * fz;
-		uz = rx * fy;
-
+	private Projection(double width, double height) {
+		this.camera = capturedCamera;
+		this.view = new Matrix4f(capturedView);
+		this.projection = new Matrix4f(capturedProjection);
 		this.width = width;
 		this.height = height;
-		this.aspect = width / height;
-		this.tanHalf = Math.tan(Math.toRadians(fov) / 2);
 	}
 
-	/** World point in camera space: {right, up, forward}. */
+	/** World point in camera space: {right, up, distance in front}. */
 	public double[] camera(double wx, double wy, double wz) {
-		double dx = wx - eye.x, dy = wy - eye.y, dz = wz - eye.z;
-		return new double[] {dx * rx + dz * rz, dx * ux + dy * uy + dz * uz, dx * fx + dy * fy + dz * fz};
+		Vector4f v = new Vector4f((float) (wx - camera.x), (float) (wy - camera.y), (float) (wz - camera.z), 1);
+		view.transform(v);
+		return new double[] {v.x, v.y, -v.z};
 	}
 
 	/** Camera-space point (must be in front) to screen {x, y}. */
 	public double[] screen(double[] c) {
-		return new double[] {
-				width / 2 + (c[0] / c[2]) / (tanHalf * aspect) * (width / 2),
-				height / 2 - (c[1] / c[2]) / tanHalf * (height / 2)
-		};
+		Vector4f v = new Vector4f((float) c[0], (float) c[1], (float) -c[2], 1);
+		projection.transform(v);
+		double nx = v.x / v.w, ny = v.y / v.w;
+		return new double[] {(nx + 1) / 2 * width, (1 - ny) / 2 * height};
 	}
 
 	/** @return screen {x, y}, or null if the point is behind the camera */
