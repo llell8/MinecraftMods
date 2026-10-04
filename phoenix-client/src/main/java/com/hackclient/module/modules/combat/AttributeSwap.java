@@ -203,7 +203,7 @@ public class AttributeSwap extends Module {
 
 		// Mace smash attacks scale with fall distance
 		boolean falling = mc.player.fallDistance > 1.5 && !mc.player.isFallFlying()
-				|| maceFromElytra.get() && mc.player.isFallFlying();
+				|| maceFromElytra.get() && ElytraUtil.isDiving();
 		boolean maceKill = HackClient.getModuleManager().getIfEnabled(MaceKill.class) != null;
 		if (maceWhenFalling.get() && (falling || maceKill)) {
 			int mace = findSlot(stack -> stack.is(Items.MACE));

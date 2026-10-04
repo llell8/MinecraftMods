@@ -5,6 +5,7 @@ import com.hackclient.module.Module;
 import com.hackclient.setting.BlockListSetting;
 import com.hackclient.render.ShapeMode;
 import com.hackclient.setting.BoolSetting;
+import com.hackclient.setting.ColorSetting;
 import com.hackclient.setting.ModeSetting;
 import com.hackclient.setting.NumberSetting;
 import net.minecraft.core.BlockPos;
@@ -31,6 +32,8 @@ public class BlockESP extends Module {
 	private final NumberSetting fillOpacity = number("Fill opacity", 40, 0, 255, 0);
 	private final NumberSetting lineWidth = number("Line width", 1.5, 0.5, 4, 1);
 	private final BoolSetting tracers = bool("Tracers", false);
+	private final BoolSetting customColor = bool("Custom colour", false);
+	private final ColorSetting color = color("Colour", 0xFF00FFFF);
 
 	/** A found block and the colour to draw it in. */
 	public record Found(BlockPos pos, int color) {
@@ -123,6 +126,11 @@ public class BlockESP extends Module {
 
 	public double lineWidth() {
 		return lineWidth.get();
+	}
+
+	/** The block's own colour, or the picked one if "Custom colour" is on. */
+	public int lineColor(Found found) {
+		return customColor.get() ? color.get() : found.color();
 	}
 
 	public int sideColor(int lineColor) {

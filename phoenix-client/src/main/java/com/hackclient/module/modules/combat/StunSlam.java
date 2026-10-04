@@ -54,8 +54,9 @@ public class StunSlam extends Module {
 
 		// The smash needs a fall, unless MaceKill is on to fake one
 		boolean maceKill = HackClient.getModuleManager().getIfEnabled(MaceKill.class) != null;
-		boolean gliding = useElytra.get() && mc.player.isFallFlying();
-		if (!useElytra.get() && mc.player.isFallFlying()) return false;
+		// While gliding, only in a real dive (taking off or climbing would just knock you out of the glide)
+		boolean gliding = mc.player.isFallFlying();
+		if (gliding && !(useElytra.get() && ElytraUtil.isDiving())) return false;
 		if (requireFalling.get() && !maceKill && !gliding && mc.player.fallDistance < minFall.get()) return false;
 
 		int axe = findSlot(stack -> stack.is(ItemTags.AXES));

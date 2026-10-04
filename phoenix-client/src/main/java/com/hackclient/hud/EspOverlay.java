@@ -53,7 +53,7 @@ public class EspOverlay implements HudElement {
 	private void drawBlocks(QuadBatch batch, Projection p, BlockESP esp) {
 		for (BlockESP.Found found : esp.found()) {
 			AABB box = new AABB(found.pos());
-			int color = found.color();
+			int color = esp.lineColor(found);
 			p.box(batch, box, esp.shapeMode(), esp.sideColor(color), color, esp.lineWidth());
 			if (esp.tracers()) {
 				double[] end = p.towards(box.getCenter().x, box.getCenter().y, box.getCenter().z);

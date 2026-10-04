@@ -4,6 +4,7 @@ import com.hackclient.module.Category;
 import com.hackclient.module.Module;
 import com.hackclient.render.ShapeMode;
 import com.hackclient.setting.BoolSetting;
+import com.hackclient.setting.ColorSetting;
 import com.hackclient.setting.ModeSetting;
 import com.hackclient.setting.NumberSetting;
 import com.hackclient.setting.SettingGroup;
@@ -49,6 +50,10 @@ public class ESP extends Module {
 
 	private final SettingGroup sgColors = group("Colours", false);
 	private final BoolSetting distanceColors = bool("Distance colours", false);
+	private final ColorSetting playerColor = color("Players", 0xFFFFFFFF);
+	private final ColorSetting mobColor = color("Mobs", 0xFFFF1919);
+	private final ColorSetting animalColor = color("Animals", 0xFF19FF19);
+	private final ColorSetting itemColor = color("Items", 0xFFFFA500);
 
 	public ESP() {
 		super("ESP", "Highlights entities through walls.", Category.RENDER, GLFW.GLFW_KEY_UNKNOWN);
@@ -85,13 +90,13 @@ public class ESP extends Module {
 		return lineWidth.get();
 	}
 
-	/** Meteor's default colours: players white, hostile red, animals green, items orange. */
+	/** The colour picked for this entity type (defaults are Meteor's), or a distance colour. */
 	public int lineColor(Entity entity) {
 		if (distanceColors.get()) return distanceColor(entity.distanceTo(mc.player));
-		if (entity instanceof Player) return 0xFFFFFFFF;
-		if (entity instanceof Enemy) return 0xFFFF1919;
-		if (entity instanceof Animal) return 0xFF19FF19;
-		if (entity instanceof ItemEntity) return 0xFFFFA500;
+		if (entity instanceof Player) return playerColor.get();
+		if (entity instanceof Enemy) return mobColor.get();
+		if (entity instanceof Animal) return animalColor.get();
+		if (entity instanceof ItemEntity) return itemColor.get();
 		return 0xFFAFAFAF;
 	}
 

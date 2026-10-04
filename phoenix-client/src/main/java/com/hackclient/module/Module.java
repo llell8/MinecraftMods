@@ -2,6 +2,7 @@ package com.hackclient.module;
 
 import com.hackclient.setting.BlockListSetting;
 import com.hackclient.setting.BoolSetting;
+import com.hackclient.setting.ColorSetting;
 import com.hackclient.setting.ModeSetting;
 import com.hackclient.setting.MultiSetting;
 import com.hackclient.setting.NumberSetting;
@@ -65,6 +66,10 @@ public abstract class Module {
 
 	protected BlockListSetting blocks(String name, String... defaultIds) {
 		return add(new BlockListSetting(name, java.util.List.of(defaultIds)));
+	}
+
+	protected ColorSetting color(String name, int defaultArgb) {
+		return add(new ColorSetting(name, defaultArgb));
 	}
 
 	protected SlotsSetting slots(String name, int defaultMask) {

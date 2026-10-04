@@ -3,6 +3,7 @@ package com.hackclient.module.modules.render;
 import com.hackclient.module.Category;
 import com.hackclient.module.Module;
 import com.hackclient.setting.BoolSetting;
+import com.hackclient.setting.ColorSetting;
 import com.hackclient.setting.ModeSetting;
 import com.hackclient.setting.NumberSetting;
 import net.minecraft.world.entity.Entity;
@@ -22,6 +23,10 @@ public class Tracers extends Module {
 	private final ModeSetting<Target> target = mode("Target", Target.BODY);
 	private final NumberSetting lineWidth = number("Line width", 1.5, 0.5, 4, 1);
 	private final BoolSetting distanceColors = bool("Distance colours", true);
+	private final ColorSetting playerColor = color("Players colour", 0xFFFFFFFF);
+	private final ColorSetting mobColor = color("Mobs colour", 0xFFFF1919);
+	private final ColorSetting animalColor = color("Animals colour", 0xFF19FF19);
+	private final ColorSetting itemColor = color("Items colour", 0xFFFFA500);
 
 	public enum Target {
 		HEAD("Head"), BODY("Body"), FEET("Feet");
@@ -54,10 +59,10 @@ public class Tracers extends Module {
 	/** Distance colours: red close to green far. Otherwise Meteor-style colours by type. */
 	public int colorFor(Entity entity) {
 		if (distanceColors.get()) return ESP.distanceColor(entity.distanceTo(mc.player));
-		if (entity instanceof Player) return 0xFFFFFFFF;
-		if (entity instanceof Enemy) return 0xFFFF1919;
-		if (entity instanceof Animal) return 0xFF19FF19;
-		return 0xFFFFA500;
+		if (entity instanceof Player) return playerColor.get();
+		if (entity instanceof Enemy) return mobColor.get();
+		if (entity instanceof Animal) return animalColor.get();
+		return itemColor.get();
 	}
 
 	/** How far up the entity the line ends, as a fraction of its height. */

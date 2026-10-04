@@ -1,6 +1,8 @@
 package com.hackclient.gui;
 
 import com.hackclient.gui.component.BlockListComponent;
+import com.hackclient.gui.component.ColorComponent;
+import com.hackclient.setting.ColorSetting;
 import com.hackclient.setting.BlockListSetting;
 
 import com.hackclient.gui.component.ActiveComponent;
@@ -81,6 +83,7 @@ public class ModuleScreen extends ScaledScreen {
 		else if (setting instanceof ModeSetting<?> mode) component = new ModeComponent(mode);
 		else if (setting instanceof MultiSetting<?> multi) component = new MultiComponent(multi);
 		else if (setting instanceof BlockListSetting blocks) component = new BlockListComponent(blocks);
+		else if (setting instanceof ColorSetting color) component = new ColorComponent(color);
 		else return null;
 		return new ResettableComponent(component, setting);
 	}

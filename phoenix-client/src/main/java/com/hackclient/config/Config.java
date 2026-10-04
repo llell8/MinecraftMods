@@ -12,6 +12,7 @@ import com.hackclient.module.ModuleManager;
 import com.google.gson.JsonArray;
 import com.hackclient.setting.BlockListSetting;
 import com.hackclient.setting.BoolSetting;
+import com.hackclient.setting.ColorSetting;
 import com.hackclient.setting.ModeSetting;
 import com.hackclient.setting.MultiSetting;
 import com.hackclient.setting.NumberSetting;
@@ -46,6 +47,7 @@ public final class Config {
 				else if (setting instanceof SlotsSetting slots) settings.addProperty(setting.getName(), slots.get());
 				else if (setting instanceof ModeSetting<?> mode) settings.addProperty(setting.getName(), mode.get().name());
 				else if (setting instanceof MultiSetting<?> multi) settings.addProperty(setting.getName(), multi.get());
+				else if (setting instanceof ColorSetting color) settings.addProperty(setting.getName(), color.get());
 				else if (setting instanceof BlockListSetting blocks) {
 					JsonArray array = new JsonArray();
 					blocks.get().forEach(array::add);
@@ -85,6 +87,7 @@ public final class Config {
 						else if (setting instanceof SlotsSetting slots) slots.set(value.getAsInt());
 						else if (setting instanceof ModeSetting<?> mode) mode.setByName(value.getAsString());
 						else if (setting instanceof MultiSetting<?> multi) multi.set(value.getAsInt());
+						else if (setting instanceof ColorSetting color) color.set(value.getAsInt());
 						else if (setting instanceof BlockListSetting blocks && value.isJsonArray()) {
 							java.util.Set<String> ids = new java.util.LinkedHashSet<>();
 							value.getAsJsonArray().forEach(e -> ids.add(e.getAsString()));

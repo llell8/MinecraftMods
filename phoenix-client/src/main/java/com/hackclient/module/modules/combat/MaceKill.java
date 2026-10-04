@@ -32,8 +32,11 @@ public class MaceKill extends Module {
 	public boolean onAttack(Entity target) {
 		if (!(target instanceof LivingEntity)) return false;
 		if (!mc.player.getMainHandItem().is(Items.MACE) || mc.player.isPassenger()) return false;
-		// Mid-glide smashes don't count, so stop gliding first
-		ElytraUtil.cancelGlide();
+		if (mc.player.isFallFlying()) {
+			// In a dive the real fall distance does the work: just stop gliding so the smash counts.
+			// No fake fall here, as moving you around mid-glide makes the server snap you back.
+			return ElytraUtil.cancelGlide();
+		}
 
 		double fall = clearHeightAbove(height.get());
 		if (fall < 2) return false;
