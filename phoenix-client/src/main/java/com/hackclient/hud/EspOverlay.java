@@ -1,81 +1,100 @@
 package com.hackclient.hud;
 
 import com.hackclient.HackClient;
+import com.hackclient.module.ModuleManager;
 import com.hackclient.module.modules.render.BlockESP;
+import com.hackclient.module.modules.render.ESP;
 import com.hackclient.module.modules.render.Tracers;
-import com.hackclient.render.Draw;
 import com.hackclient.render.Projection;
+import com.hackclient.render.QuadBatch;
+import com.hackclient.render.ShapeMode;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Draws BlockESP boxes and Tracers lines on top of the game. Works in real screen pixels
- * (undoing the GUI scale) so lines stay thin.
+ * Draws ESP boxes, BlockESP boxes and Tracers on top of the game, so they show through walls.
+ * Works in real screen pixels (undoing the GUI scale) so lines stay thin and smooth, and batches
+ * everything into one draw.
  */
 public class EspOverlay implements HudElement {
 	@Override
 	public void render(GuiGraphics graphics, DeltaTracker tickCounter) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.level == null || mc.options.hideGui) return;
-		BlockESP blockEsp = HackClient.getModuleManager().getIfEnabled(BlockESP.class);
-		Tracers tracers = HackClient.getModuleManager().getIfEnabled(Tracers.class);
-		if (blockEsp == null && tracers == null) return;
+		ModuleManager modules = HackClient.getModuleManager();
+		ESP esp = modules.getIfEnabled(ESP.class);
+		BlockESP blockEsp = modules.getIfEnabled(BlockESP.class);
+		Tracers tracers = modules.getIfEnabled(Tracers.class);
+		if ((esp == null || esp.mode() == ESP.Mode.GLOW) && blockEsp == null && tracers == null) return;
 
 		float scale = (float) mc.getWindow().getGuiScale();
-		double width = graphics.guiWidth() * scale;
-		double height = graphics.guiHeight() * scale;
+		int width = (int) Math.ceil(graphics.guiWidth() * scale);
+		int height = (int) Math.ceil(graphics.guiHeight() * scale);
 		float partialTick = tickCounter.getGameTimeDeltaPartialTick(true);
 		Projection projection = new Projection(partialTick, width, height);
 
 		graphics.pose().pushMatrix();
 		graphics.pose().scale(1 / scale, 1 / scale);
-		if (blockEsp != null) drawBlocks(graphics, projection, blockEsp);
-		if (tracers != null) drawTracers(graphics, projection, tracers, partialTick, mc);
+		QuadBatch batch = new QuadBatch(graphics, width, height);
+
+		if (blockEsp != null) drawBlocks(batch, projection, blockEsp);
+		if (esp != null && esp.mode() != ESP.Mode.GLOW) drawEntities(batch, projection, esp, partialTick, mc);
+		if (tracers != null) drawTracers(batch, projection, tracers, partialTick, mc);
+
+		batch.submit(graphics);
 		graphics.pose().popMatrix();
 	}
 
-	private void drawBlocks(GuiGraphics g, Projection p, BlockESP esp) {
-		double cx = p.width / 2, cy = p.height / 2;
+	private void drawBlocks(QuadBatch batch, Projection p, BlockESP esp) {
 		for (BlockESP.Found found : esp.found()) {
-			int bx = found.pos().getX(), by = found.pos().getY(), bz = found.pos().getZ();
-			// Screen rectangle around the block's 8 corners
-			double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE, maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
-			boolean visible = true;
-			for (int i = 0; i < 8 && visible; i++) {
-				double[] s = p.project(bx + (i & 1), by + ((i >> 1) & 1), bz + ((i >> 2) & 1));
-				if (s == null) {
-					visible = false;
-					break;
-				}
-				minX = Math.min(minX, s[0]);
-				minY = Math.min(minY, s[1]);
-				maxX = Math.max(maxX, s[0]);
-				maxY = Math.max(maxY, s[1]);
-			}
+			AABB box = new AABB(found.pos());
 			int color = found.color();
-			if (visible && maxX > 0 && maxY > 0 && minX < p.width && minY < p.height) {
-				int x1 = (int) minX, y1 = (int) minY, x2 = Math.max(x1 + 2, (int) maxX), y2 = Math.max(y1 + 2, (int) maxY);
-				if (esp.fill()) g.fill(x1, y1, x2, y2, (color & 0x00FFFFFF) | 0x40000000);
-				Draw.outline(g, x1, y1, x2, y2, color, 1);
-			}
+			p.box(batch, box, esp.shapeMode(), esp.sideColor(color), color, esp.lineWidth());
 			if (esp.tracers()) {
-				double[] end = p.towards(bx + 0.5, by + 0.5, bz + 0.5);
-				Draw.line(g, cx, cy, end[0], end[1], (color & 0x00FFFFFF) | 0xA0000000, 1);
+				double[] end = p.towards(box.getCenter().x, box.getCenter().y, box.getCenter().z);
+				batch.line(p.width / 2, p.height / 2, end[0], end[1], esp.lineWidth(), (color & 0x00FFFFFF) | 0xC0000000);
 			}
 		}
 	}
 
-	private void drawTracers(GuiGraphics g, Projection p, Tracers tracers, float partialTick, Minecraft mc) {
-		double cx = p.width / 2, cy = p.height / 2;
+	private void drawEntities(QuadBatch batch, Projection p, ESP esp, float partialTick, Minecraft mc) {
+		for (Entity entity : mc.level.entitiesForRendering()) {
+			if (!esp.shouldDraw(entity)) continue;
+			// Move the box to where the entity is drawn this frame, so it doesn't lag behind
+			Vec3 offset = entity.getPosition(partialTick).subtract(entity.position());
+			AABB box = entity.getBoundingBox().move(offset);
+			int line = esp.lineColor(entity);
+			int side = esp.sideColor(entity);
+
+			if (esp.mode() == ESP.Mode.BOX) {
+				p.box(batch, box, esp.shapeMode(), side, line, esp.lineWidth());
+			} else {
+				double[] r = p.rect(box);
+				if (r == null) continue;
+				ShapeMode shape = esp.shapeMode();
+				if (shape.sides()) batch.quad(r[0], r[1], r[2], r[1], r[2], r[3], r[0], r[3], side);
+				if (shape.lines()) {
+					double w = esp.lineWidth();
+					batch.line(r[0], r[1], r[2], r[1], w, line);
+					batch.line(r[2], r[1], r[2], r[3], w, line);
+					batch.line(r[2], r[3], r[0], r[3], w, line);
+					batch.line(r[0], r[3], r[0], r[1], w, line);
+				}
+			}
+		}
+	}
+
+	private void drawTracers(QuadBatch batch, Projection p, Tracers tracers, float partialTick, Minecraft mc) {
 		for (Entity entity : mc.level.entitiesForRendering()) {
 			if (!tracers.shouldTrace(entity)) continue;
 			Vec3 pos = entity.getPosition(partialTick);
-			double[] end = p.towards(pos.x, pos.y + entity.getBbHeight() / 2, pos.z);
-			Draw.line(g, cx, cy, end[0], end[1], tracers.colorFor(entity), tracers.thickness());
+			double[] end = p.towards(pos.x, pos.y + entity.getBbHeight() * tracers.targetHeight(), pos.z);
+			batch.line(p.width / 2, p.height / 2, end[0], end[1], tracers.lineWidth(), tracers.colorFor(entity));
 		}
 	}
 }

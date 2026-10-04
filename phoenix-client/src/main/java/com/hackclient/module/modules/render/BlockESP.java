@@ -3,7 +3,9 @@ package com.hackclient.module.modules.render;
 import com.hackclient.module.Category;
 import com.hackclient.module.Module;
 import com.hackclient.setting.BlockListSetting;
+import com.hackclient.render.ShapeMode;
 import com.hackclient.setting.BoolSetting;
+import com.hackclient.setting.ModeSetting;
 import com.hackclient.setting.NumberSetting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
@@ -13,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Highlights chosen blocks through walls. Pick any blocks in the game in its settings.
+ * Meteor-style block ESP: 3D boxes around chosen blocks, visible through walls. Pick any blocks in the game in its settings.
  * The area around you is scanned a slice at a time, so it never freezes the game. Drawn by EspOverlay.
  */
 public class BlockESP extends Module {
@@ -25,7 +27,9 @@ public class BlockESP extends Module {
 			"minecraft:chest", "minecraft:trapped_chest", "minecraft:barrel", "minecraft:ender_chest", "minecraft:shulker_box");
 	private final NumberSetting range = number("Range", 48, 8, 128, 0);
 	private final NumberSetting maxShown = number("Max shown", 300, 10, 2000, 0);
-	private final BoolSetting fill = bool("Fill", true);
+	private final ModeSetting<ShapeMode> shapeMode = mode("Shape", ShapeMode.BOTH);
+	private final NumberSetting fillOpacity = number("Fill opacity", 40, 0, 255, 0);
+	private final NumberSetting lineWidth = number("Line width", 1.5, 0.5, 4, 1);
 	private final BoolSetting tracers = bool("Tracers", false);
 
 	/** A found block and the colour to draw it in. */
@@ -113,8 +117,16 @@ public class BlockESP extends Module {
 		return found;
 	}
 
-	public boolean fill() {
-		return fill.get();
+	public ShapeMode shapeMode() {
+		return shapeMode.get();
+	}
+
+	public double lineWidth() {
+		return lineWidth.get();
+	}
+
+	public int sideColor(int lineColor) {
+		return (lineColor & 0x00FFFFFF) | (fillOpacity.get().intValue() << 24);
 	}
 
 	public boolean tracers() {

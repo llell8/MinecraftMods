@@ -2,7 +2,11 @@ package com.hackclient.module.modules.render;
 
 import com.hackclient.module.Category;
 import com.hackclient.module.Module;
+import com.hackclient.render.ShapeMode;
 import com.hackclient.setting.BoolSetting;
+import com.hackclient.setting.ModeSetting;
+import com.hackclient.setting.NumberSetting;
+import com.hackclient.setting.SettingGroup;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -10,23 +14,96 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import org.lwjgl.glfw.GLFW;
 
-/** Makes entities glow through walls. Hooked in MinecraftMixin. */
+/**
+ * Meteor-style entity ESP. Box: a 3D box around each entity, visible through walls. 2D: a flat
+ * rectangle. Glow: Minecraft's glowing outline (hooked in MinecraftMixin). Boxes are drawn by EspOverlay.
+ */
 public class ESP extends Module {
+	public enum Mode {
+		BOX("Box"), FLAT("2D"), GLOW("Glow");
+
+		private final String display;
+
+		Mode(String display) {
+			this.display = display;
+		}
+
+		@Override
+		public String toString() {
+			return display;
+		}
+	}
+
+	private final SettingGroup sgGeneral = group("General", true);
+	private final ModeSetting<Mode> mode = mode("Mode", Mode.BOX);
+	private final ModeSetting<ShapeMode> shapeMode = mode("Shape", ShapeMode.BOTH);
+	private final NumberSetting fillOpacity = number("Fill opacity", 50, 0, 255, 0);
+	private final NumberSetting lineWidth = number("Line width", 1.5, 0.5, 4, 1);
+	private final NumberSetting maxDistance = number("Max distance", 256, 16, 512, 0);
+
+	private final SettingGroup sgEntities = group("Entities", true);
 	private final BoolSetting players = bool("Players", true);
 	private final BoolSetting mobs = bool("Mobs", true);
 	private final BoolSetting animals = bool("Animals", false);
 	private final BoolSetting items = bool("Items", false);
 
+	private final SettingGroup sgColors = group("Colours", false);
+	private final BoolSetting distanceColors = bool("Distance colours", false);
+
 	public ESP() {
 		super("ESP", "Highlights entities through walls.", Category.RENDER, GLFW.GLFW_KEY_UNKNOWN);
 	}
 
-	public boolean shouldGlow(Entity entity) {
+	private boolean typeEnabled(Entity entity) {
 		if (entity == mc.player) return false;
 		if (entity instanceof Player) return players.get();
 		if (entity instanceof Enemy) return mobs.get();
 		if (entity instanceof Animal) return animals.get();
 		if (entity instanceof ItemEntity) return items.get();
 		return false;
+	}
+
+	/** Used by MinecraftMixin: only in Glow mode. */
+	public boolean shouldGlow(Entity entity) {
+		return mode.get() == Mode.GLOW && typeEnabled(entity);
+	}
+
+	/** Used by EspOverlay: Box and 2D modes. */
+	public boolean shouldDraw(Entity entity) {
+		return mode.get() != Mode.GLOW && typeEnabled(entity) && entity.distanceTo(mc.player) <= maxDistance.get();
+	}
+
+	public Mode mode() {
+		return mode.get();
+	}
+
+	public ShapeMode shapeMode() {
+		return shapeMode.get();
+	}
+
+	public double lineWidth() {
+		return lineWidth.get();
+	}
+
+	/** Meteor's default colours: players white, hostile red, animals green, items orange. */
+	public int lineColor(Entity entity) {
+		if (distanceColors.get()) return distanceColor(entity.distanceTo(mc.player));
+		if (entity instanceof Player) return 0xFFFFFFFF;
+		if (entity instanceof Enemy) return 0xFFFF1919;
+		if (entity instanceof Animal) return 0xFF19FF19;
+		if (entity instanceof ItemEntity) return 0xFFFFA500;
+		return 0xFFAFAFAF;
+	}
+
+	public int sideColor(Entity entity) {
+		return (lineColor(entity) & 0x00FFFFFF) | (fillOpacity.get().intValue() << 24);
+	}
+
+	/** Red when close, through yellow, to green when far. */
+	static int distanceColor(double distance) {
+		double t = Math.max(0, Math.min(1, distance / 64));
+		int r = (int) (255 * Math.min(1, 2 * (1 - t)));
+		int g = (int) (255 * Math.min(1, 2 * t));
+		return 0xFF000000 | (r << 16) | (g << 8);
 	}
 }
