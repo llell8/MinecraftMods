@@ -2,6 +2,7 @@ package com.hackclient.hud;
 
 import com.hackclient.HackClient;
 import com.hackclient.module.ModuleManager;
+import com.hackclient.module.modules.player.AirPlace;
 import com.hackclient.module.modules.render.BlockESP;
 import com.hackclient.module.modules.render.ESP;
 import com.hackclient.module.modules.render.Tracers;
@@ -30,7 +31,9 @@ public class EspOverlay implements HudElement {
 		ESP esp = modules.getIfEnabled(ESP.class);
 		BlockESP blockEsp = modules.getIfEnabled(BlockESP.class);
 		Tracers tracers = modules.getIfEnabled(Tracers.class);
-		if ((esp == null || esp.mode() == ESP.Mode.OUTLINE) && blockEsp == null && tracers == null) return;
+		AirPlace airPlace = modules.getIfEnabled(AirPlace.class);
+		if ((esp == null || esp.mode() == ESP.Mode.OUTLINE) && blockEsp == null && tracers == null
+				&& (airPlace == null || airPlace.target() == null)) return;
 
 		float scale = (float) mc.getWindow().getGuiScale();
 		int width = (int) Math.ceil(graphics.guiWidth() * scale);
@@ -46,6 +49,10 @@ public class EspOverlay implements HudElement {
 		if (blockEsp != null) drawBlocks(batch, projection, blockEsp);
 		if (esp != null && esp.mode() != ESP.Mode.OUTLINE) drawEntities(batch, projection, esp, partialTick, mc);
 		if (tracers != null) drawTracers(batch, projection, tracers, partialTick, mc);
+		// AirPlace: show where the block will go
+		if (airPlace != null && airPlace.target() != null) {
+			projection.box(batch, new AABB(airPlace.target()), ShapeMode.BOTH, 0x30FFFFFF, 0xFFFFFFFF, 1.5);
+		}
 
 		batch.submit(graphics);
 		graphics.pose().popMatrix();

@@ -16,13 +16,14 @@ import net.minecraft.world.entity.player.Player;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Meteor-style entity ESP. Outline: traces the entity's actual model, armour and all, through walls
- * (Minecraft's glowing outline, in your colour; hooked in MinecraftMixin and EntityMixin).
+ * Meteor-style entity ESP. Shader: a crisp outline and see-through fill around the entity's real model,
+ * armour and all, through walls. It reuses Minecraft's glowing-outline buffer (MinecraftMixin, EntityMixin)
+ * with our own shader in place of the blurry vanilla one (assets/minecraft/post_effect/entity_outline.json).
  * Box: a 3D box around each entity. 2D: a flat rectangle. Boxes are drawn by EspOverlay.
  */
 public class ESP extends Module {
 	public enum Mode {
-		OUTLINE("Outline"), BOX("Box"), FLAT("2D");
+		OUTLINE("Shader"), BOX("Box"), FLAT("2D");
 
 		private final String display;
 

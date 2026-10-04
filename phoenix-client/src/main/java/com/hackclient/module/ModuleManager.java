@@ -15,16 +15,19 @@ import com.hackclient.module.modules.grinding.AutoTrade;
 import com.hackclient.module.modules.grinding.ToolSaver;
 import com.hackclient.module.modules.grinding.TradePreview;
 import com.hackclient.module.modules.misc.ClickGui;
+import com.hackclient.module.modules.movement.AirJump;
 import com.hackclient.module.modules.movement.AutoWalk;
 import com.hackclient.module.modules.movement.Flight;
 import com.hackclient.module.modules.movement.Speed;
 import com.hackclient.module.modules.movement.Spider;
 import com.hackclient.module.modules.movement.Step;
 import com.hackclient.module.modules.movement.Velocity;
+import com.hackclient.module.modules.player.AirPlace;
 import com.hackclient.module.modules.player.AutoRespawn;
 import com.hackclient.module.modules.player.AutoTool;
 import com.hackclient.module.modules.player.FastPlace;
 import com.hackclient.module.modules.player.NoFall;
+import com.hackclient.module.modules.player.Reach;
 import com.hackclient.module.modules.render.ESP;
 import com.hackclient.module.modules.render.Fullbright;
 import com.hackclient.module.modules.render.BlockESP;
@@ -58,11 +61,14 @@ public class ModuleManager {
 		modules.add(new StunSlam());
 		// Player
 		modules.add(new NoFall());
+		modules.add(new Reach());
+		modules.add(new AirPlace());
 		modules.add(new FastPlace());
 		modules.add(new AutoTool());
 		modules.add(new AutoRespawn());
 		// Movement
 		modules.add(new Flight());
+		modules.add(new AirJump());
 		modules.add(new Speed());
 		modules.add(new Step());
 		modules.add(new Spider());
