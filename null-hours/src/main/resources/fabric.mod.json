@@ -1,0 +1,21 @@
+{
+	"schemaVersion": 1,
+	"id": "nullhours",
+	"version": "${version}",
+	"name": "Null Hours",
+	"description": "A singleplayer horror mod. Something is in your world, and it gets worse every night.",
+	"authors": [],
+	"license": "All-Rights-Reserved",
+	"icon": "assets/nullhours/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["com.nullhours.NullHours"],
+		"client": ["com.nullhours.client.NullHoursClient"]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
