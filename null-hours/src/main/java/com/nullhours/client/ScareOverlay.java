@@ -22,7 +22,8 @@ public final class ScareOverlay {
 			NullHours.id("textures/gui/jumpscare/echo.png"),
 			NullHours.id("textures/gui/jumpscare/grinner.png")
 	};
-	private static final int JUMPSCARE_TICKS = 18;
+	private static final int JUMPSCARE_TICKS = 16;
+	private static final int FADE_TICKS = 5;
 	private static final RandomSource RANDOM = RandomSource.create();
 
 	private static int jumpscareTicks;
@@ -44,8 +45,7 @@ public final class ScareOverlay {
 				jumpscareTicks = JUMPSCARE_TICKS;
 				snapCamera(mc.player, payload.x(), payload.y(), payload.z());
 				play(SoundEvents.ENDERMAN_SCREAM, 0.5f);
-				play(SoundEvents.GHAST_SCREAM, 0.6f);
-				play(SoundEvents.ELDER_GUARDIAN_CURSE, 0.8f);
+				play(SoundEvents.ELDER_GUARDIAN_CURSE, 0.6f);
 				play(SoundEvents.WARDEN_ROAR, 1.6f);
 			}
 			case ScarePayload.GLITCH -> {
@@ -104,32 +104,50 @@ public final class ScareOverlay {
 			graphics.fill(0, 0, width, height, 0xFF000000);
 			// The words only fade in halfway through, and flicker
 			if (blackoutTicks < blackoutLength / 2 && RANDOM.nextInt(6) != 0) {
-				graphics.drawCenteredString(font, Component.literal(text), width / 2, height / 2 - 4, 0xFF5A0000);
+				graphics.drawCenteredString(font, Component.literal(text), width / 2, height / 2 - 4, 0xFF6E6E6E);
 			}
 		}
 
 		if (glitchTicks > 0) drawGlitch(graphics, width, height);
 
 		if (flashTicks > 0) {
-			graphics.fill(0, 0, width, height, 0xC0000000);
-			drawBigText(graphics, font, text, width, height, 0xFFC00000, 4.0f);
+			graphics.fill(0, 0, width, height, 0xE0000000);
+			drawStatic(graphics, width, height, 120, 0x30);
+			drawBigText(graphics, font, text, width, height, 0xFFE6E6E6, 4.0f);
 		}
 
 		if (jumpscareTicks > 0) drawJumpscare(graphics, width, height);
 	}
 
+	/**
+	 * A short cut to the face: static, the face flickering in and out of the static, then
+	 * black. Everything is black and white.
+	 */
 	private static void drawJumpscare(GuiGraphics graphics, int width, int height) {
 		graphics.fill(0, 0, width, height, 0xFF000000);
 		int elapsed = JUMPSCARE_TICKS - jumpscareTicks;
-		// The face lunges at the screen over the first few frames and shakes
-		float grow = Math.min(1.0f, elapsed / 4.0f);
-		int size = (int) (height * (0.7f + 0.6f * grow));
-		int shake = Math.max(2, size / 40);
-		int x = (width - size) / 2 + RANDOM.nextInt(shake * 2 + 1) - shake;
-		int y = (height - size) / 2 + RANDOM.nextInt(shake * 2 + 1) - shake;
-		graphics.blit(RenderPipelines.GUI_TEXTURED, FACES[face], x, y, 0.0f, 0.0f, size, size, 64, 64, 64, 64);
-		if (elapsed % 4 < 2) graphics.fill(0, 0, width, height, 0x50FF0000);
-		if (jumpscareTicks < 5) graphics.fill(0, 0, width, height, (255 - jumpscareTicks * 50) << 24);
+		if (jumpscareTicks <= FADE_TICKS) {
+			drawStatic(graphics, width, height, 60 * jumpscareTicks, 0x50);
+			return;
+		}
+		boolean showFace = elapsed >= 1 && (elapsed % 3 != 2 || elapsed > 6);
+		if (showFace) {
+			// Lunges at the screen and shakes
+			float grow = Math.min(1.0f, elapsed / 3.0f);
+			int size = (int) (height * (0.8f + 0.5f * grow));
+			int shake = Math.max(2, size / 30);
+			int x = (width - size) / 2 + RANDOM.nextInt(shake * 2 + 1) - shake;
+			int y = (height - size) / 2 + RANDOM.nextInt(shake * 2 + 1) - shake;
+			graphics.blit(RenderPipelines.GUI_TEXTURED, FACES[face], x, y, 0.0f, 0.0f, size, size, 128, 128, 128, 128);
+			drawStatic(graphics, width, height, 500, 0x40);
+		} else {
+			drawStatic(graphics, width, height, 1500, 0xB0);
+		}
+		// Torn scanlines across the picture
+		for (int i = 0; i < 4; i++) {
+			int y = RANDOM.nextInt(height);
+			graphics.fill(0, y, width, y + 1 + RANDOM.nextInt(3), RANDOM.nextBoolean() ? 0xC0000000 : 0x70FFFFFF);
+		}
 	}
 
 	private static void drawGlitch(GuiGraphics graphics, int width, int height) {
@@ -138,23 +156,23 @@ public final class ScareOverlay {
 			int y = RANDOM.nextInt(height);
 			int h = 1 + RANDOM.nextInt(Math.max(2, height / 25));
 			int x = RANDOM.nextInt(width / 3);
-			int color = switch (RANDOM.nextInt(4)) {
-				case 0 -> 0xA0FF0000;
-				case 1 -> 0xA000FFFF;
-				case 2 -> 0xC0000000;
-				default -> 0x90FFFFFF;
-			};
+			int gray = RANDOM.nextInt(256);
+			int color = (RANDOM.nextBoolean() ? 0xB0000000 : 0x80000000) | gray << 16 | gray << 8 | gray;
 			graphics.fill(x, y, x + width / 2 + RANDOM.nextInt(width / 2 + 1), y + h, color);
 		}
-		// Blocky static
-		int cell = Math.max(2, width / 160);
-		for (int i = 0; i < 400; i++) {
-			int x = RANDOM.nextInt(width / cell) * cell;
-			int y = RANDOM.nextInt(height / cell) * cell;
-			int gray = RANDOM.nextInt(256);
-			graphics.fill(x, y, x + cell, y + cell, 0x80000000 | gray << 16 | gray << 8 | gray);
-		}
+		drawStatic(graphics, width, height, 400, 0x80);
 		if (RANDOM.nextInt(4) == 0) graphics.fill(0, 0, width, height, 0x60000000);
+	}
+
+	/** Blocky gray TV static. */
+	private static void drawStatic(GuiGraphics graphics, int width, int height, int dots, int alpha) {
+		int cell = Math.max(2, width / 160);
+		for (int i = 0; i < dots; i++) {
+			int x = RANDOM.nextInt(Math.max(1, width / cell)) * cell;
+			int y = RANDOM.nextInt(Math.max(1, height / cell)) * cell;
+			int gray = RANDOM.nextInt(256);
+			graphics.fill(x, y, x + cell, y + cell, alpha << 24 | gray << 16 | gray << 8 | gray);
+		}
 	}
 
 	private static void drawBigText(GuiGraphics graphics, Font font, String message, int width, int height, int color, float scale) {

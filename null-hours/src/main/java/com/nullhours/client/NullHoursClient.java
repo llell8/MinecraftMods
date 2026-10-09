@@ -12,9 +12,9 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 public class NullHoursClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
-		EntityRendererRegistry.register(ModEntities.HOLLOW, ctx -> new HauntRenderer<>(ctx, NullHours.id("textures/entity/hollow.png"), true));
-		EntityRendererRegistry.register(ModEntities.ECHO, ctx -> new HauntRenderer<>(ctx, NullHours.id("textures/entity/echo.png"), false));
-		EntityRendererRegistry.register(ModEntities.GRINNER, ctx -> new HauntRenderer<>(ctx, NullHours.id("textures/entity/grinner.png"), true));
+		EntityRendererRegistry.register(ModEntities.HOLLOW, ctx -> new SpriteRenderer<>(ctx, "hollow", true));
+		EntityRendererRegistry.register(ModEntities.ECHO, ctx -> new SpriteRenderer<>(ctx, "echo", false));
+		EntityRendererRegistry.register(ModEntities.GRINNER, ctx -> new SpriteRenderer<>(ctx, "grinner", true));
 
 		ClientPlayNetworking.registerGlobalReceiver(ScarePayload.TYPE, (payload, context) -> ScareOverlay.handle(payload));
 		ClientTickEvents.END_CLIENT_TICK.register(client -> ScareOverlay.tick());

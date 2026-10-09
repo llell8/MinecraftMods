@@ -270,7 +270,7 @@ public final class HauntEvents {
 
 	private static boolean grinner(ServerLevel level, ServerPlayer player, int stage) {
 		if (HauntDirector.hasActiveEntity(level, player)) return false;
-		BlockPos pos = SpawnUtil.around(level, player, player.getYRot() + 180, 2.5, 3);
+		BlockPos pos = SpawnUtil.around(level, player, player.getYRot() + 180, 6, 3);
 		if (pos == null || SpawnUtil.isInView(player, pos, 0.3)) return false;
 		GrinnerEntity grinner = SpawnUtil.spawn(ModEntities.GRINNER, level, pos, player);
 		if (grinner == null) return false;

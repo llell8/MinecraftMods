@@ -14,9 +14,13 @@ import net.minecraft.world.level.Level;
 
 /**
  * A tall black figure with white eyes. It stands far away and watches. Stare back and it
- * either fades away or comes running.
+ * either fades away or comes running. A sprinting player can outrun it, and it gives up
+ * once they are far enough away.
  */
 public class HollowEntity extends HauntEntity {
+	private static final double CHASE_SPEED = 1.5;
+	private static final double ESCAPE_DISTANCE = 40.0;
+
 	private float chaseChance;
 	private boolean chasing;
 	private int stareTicks;
@@ -70,17 +74,18 @@ public class HollowEntity extends HauntEntity {
 		}
 
 		chaseTicks++;
-		if (distance < 2.2) {
+		if (distance < 1.8) {
 			jumpscare(level, victim, ScarePayload.FACE_HOLLOW);
 			return;
 		}
-		if (chaseTicks > 20 * 20) {
+		// Got away
+		if (distance > ESCAPE_DISTANCE || chaseTicks > 20 * 25) {
 			vanish(level);
 			return;
 		}
-		getNavigation().moveTo(victim, 2.0);
+		getNavigation().moveTo(victim, CHASE_SPEED);
 		// If it cannot find a path it blinks closer instead of getting stuck
-		if (chaseTicks % 40 == 0 && getNavigation().isDone() && distance > 6) {
+		if (chaseTicks % 60 == 0 && getNavigation().isDone() && distance > 10) {
 			BlockPos spot = SpawnUtil.around(level, victim, victim.getYRot() + 180 + getRandom().nextInt(90) - 45, Math.min(distance - 3, 10), 3);
 			if (spot != null) teleportTo(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5);
 		}

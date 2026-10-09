@@ -14,7 +14,8 @@ import net.minecraft.world.level.Level;
 
 /**
  * Looks like a player with empty black eyes. It only moves while you are not looking at
- * it, and it talks to you in chat.
+ * it, and it talks to you in chat. Walk backwards while watching it, or get far enough
+ * away, and it gives up.
  */
 public class EchoEntity extends HauntEntity {
 	public static final String NAME = "Echo";
@@ -64,7 +65,12 @@ public class EchoEntity extends HauntEntity {
 			lookAtVictim(victim);
 			return;
 		}
-		if (distanceTo(victim) < 2.0) {
+		if (distanceTo(victim) > 40.0) {
+			say(victim, "next time");
+			vanish(level);
+			return;
+		}
+		if (distanceTo(victim) < 1.8) {
 			jumpscare(level, victim, ScarePayload.FACE_ECHO);
 			return;
 		}
