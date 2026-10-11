@@ -1,0 +1,14 @@
+{
+  "block.backrooms.wallpaper": "Mono-Yellow Wallpaper",
+  "block.backrooms.moist_carpet": "Moist Carpet",
+  "block.backrooms.ceiling_tile": "Ceiling Tile",
+  "block.backrooms.fluorescent_light": "Fluorescent Light",
+  "block.backrooms.exit_door": "Exit Door",
+  "entity.backrooms.smiler": "Smiler",
+  "subtitles.backrooms.ambient.hum": "Fluorescent lights hum",
+  "subtitles.backrooms.block.fluorescent_light.buzz": "Light flickers",
+  "subtitles.backrooms.player.noclip": "Reality tears",
+  "subtitles.backrooms.entity.smiler.ambient": "Something breathes",
+  "subtitles.backrooms.entity.smiler.scream": "Smiler shrieks",
+  "subtitles.backrooms.entity.smiler.blink": "Smiler vanishes"
+}

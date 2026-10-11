@@ -1,0 +1,123 @@
+package com.meryx.backrooms;
+
+import com.meryx.backrooms.world.Maze;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.phys.Vec3;
+
+/**
+ * Getting into and out of the Backrooms. Suffocating inside a block in the overworld can glitch you through
+ * reality into Level 0; an exit door takes you back to the surface where you fell through.
+ */
+public final class Noclip {
+    /** Chance that a suffocation hurt in the overworld noclips you instead. */
+    private static final float NOCLIP_CHANCE = 0.2F;
+    /** The overworld position a player noclipped from, kept on the player as a scoreboard tag so it survives restarts. */
+    private static final String RETURN_TAG = "backrooms_return:";
+
+    private static final Set<UUID> PENDING = new HashSet<>();
+
+    private Noclip() {
+    }
+
+    public static boolean onDamage(LivingEntity entity, DamageSource source, float amount) {
+        if (entity instanceof ServerPlayer player
+                && source.is(DamageTypes.IN_WALL)
+                && player.level().dimension() == Level.OVERWORLD
+                && player.getRandom().nextFloat() < NOCLIP_CHANCE) {
+            // Teleporting while the player is mid-tick is asking for trouble, so do it at the end of the tick
+            PENDING.add(player.getUUID());
+            return false;
+        }
+        return true;
+    }
+
+    public static void tick(MinecraftServer server) {
+        if (PENDING.isEmpty()) {
+            return;
+        }
+        for (UUID id : PENDING) {
+            ServerPlayer player = server.getPlayerList().getPlayer(id);
+            if (player != null && player.isAlive()) {
+                enter(player);
+            }
+        }
+        PENDING.clear();
+    }
+
+    public static void enter(ServerPlayer player) {
+        ServerLevel level0 = ((ServerLevel) player.level()).getServer().getLevel(Backrooms.LEVEL_0);
+        if (level0 == null) {
+            return;
+        }
+        clearReturnTag(player);
+        player.addTag(RETURN_TAG + player.getBlockX() + "," + player.getBlockZ());
+
+        // Every cell's centre is open floor
+        int x = Math.floorDiv(player.getBlockX(), Maze.CELL) * Maze.CELL + Maze.CELL / 2;
+        int z = Math.floorDiv(player.getBlockZ(), Maze.CELL) * Maze.CELL + Maze.CELL / 2;
+        player.teleport(new TeleportTransition(level0, new Vec3(x + 0.5, Maze.STAND_Y, z + 0.5), Vec3.ZERO,
+                player.getYRot(), 0.0F, TeleportTransition.DO_NOTHING));
+        player.resetFallDistance();
+        player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 100));
+        player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 160));
+        level0.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.NOCLIP, SoundSource.PLAYERS, 1.0F, 0.5F);
+        player.connection.send(new ClientboundSetTitleTextPacket(Component.literal("Level 0").withStyle(ChatFormatting.YELLOW)));
+        player.connection.send(new ClientboundSetSubtitleTextPacket(
+                Component.literal("You noclipped out of reality.").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)));
+        SmilerSpawner.entered(player);
+    }
+
+    public static void leave(ServerPlayer player) {
+        ServerLevel overworld = ((ServerLevel) player.level()).getServer().getLevel(Level.OVERWORLD);
+        if (overworld == null) {
+            return;
+        }
+        int x = 0;
+        int z = 0;
+        for (String tag : player.getTags()) {
+            if (tag.startsWith(RETURN_TAG)) {
+                String[] parts = tag.substring(RETURN_TAG.length()).split(",");
+                try {
+                    x = Integer.parseInt(parts[0]);
+                    z = Integer.parseInt(parts[1]);
+                } catch (RuntimeException ignored) {
+                    // A damaged tag: fall back to the world origin
+                }
+            }
+        }
+        clearReturnTag(player);
+        int y = overworld.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+        player.teleport(new TeleportTransition(overworld, new Vec3(x + 0.5, y, z + 0.5), Vec3.ZERO,
+                player.getYRot(), player.getXRot(), TeleportTransition.DO_NOTHING));
+        player.resetFallDistance();
+        overworld.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.NOCLIP, SoundSource.PLAYERS, 1.0F, 1.2F);
+        player.sendSystemMessage(Component.literal("You made it out... this time.").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC), true);
+    }
+
+    private static void clearReturnTag(ServerPlayer player) {
+        for (String tag : List.copyOf(player.getTags())) {
+            if (tag.startsWith(RETURN_TAG)) {
+                player.removeTag(tag);
+            }
+        }
+    }
+}

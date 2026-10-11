@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "backrooms",
+  "version": "${version}",
+  "name": "The Backrooms",
+  "description": "If you're not careful and you noclip out of reality in the wrong areas, you'll end up in the Backrooms.",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.meryx.backrooms.Backrooms"],
+    "client": ["com.meryx.backrooms.client.BackroomsClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

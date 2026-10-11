@@ -58,3 +58,32 @@ jobs:
           body: "Automatic build of ${{ github.sha }}."
           files: |
             phoenix-client/build/libs/*.jar
+
+  backrooms:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backrooms
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
+      - run: gradle build --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backrooms-jar
+          path: backrooms/build/libs/*.jar
+      - name: Publish Backrooms release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: backrooms-latest
+          name: The Backrooms (latest build)
+          prerelease: true
+          make_latest: false
+          body: "Automatic build of ${{ github.sha }}."
+          files: |
+            backrooms/build/libs/*.jar

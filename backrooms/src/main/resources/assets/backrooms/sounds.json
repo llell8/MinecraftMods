@@ -1,0 +1,98 @@
+{
+  "ambient.hum": {
+    "sounds": [
+      {
+        "name": "backrooms:hum",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.ambient.hum"
+  },
+  "block.fluorescent_light.buzz": {
+    "sounds": [
+      {
+        "name": "backrooms:buzz1"
+      },
+      {
+        "name": "backrooms:buzz2"
+      },
+      {
+        "name": "backrooms:buzz3"
+      }
+    ],
+    "subtitle": "subtitles.backrooms.block.fluorescent_light.buzz"
+  },
+  "player.noclip": {
+    "sounds": [
+      {
+        "name": "minecraft:block/portal/travel",
+        "volume": 0.6,
+        "pitch": 1.6
+      }
+    ],
+    "subtitle": "subtitles.backrooms.player.noclip"
+  },
+  "entity.smiler.ambient": {
+    "sounds": [
+      {
+        "name": "minecraft:ambient/cave/cave1",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:ambient/cave/cave3",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:ambient/cave/cave6",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:ambient/cave/cave9",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:ambient/cave/cave11",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:ambient/cave/cave13",
+        "pitch": 0.7
+      }
+    ],
+    "subtitle": "subtitles.backrooms.entity.smiler.ambient"
+  },
+  "entity.smiler.scream": {
+    "sounds": [
+      {
+        "name": "minecraft:mob/endermen/scream1",
+        "pitch": 0.5
+      },
+      {
+        "name": "minecraft:mob/endermen/scream2",
+        "pitch": 0.5
+      },
+      {
+        "name": "minecraft:mob/endermen/scream3",
+        "pitch": 0.5
+      },
+      {
+        "name": "minecraft:mob/endermen/scream4",
+        "pitch": 0.5
+      }
+    ],
+    "subtitle": "subtitles.backrooms.entity.smiler.scream"
+  },
+  "entity.smiler.blink": {
+    "sounds": [
+      {
+        "name": "minecraft:mob/endermen/portal",
+        "pitch": 0.5
+      },
+      {
+        "name": "minecraft:mob/endermen/portal2",
+        "pitch": 0.5
+      }
+    ],
+    "subtitle": "subtitles.backrooms.entity.smiler.blink"
+  }
+}
