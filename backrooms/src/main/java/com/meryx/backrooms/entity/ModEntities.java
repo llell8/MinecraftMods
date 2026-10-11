@@ -25,7 +25,7 @@ public final class ModEntities {
 
     private static final ResourceKey<Item> SMILER_EGG_KEY = ResourceKey.create(Registries.ITEM, Backrooms.id("smiler_spawn_egg"));
     public static final Item SMILER_SPAWN_EGG = Registry.register(BuiltInRegistries.ITEM, SMILER_EGG_KEY,
-            new SpawnEggItem(SMILER, new Item.Properties().setId(SMILER_EGG_KEY)));
+            new SpawnEggItem(new Item.Properties().setId(SMILER_EGG_KEY).spawnEgg(SMILER)));
 
     private ModEntities() {
     }
