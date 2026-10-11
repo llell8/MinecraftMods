@@ -2,6 +2,7 @@ package com.meryx.backrooms.client;
 
 import com.meryx.backrooms.Backrooms;
 import com.meryx.backrooms.entity.Smiler;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
@@ -25,9 +26,14 @@ public class SmilerRenderer extends MobRenderer<Smiler, LivingEntityRenderState,
         return TEXTURE;
     }
 
-    /** Fully bright, so its eyes and grin glow in the dark while its body stays black. */
+    /** Fully bright: it is made of light. */
     @Override
     public int getBlockLightLevel(Smiler smiler, BlockPos pos) {
         return 15;
+    }
+
+    @Override
+    public void scale(LivingEntityRenderState state, PoseStack poseStack) {
+        poseStack.scale(SmilerModel.SCALE, SmilerModel.SCALE, SmilerModel.SCALE);
     }
 }
