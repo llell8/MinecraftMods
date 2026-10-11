@@ -171,6 +171,12 @@ public class Smiler extends Monster {
         return false;
     }
 
+    /** Stays on your trail rather than randomly despawning; it only goes once you are far away. */
+    @Override
+    public boolean removeWhenFarAway(double distanceToClosestPlayer) {
+        return distanceToClosestPlayer > 96.0 * 96.0;
+    }
+
     @Override
     public boolean isPushable() {
         return false;

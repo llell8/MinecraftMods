@@ -3,6 +3,7 @@ package com.meryx.backrooms.client;
 import com.meryx.backrooms.Backrooms;
 import com.meryx.backrooms.entity.Smiler;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.core.BlockPos;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -26,6 +27,12 @@ public class SmilerRenderer extends HumanoidMobRenderer<Smiler, HumanoidRenderSt
     @Override
     public Identifier getTextureLocation(HumanoidRenderState state) {
         return TEXTURE;
+    }
+
+    /** Fully bright, so its eyes and grin glow in the dark while its body stays black. */
+    @Override
+    public int getBlockLightLevel(Smiler smiler, BlockPos pos) {
+        return 15;
     }
 
     @Override

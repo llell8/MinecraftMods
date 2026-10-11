@@ -10,5 +10,6 @@
   "subtitles.backrooms.player.noclip": "Reality tears",
   "subtitles.backrooms.entity.smiler.ambient": "Something breathes",
   "subtitles.backrooms.entity.smiler.scream": "Smiler shrieks",
-  "subtitles.backrooms.entity.smiler.blink": "Smiler vanishes"
+  "subtitles.backrooms.entity.smiler.blink": "Smiler vanishes",
+  "item.backrooms.smiler_spawn_egg": "Smiler Spawn Egg"
 }

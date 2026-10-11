@@ -18,7 +18,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 public final class SmilerSpawner {
     private static final int CHECK_INTERVAL = 40;
     /** Ticks in Level 0 before the first Smiler can show up. */
-    private static final int GRACE_TICKS = 20 * 45;
+    private static final int GRACE_TICKS = 20 * 20;
     private static final double HUNT_RANGE = 80.0;
 
     private static final Map<UUID, Integer> ENTERED_AT = new HashMap<>();
@@ -45,7 +45,7 @@ public final class SmilerSpawner {
                 continue;
             }
             int entered = ENTERED_AT.computeIfAbsent(player.getUUID(), id -> now);
-            if (now - entered < GRACE_TICKS || random.nextInt(12) != 0) {
+            if (now - entered < GRACE_TICKS || random.nextInt(5) != 0) {
                 continue;
             }
             if (!level.getEntitiesOfClass(Smiler.class, player.getBoundingBox().inflate(HUNT_RANGE)).isEmpty()) {
