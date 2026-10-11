@@ -4,6 +4,7 @@ import com.meryx.backrooms.Backrooms;
 import com.meryx.backrooms.entity.ModEntities;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.Minecraft;
 
@@ -12,6 +13,7 @@ public class BackroomsClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        EntityModelLayerRegistry.registerModelLayer(SmilerModel.LAYER, SmilerModel::createBodyLayer);
         EntityRendererRegistry.register(ModEntities.SMILER, SmilerRenderer::new);
         ClientTickEvents.END_CLIENT_TICK.register(this::tick);
     }
