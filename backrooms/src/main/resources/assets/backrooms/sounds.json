@@ -65,15 +65,15 @@
     "sounds": [
       {
         "name": "backrooms:scream1",
-        "pitch": 1.2
+        "pitch": 1.05
       },
       {
         "name": "backrooms:scream2",
-        "pitch": 1.2
+        "pitch": 1.05
       },
       {
         "name": "backrooms:scream3",
-        "pitch": 1.2
+        "pitch": 1.05
       }
     ],
     "subtitle": "subtitles.backrooms.entity.smiler.scream"
