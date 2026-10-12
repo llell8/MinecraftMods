@@ -147,9 +147,11 @@ public final class Glitches {
         Glitch glitch = new Glitch(level, pos.immutable(), level.getBlockState(pos), torn, tag, endAt);
         ACTIVE.add(glitch);
         ACTIVE_TAGS.add(tag);
-        // A hair bigger than the block, so it sits over every face, and fully bright so it shows up in the dark
+        // A hair bigger than the block, so it sits over every face, and fully bright so it shows up in the dark.
+        // The coordinates are written as decimals: /summon centres whole numbers on the block, which would put the
+        // display over the corner of four blocks.
         String command = String.format(Locale.ROOT,
-                "summon minecraft:block_display %d %d %d {Tags:[\"%s\",\"%s\"],block_state:{Name:\"backrooms:glitch\"},"
+                "summon minecraft:block_display %d.0 %d.0 %d.0 {Tags:[\"%s\",\"%s\"],block_state:{Name:\"backrooms:glitch\"},"
                         + "brightness:{sky:15,block:15},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],"
                         + "translation:[-0.005f,-0.005f,-0.005f],scale:[1.01f,1.01f,1.01f]}}",
                 pos.getX(), pos.getY(), pos.getZ(), TAG, tag);
