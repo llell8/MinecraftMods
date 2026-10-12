@@ -14,12 +14,12 @@ import net.minecraft.util.Mth;
 
 /**
  * Nothing but a face: two glowing eyes and a grin full of teeth hanging in the dark, about two blocks up. Everything
- * else in the texture is transparent. The face is drawn at 4x detail and {@link SmilerRenderer} scales it down.
+ * else in the texture is transparent. The face is drawn at 8x detail and {@link SmilerRenderer} scales it down.
  */
 public class SmilerModel extends EntityModel<LivingEntityRenderState> {
     public static final ModelLayerLocation LAYER = new ModelLayerLocation(Backrooms.id("smiler"), "main");
     /** The renderer's scale, which also scales this model's distance from the ground. */
-    public static final float SCALE = 0.25F;
+    public static final float SCALE = 0.125F;
     private static final float FACE_Y = 24.0F - 2.1F * 16.0F / SCALE;
 
     private final ModelPart face;
@@ -33,9 +33,9 @@ public class SmilerModel extends EntityModel<LivingEntityRenderState> {
         MeshDefinition mesh = new MeshDefinition();
         PartDefinition root = mesh.getRoot();
         root.addOrReplaceChild("face",
-                CubeListBuilder.create().texOffs(0, 0).addBox(-32.0F, -20.0F, -0.5F, 64.0F, 40.0F, 1.0F),
+                CubeListBuilder.create().texOffs(0, 0).addBox(-64.0F, -40.0F, -0.5F, 128.0F, 80.0F, 1.0F),
                 PartPose.offset(0.0F, FACE_Y, 0.0F));
-        return LayerDefinition.create(mesh, 256, 64);
+        return LayerDefinition.create(mesh, 512, 128);
     }
 
     @Override
@@ -44,6 +44,6 @@ public class SmilerModel extends EntityModel<LivingEntityRenderState> {
         // Always turned towards whatever it is watching, drifting gently up and down
         face.yRot = state.yRot * Mth.DEG_TO_RAD;
         face.xRot = state.xRot * Mth.DEG_TO_RAD;
-        face.y = FACE_Y + Mth.sin(state.ageInTicks * 0.08F) * 4.0F;
+        face.y = FACE_Y + Mth.sin(state.ageInTicks * 0.08F) * 8.0F;
     }
 }
