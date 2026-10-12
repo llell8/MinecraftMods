@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "backrooms:item/vhs_smiler_spawn_egg"
+  }
+}

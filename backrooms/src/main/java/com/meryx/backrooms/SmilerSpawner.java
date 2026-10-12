@@ -2,7 +2,6 @@ package com.meryx.backrooms;
 
 import com.meryx.backrooms.entity.ModEntities;
 import com.meryx.backrooms.entity.Smiler;
-import com.meryx.backrooms.world.Maze;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -14,12 +13,13 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntitySpawnReason;
 
-/** Sends a Smiler after each survival player who has wandered Level 0 for a while, somewhere out of sight. */
+/** Puts Smilers in the dark places around each survival player who has wandered Level 0 for a while. */
 public final class SmilerSpawner {
     private static final int CHECK_INTERVAL = 40;
     /** Ticks in Level 0 before the first Smiler can show up. */
     private static final int GRACE_TICKS = 20 * 20;
-    private static final double HUNT_RANGE = 80.0;
+    private static final double NEARBY = 48.0;
+    private static final int MAX_NEARBY = 3;
 
     private static final Map<UUID, Integer> ENTERED_AT = new HashMap<>();
 
@@ -45,43 +45,27 @@ public final class SmilerSpawner {
                 continue;
             }
             int entered = ENTERED_AT.computeIfAbsent(player.getUUID(), id -> now);
-            if (now - entered < GRACE_TICKS || random.nextInt(5) != 0) {
+            if (now - entered < GRACE_TICKS || random.nextInt(4) != 0) {
                 continue;
             }
-            if (!level.getEntitiesOfClass(Smiler.class, player.getBoundingBox().inflate(HUNT_RANGE)).isEmpty()) {
+            if (level.getEntitiesOfClass(Smiler.class, player.getBoundingBox().inflate(NEARBY)).size() >= MAX_NEARBY) {
                 continue;
             }
-            spawnNear(level, player, random);
-        }
-    }
-
-    private static void spawnNear(ServerLevel level, ServerPlayer player, RandomSource random) {
-        int playerCellX = Math.floorDiv(player.getBlockX(), Maze.CELL);
-        int playerCellZ = Math.floorDiv(player.getBlockZ(), Maze.CELL);
-        for (int attempt = 0; attempt < 10; attempt++) {
-            int cellX = playerCellX + (random.nextBoolean() ? 1 : -1) * (3 + random.nextInt(3));
-            int cellZ = playerCellZ + random.nextInt(11) - 5;
-            if (random.nextBoolean()) {
-                int swap = cellX - playerCellX;
-                cellX = playerCellX + (cellZ - playerCellZ);
-                cellZ = playerCellZ + swap;
-            }
-            BlockPos pos = new BlockPos(cellX * Maze.CELL + Maze.CELL / 2, Maze.STAND_Y, cellZ * Maze.CELL + Maze.CELL / 2);
-            if (!level.getBlockState(pos).isAir() || !level.getBlockState(pos.above()).isAir()) {
+            // Only where the lights are dead: in a well-lit area you are safe
+            BlockPos spot = Smiler.findDarkSpot(level, player.blockPosition(), 2, 6, random);
+            if (spot == null) {
                 continue;
             }
-            Smiler smiler = ModEntities.SMILER.create(level, EntitySpawnReason.EVENT);
-            if (smiler == null) {
-                return;
+            Smiler smiler = (random.nextBoolean() ? ModEntities.SMILER : ModEntities.VHS_SMILER).create(level, EntitySpawnReason.EVENT);
+            if (smiler != null) {
+                smiler.setPos(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5);
+                if (player.hasLineOfSight(smiler)) {
+                    // It is already there when you look; it never appears in front of you
+                    smiler.discard();
+                    continue;
+                }
+                level.addFreshEntity(smiler);
             }
-            smiler.setPos(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
-            if (player.hasLineOfSight(smiler)) {
-                // Never appear in plain sight
-                smiler.discard();
-                continue;
-            }
-            level.addFreshEntity(smiler);
-            return;
         }
     }
 }

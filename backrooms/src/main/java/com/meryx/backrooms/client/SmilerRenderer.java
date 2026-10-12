@@ -10,10 +10,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 
 public class SmilerRenderer extends MobRenderer<Smiler, LivingEntityRenderState, SmilerModel> {
-    private static final Identifier TEXTURE = Backrooms.id("textures/entity/smiler.png");
+    private final Identifier texture;
 
-    public SmilerRenderer(EntityRendererProvider.Context context) {
+    public SmilerRenderer(EntityRendererProvider.Context context, String textureName) {
         super(context, new SmilerModel(context.bakeLayer(SmilerModel.LAYER)), 0.0F);
+        this.texture = Backrooms.id("textures/entity/" + textureName + ".png");
     }
 
     @Override
@@ -23,7 +24,7 @@ public class SmilerRenderer extends MobRenderer<Smiler, LivingEntityRenderState,
 
     @Override
     public Identifier getTextureLocation(LivingEntityRenderState state) {
-        return TEXTURE;
+        return texture;
     }
 
     /** Fully bright: it is made of light. */

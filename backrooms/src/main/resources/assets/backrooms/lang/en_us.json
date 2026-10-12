@@ -11,5 +11,7 @@
   "subtitles.backrooms.entity.smiler.ambient": "Something breathes",
   "subtitles.backrooms.entity.smiler.scream": "Smiler shrieks",
   "subtitles.backrooms.entity.smiler.blink": "Smiler vanishes",
-  "item.backrooms.smiler_spawn_egg": "Smiler Spawn Egg"
+  "item.backrooms.smiler_spawn_egg": "Smiler Spawn Egg",
+  "entity.backrooms.vhs_smiler": "VHS Smiler",
+  "item.backrooms.vhs_smiler_spawn_egg": "VHS Smiler Spawn Egg"
 }
