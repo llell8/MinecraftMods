@@ -124,12 +124,12 @@ public class BacteriaModel extends EntityModel<LivingEntityRenderState> {
 
         // Right arm: one long, straight rod reaching out and down to the floor like a crutch, fingers splayed
         shoulders.addOrReplaceChild("right_arm", cubes()
-                        .addBox(-0.5F, 0.0F, -0.5F, 1.0F, 41.0F, 1.0F)
+                        .addBox(-0.5F, 0.0F, -0.5F, 1.0F, 38.5F, 1.0F)
                         .addBox(-1.0F, 13.0F, -1.0F, 2.0F, 2.0F, 2.0F)
-                        .addBox(-2.5F, 40.0F, -0.5F, 5.0F, 1.0F, 1.0F)
-                        .addBox(-2.5F, 41.0F, -0.5F, 1.0F, 2.0F, 1.0F)
-                        .addBox(1.5F, 41.0F, -0.5F, 1.0F, 2.0F, 1.0F)
-                        .addBox(-0.5F, 41.0F, -2.5F, 1.0F, 1.0F, 2.0F),
+                        .addBox(-2.5F, 37.5F, -0.5F, 5.0F, 1.0F, 1.0F)
+                        .addBox(-2.5F, 38.5F, -0.5F, 1.0F, 2.0F, 1.0F)
+                        .addBox(1.5F, 38.5F, -0.5F, 1.0F, 2.0F, 1.0F)
+                        .addBox(-0.5F, 38.5F, -2.5F, 1.0F, 1.0F, 2.0F),
                 PartPose.offsetAndRotation(-8.5F, 0.5F, 0.0F, 0.0F, 0.0F, 0.33F));
 
         // Left arm: hangs to the elbow, then the forearm reaches across in front of its body
