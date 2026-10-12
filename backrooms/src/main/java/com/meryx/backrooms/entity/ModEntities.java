@@ -25,7 +25,7 @@ public final class ModEntities {
     public static final EntityType<Smiler> VHS_SMILER = register("vhs_smiler",
             EntityType.Builder.of(Smiler::new, MobCategory.MONSTER).sized(0.6F, 2.6F).eyeHeight(2.35F));
     public static final EntityType<Bacteria> BACTERIA = register("bacteria",
-            EntityType.Builder.of(Bacteria::new, MobCategory.MONSTER).sized(0.8F, 3.1F).eyeHeight(2.8F));
+            EntityType.Builder.of(Bacteria::new, MobCategory.MONSTER).sized(0.9F, 3.0F).eyeHeight(2.6F));
 
     private ModEntities() {
     }

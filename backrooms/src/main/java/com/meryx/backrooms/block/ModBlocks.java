@@ -33,7 +33,10 @@ public final class ModBlocks {
     public static final Block EXIT_DOOR = register("exit_door", ExitDoorBlock::new,
             unbreakable().mapColor(MapColor.METAL).sound(SoundType.METAL).lightLevel(state -> 4));
 
-    /** A block that has come loose from reality: no collision, so you can step into it. See {@code Glitches}. */
+    /**
+     * The animated, see-through static that {@code Glitches} lays over blocks. As a block it has no collision: stack two
+     * and step in to test the way into Level 0.
+     */
     public static final Block GLITCH = register("glitch", Block::new,
             unbreakable().mapColor(MapColor.COLOR_BLACK).sound(SoundType.AMETHYST).noCollision().noOcclusion()
                     .lightLevel(state -> 3)

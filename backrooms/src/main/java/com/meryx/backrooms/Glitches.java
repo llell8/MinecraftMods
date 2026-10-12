@@ -2,8 +2,12 @@ package com.meryx.backrooms;
 
 import com.meryx.backrooms.block.ModBlocks;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
@@ -11,67 +15,105 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 
 /**
- * Reality wearing thin: now and then a block near a player in the overworld starts glitching, losing its collision,
- * and goes back to normal a minute or so later. Sometimes two glitch one above the other, and a 1x2 glitch is a way
- * in: step into it and you noclip into Level 0.
+ * Reality wearing thin. At any moment a block near a player can start glitching: a see-through, flickering overlay of
+ * static and torn wallpaper appears over it, then fades a little later. The overlay is a vanilla block display showing
+ * the animated {@code backrooms:glitch} block, a hair bigger than the block it covers.
+ * <p>
+ * Sometimes two blocks one above the other glitch together. Those tear open: the blocks vanish, leaving a 1x2 doorway
+ * of static. Step into it and you noclip into Level 0. The blocks come back when the glitch ends.
  */
 public final class Glitches {
+    /** Every display this mod spawns carries this tag, so leftovers from a crash can be cleaned up. */
+    public static final String TAG = "backrooms_glitch";
+
     /** How often each player gets a chance of a glitch nearby, and the chance. */
-    private static final int ROLL_INTERVAL = 20 * 30;
-    private static final int ROLL_ONE_IN = 3;
-    /** Chance that a glitch takes the block above or below with it, making a way in. */
-    private static final float PAIR_CHANCE = 0.4F;
+    private static final int ROLL_INTERVAL = 100;
+    private static final int ROLL_ONE_IN = 5;
+    /** Chance that a glitch is a 1x2 tear, a way in. */
+    private static final float PAIR_CHANCE = 0.3F;
     private static final int RADIUS = 12;
 
-    private record Glitch(ServerLevel level, BlockPos pos, BlockState original, int revertAt) {
+    private record Glitch(ServerLevel level, BlockPos pos, BlockState original, boolean torn, String tag, int endAt) {
     }
 
     private static final List<Glitch> ACTIVE = new ArrayList<>();
+    private static final Set<String> ACTIVE_TAGS = new HashSet<>();
+    private static int nextId;
 
     private Glitches() {
     }
 
     public static void tick(MinecraftServer server) {
         int now = server.getTickCount();
-        revertDue(now, false);
+        endDue(now, false);
 
-        ServerLevel overworld = server.getLevel(Level.OVERWORLD);
-        if (overworld == null) {
-            return;
-        }
-        for (ServerPlayer player : overworld.players()) {
-            if (player.isSpectator()) {
+        for (ServerLevel level : server.getAllLevels()) {
+            if (level.dimension().equals(Backrooms.LEVEL_0)) {
                 continue;
             }
-            BlockPos feet = player.blockPosition();
-            if (overworld.getBlockState(feet).is(ModBlocks.GLITCH) && overworld.getBlockState(feet.above()).is(ModBlocks.GLITCH)) {
-                Noclip.queue(player);
-            }
-            if (now % ROLL_INTERVAL == 0 && overworld.getRandom().nextInt(ROLL_ONE_IN) == 0) {
-                glitchNear(overworld, player, now);
+            for (ServerPlayer player : level.players()) {
+                if (player.isSpectator()) {
+                    continue;
+                }
+                if (inDoorway(level, player.blockPosition())) {
+                    Noclip.queue(player);
+                    continue;
+                }
+                if (now % ROLL_INTERVAL == 0 && level.getRandom().nextInt(ROLL_ONE_IN) == 0) {
+                    glitchNear(level, player, now);
+                }
             }
         }
     }
 
-    /** Puts every glitched block back, for when the server stops. */
-    public static void revertAll() {
-        revertDue(Integer.MAX_VALUE, true);
+    /** Feet and head both inside a torn glitch, or inside placed glitch blocks (handy for testing). */
+    private static boolean inDoorway(ServerLevel level, BlockPos feet) {
+        if (level.getBlockState(feet).is(ModBlocks.GLITCH) && level.getBlockState(feet.above()).is(ModBlocks.GLITCH)) {
+            return true;
+        }
+        boolean lower = false;
+        boolean upper = false;
+        for (Glitch glitch : ACTIVE) {
+            if (glitch.torn && glitch.level == level) {
+                lower |= glitch.pos.equals(feet);
+                upper |= glitch.pos.equals(feet.above());
+            }
+        }
+        return lower && upper;
     }
 
-    private static void revertDue(int now, boolean force) {
+    /** Ends every glitch and puts torn blocks back, for when the server stops. */
+    public static void endAll() {
+        endDue(Integer.MAX_VALUE, true);
+    }
+
+    /** Glitch displays left over from a crash are not tracked any more: get rid of them as they load. */
+    public static void onEntityLoad(Entity entity) {
+        if (entity.getTags().contains(TAG) && entity.getTags().stream().noneMatch(ACTIVE_TAGS::contains)) {
+            entity.discard();
+        }
+    }
+
+    private static void endDue(int now, boolean force) {
         for (Iterator<Glitch> it = ACTIVE.iterator(); it.hasNext(); ) {
             Glitch glitch = it.next();
-            if (now < glitch.revertAt || (!force && !glitch.level.isLoaded(glitch.pos))) {
+            if (now < glitch.endAt || (!force && !glitch.level.isLoaded(glitch.pos))) {
                 continue;
             }
-            if (glitch.level.getBlockState(glitch.pos).is(ModBlocks.GLITCH)) {
+            for (Entity display : glitch.level.getEntities((Entity) null, new AABB(glitch.pos).inflate(0.5), e -> e.getTags().contains(glitch.tag))) {
+                display.discard();
+            }
+            if (glitch.torn && glitch.level.getBlockState(glitch.pos).isAir()) {
                 glitch.level.setBlock(glitch.pos, glitch.original, Block.UPDATE_ALL);
             }
+            ACTIVE_TAGS.remove(glitch.tag);
             it.remove();
         }
     }
@@ -84,35 +126,52 @@ public final class Glitches {
             if (!canGlitch(level, pos) || !exposed(level, pos)) {
                 continue;
             }
-            int duration = 20 * (40 + random.nextInt(50));
-            glitch(level, pos, now + duration);
             if (random.nextFloat() < PAIR_CHANCE) {
-                BlockPos other = random.nextBoolean() ? pos.above() : pos.below();
-                if (!canGlitch(level, other)) {
-                    other = other.equals(pos.above()) ? pos.below() : pos.above();
-                }
+                BlockPos other = canGlitch(level, pos.above()) ? pos.above() : pos.below();
                 if (canGlitch(level, other)) {
-                    glitch(level, other, now + duration);
+                    int endAt = now + 20 * (40 + random.nextInt(40));
+                    start(level, pos, true, endAt);
+                    start(level, other, true, endAt);
+                    level.playSound(null, pos, ModSounds.GLITCH, SoundSource.BLOCKS, 1.4F, 0.6F);
+                    return;
                 }
             }
-            level.playSound(null, pos, ModSounds.GLITCH, SoundSource.BLOCKS, 1.0F, 0.8F + random.nextFloat() * 0.4F);
+            start(level, pos, false, now + 20 * (8 + random.nextInt(22)));
+            level.playSound(null, pos, ModSounds.GLITCH, SoundSource.BLOCKS, 0.8F, 0.8F + random.nextFloat() * 0.4F);
             return;
         }
     }
 
-    private static void glitch(ServerLevel level, BlockPos pos, int revertAt) {
-        ACTIVE.add(new Glitch(level, pos.immutable(), level.getBlockState(pos), revertAt));
-        level.setBlock(pos, ModBlocks.GLITCH.defaultBlockState(), Block.UPDATE_ALL);
+    private static void start(ServerLevel level, BlockPos pos, boolean torn, int endAt) {
+        String tag = TAG + "_" + nextId++;
+        Glitch glitch = new Glitch(level, pos.immutable(), level.getBlockState(pos), torn, tag, endAt);
+        ACTIVE.add(glitch);
+        ACTIVE_TAGS.add(tag);
+        // A hair bigger than the block, so it sits over every face, and fully bright so it shows up in the dark
+        String command = String.format(Locale.ROOT,
+                "summon minecraft:block_display %d %d %d {Tags:[\"%s\",\"%s\"],block_state:{Name:\"backrooms:glitch\"},"
+                        + "brightness:{sky:15,block:15},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],"
+                        + "translation:[-0.005f,-0.005f,-0.005f],scale:[1.01f,1.01f,1.01f]}}",
+                pos.getX(), pos.getY(), pos.getZ(), TAG, tag);
+        CommandSourceStack source = level.getServer().createCommandSourceStack().withLevel(level).withSuppressedOutput();
+        level.getServer().getCommands().performPrefixedCommand(source, command);
+        if (torn) {
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+        }
     }
 
-    /** Ordinary solid full blocks only: nothing with contents, nothing unbreakable. */
+    /** Ordinary solid full blocks only: nothing with contents, nothing unbreakable, nothing already glitching. */
     private static boolean canGlitch(ServerLevel level, BlockPos pos) {
         if (!level.isLoaded(pos)) {
             return false;
         }
+        for (Glitch glitch : ACTIVE) {
+            if (glitch.level == level && glitch.pos.equals(pos)) {
+                return false;
+            }
+        }
         BlockState state = level.getBlockState(pos);
         return !state.isAir()
-                && !state.is(ModBlocks.GLITCH)
                 && !state.hasBlockEntity()
                 && state.getFluidState().isEmpty()
                 && state.getDestroySpeed(level, pos) >= 0.0F

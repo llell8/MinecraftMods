@@ -17,8 +17,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 
 /**
- * A tall, spindly, hunched black thing that wanders Level 0 and runs you down once it has seen you. Unlike a Smiler it
- * can be killed, but it takes a lot of hitting.
+ * Three blocks of black wire with a blob for a head and arms that reach the floor. It wanders Level 0, shaking, and
+ * runs you down once it has seen you. Unlike a Smiler it can be killed, but it takes a lot of hitting.
  */
 public class Bacteria extends Monster {
     public Bacteria(EntityType<? extends Bacteria> type, Level level) {
