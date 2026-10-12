@@ -2,6 +2,7 @@ package com.meryx.backrooms.entity;
 
 import com.meryx.backrooms.ModSounds;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -63,7 +64,12 @@ public class Bacteria extends Monster {
     }
 
     private void scream() {
-        level().playSound(null, getX(), getY(), getZ(), ModSounds.BACTERIA_SCREAM, SoundSource.HOSTILE, 4.0F, 0.9F + random.nextFloat() * 0.2F);
+        float pitch = 0.9F + random.nextFloat() * 0.2F;
+        level().playSound(null, getX(), getY(), getZ(), ModSounds.BACTERIA_SCREAM, SoundSource.HOSTILE, 4.0F, pitch);
+        // Whoever it is after hears it right in their ears, at full volume, wherever it is
+        if (getTarget() instanceof ServerPlayer player && distanceTo(player) < 32.0F) {
+            player.playNotifySound(ModSounds.BACTERIA_SCREAM, SoundSource.HOSTILE, 1.0F, pitch);
+        }
     }
 
     @Override
