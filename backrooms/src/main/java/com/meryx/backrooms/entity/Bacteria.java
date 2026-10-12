@@ -68,7 +68,7 @@ public class Bacteria extends Monster {
         level().playSound(null, getX(), getY(), getZ(), ModSounds.BACTERIA_SCREAM, SoundSource.HOSTILE, 4.0F, pitch);
         // Whoever it is after hears it right in their ears, at full volume, wherever it is
         if (getTarget() instanceof ServerPlayer player && distanceTo(player) < 32.0F) {
-            player.playNotifySound(ModSounds.BACTERIA_SCREAM, SoundSource.HOSTILE, 1.0F, pitch);
+            ModSounds.playInEars(player, ModSounds.BACTERIA_SCREAM, pitch);
         }
     }
 

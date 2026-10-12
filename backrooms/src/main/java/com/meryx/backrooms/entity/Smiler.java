@@ -157,7 +157,7 @@ public class Smiler extends Monster {
         target.hurtServer(level, damageSources().mobAttack(this), DAMAGE);
         target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 120));
         level.playSound(null, target.getX(), target.getY(), target.getZ(), ModSounds.SMILER_SCREAM, SoundSource.HOSTILE, 3.0F, 1.0F);
-        target.playNotifySound(ModSounds.SMILER_SCREAM, SoundSource.HOSTILE, 1.0F, 1.0F);
+        ModSounds.playInEars(target, ModSounds.SMILER_SCREAM, 1.0F);
         slipAway(level);
     }
 

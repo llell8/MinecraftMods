@@ -2,7 +2,10 @@ package com.meryx.backrooms;
 
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 
 public final class ModSounds {
     public static final SoundEvent HUM = register("ambient.hum");
@@ -24,6 +27,12 @@ public final class ModSounds {
     private static SoundEvent register(String name) {
         SoundEvent event = SoundEvent.createVariableRangeEvent(Backrooms.id(name));
         return Registry.register(BuiltInRegistries.SOUND_EVENT, Backrooms.id(name), event);
+    }
+
+    /** Plays a sound to one player only, at their own position, so it is at full volume wherever its source is. */
+    public static void playInEars(ServerPlayer player, SoundEvent event, float pitch) {
+        player.connection.send(new ClientboundSoundPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event), SoundSource.HOSTILE,
+                player.getX(), player.getEyeY(), player.getZ(), 1.0F, pitch, player.getRandom().nextLong()));
     }
 
     public static void init() {
