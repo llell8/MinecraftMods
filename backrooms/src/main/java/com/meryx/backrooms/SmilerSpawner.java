@@ -1,7 +1,9 @@
 package com.meryx.backrooms;
 
+import com.meryx.backrooms.entity.Bacteria;
 import com.meryx.backrooms.entity.ModEntities;
 import com.meryx.backrooms.entity.Smiler;
+import com.meryx.backrooms.world.Maze;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -13,13 +15,20 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntitySpawnReason;
 
-/** Puts Smilers in the dark places around each survival player who has wandered Level 0 for a while. */
+/**
+ * Puts Smilers in the dark places around each survival player who has wandered Level 0 for a while, and now and then
+ * lets a Bacteria loose somewhere out of sight.
+ */
 public final class SmilerSpawner {
     private static final int CHECK_INTERVAL = 40;
     /** Ticks in Level 0 before the first Smiler can show up. */
     private static final int GRACE_TICKS = 20 * 20;
     private static final double NEARBY = 48.0;
     private static final int MAX_NEARBY = 3;
+    /** Ticks in Level 0 before a Bacteria can show up, and the chance per check after that. */
+    private static final int BACTERIA_GRACE_TICKS = 20 * 60;
+    private static final int BACTERIA_ONE_IN = 20;
+    private static final double BACTERIA_RANGE = 64.0;
 
     private static final Map<UUID, Integer> ENTERED_AT = new HashMap<>();
 
@@ -45,6 +54,10 @@ public final class SmilerSpawner {
                 continue;
             }
             int entered = ENTERED_AT.computeIfAbsent(player.getUUID(), id -> now);
+            if (now - entered >= BACTERIA_GRACE_TICKS && random.nextInt(BACTERIA_ONE_IN) == 0
+                    && level.getEntitiesOfClass(Bacteria.class, player.getBoundingBox().inflate(BACTERIA_RANGE)).isEmpty()) {
+                spawnBacteria(level, player, random);
+            }
             if (now - entered < GRACE_TICKS || random.nextInt(4) != 0) {
                 continue;
             }
@@ -66,6 +79,34 @@ public final class SmilerSpawner {
                 }
                 level.addFreshEntity(smiler);
             }
+        }
+    }
+
+    /** Somewhere a few rooms away that the player cannot see. */
+    private static void spawnBacteria(ServerLevel level, ServerPlayer player, RandomSource random) {
+        int cellX = Math.floorDiv(player.getBlockX(), Maze.CELL);
+        int cellZ = Math.floorDiv(player.getBlockZ(), Maze.CELL);
+        for (int attempt = 0; attempt < 10; attempt++) {
+            int dx = random.nextInt(9) - 4;
+            int dz = random.nextInt(9) - 4;
+            if (Math.max(Math.abs(dx), Math.abs(dz)) < 3) {
+                continue;
+            }
+            BlockPos pos = new BlockPos((cellX + dx) * Maze.CELL + Maze.CELL / 2, Maze.STAND_Y, (cellZ + dz) * Maze.CELL + Maze.CELL / 2);
+            if (!level.isLoaded(pos) || !level.getBlockState(pos).isAir() || !level.getBlockState(pos.above(2)).isAir()) {
+                continue;
+            }
+            Bacteria bacteria = ModEntities.BACTERIA.create(level, EntitySpawnReason.EVENT);
+            if (bacteria == null) {
+                return;
+            }
+            bacteria.setPos(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
+            if (player.hasLineOfSight(bacteria)) {
+                bacteria.discard();
+                continue;
+            }
+            level.addFreshEntity(bacteria);
+            return;
         }
     }
 }

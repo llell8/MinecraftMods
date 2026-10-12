@@ -11,6 +11,10 @@ public final class ModSounds {
     public static final SoundEvent SMILER_AMBIENT = register("entity.smiler.ambient");
     public static final SoundEvent SMILER_SCREAM = register("entity.smiler.scream");
     public static final SoundEvent SMILER_BLINK = register("entity.smiler.blink");
+    public static final SoundEvent GLITCH = register("block.glitch.glitch");
+    public static final SoundEvent BACTERIA_AMBIENT = register("entity.bacteria.ambient");
+    public static final SoundEvent BACTERIA_HURT = register("entity.bacteria.hurt");
+    public static final SoundEvent BACTERIA_DEATH = register("entity.bacteria.death");
 
     private ModSounds() {
     }

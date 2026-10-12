@@ -14,8 +14,10 @@ public class BackroomsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         EntityModelLayerRegistry.registerModelLayer(SmilerModel.LAYER, SmilerModel::createBodyLayer);
+        EntityModelLayerRegistry.registerModelLayer(BacteriaModel.LAYER, BacteriaModel::createBodyLayer);
         EntityRendererRegistry.register(ModEntities.SMILER, context -> new SmilerRenderer(context, "smiler"));
         EntityRendererRegistry.register(ModEntities.VHS_SMILER, context -> new SmilerRenderer(context, "vhs_smiler"));
+        EntityRendererRegistry.register(ModEntities.BACTERIA, BacteriaRenderer::new);
         ClientTickEvents.END_CLIENT_TICK.register(this::tick);
     }
 

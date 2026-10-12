@@ -5,6 +5,7 @@ import com.meryx.backrooms.entity.ModEntities;
 import com.meryx.backrooms.world.Level0ChunkGenerator;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -31,8 +32,10 @@ public class Backrooms implements ModInitializer {
 
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(Noclip::onDamage);
         ServerTickEvents.END_SERVER_TICK.register(server -> {
+            Glitches.tick(server);
             Noclip.tick(server);
             SmilerSpawner.tick(server);
         });
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> Glitches.revertAll());
     }
 }

@@ -13,5 +13,12 @@
   "subtitles.backrooms.entity.smiler.blink": "Smiler vanishes",
   "item.backrooms.smiler_spawn_egg": "Smiler Spawn Egg",
   "entity.backrooms.vhs_smiler": "VHS Smiler",
-  "item.backrooms.vhs_smiler_spawn_egg": "VHS Smiler Spawn Egg"
+  "item.backrooms.vhs_smiler_spawn_egg": "VHS Smiler Spawn Egg",
+  "block.backrooms.glitch": "Glitched Block",
+  "entity.backrooms.bacteria": "Bacteria",
+  "item.backrooms.bacteria_spawn_egg": "Bacteria Spawn Egg",
+  "subtitles.backrooms.block.glitch.glitch": "Reality glitches",
+  "subtitles.backrooms.entity.bacteria.ambient": "Bacteria clicks",
+  "subtitles.backrooms.entity.bacteria.hurt": "Bacteria hurts",
+  "subtitles.backrooms.entity.bacteria.death": "Bacteria dies"
 }

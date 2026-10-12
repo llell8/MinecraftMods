@@ -94,5 +94,86 @@
       }
     ],
     "subtitle": "subtitles.backrooms.entity.smiler.blink"
+  },
+  "block.glitch.glitch": {
+    "sounds": [
+      {
+        "name": "backrooms:buzz1",
+        "pitch": 0.6
+      },
+      {
+        "name": "backrooms:buzz2",
+        "pitch": 0.5
+      },
+      {
+        "name": "minecraft:block/portal/trigger",
+        "volume": 0.4,
+        "pitch": 1.8
+      }
+    ],
+    "subtitle": "subtitles.backrooms.block.glitch.glitch"
+  },
+  "entity.bacteria.ambient": {
+    "sounds": [
+      {
+        "name": "minecraft:mob/silverfish/say1",
+        "pitch": 0.5
+      },
+      {
+        "name": "minecraft:mob/silverfish/say2",
+        "pitch": 0.5
+      },
+      {
+        "name": "minecraft:mob/silverfish/say3",
+        "pitch": 0.5
+      },
+      {
+        "name": "minecraft:mob/silverfish/say4",
+        "pitch": 0.5
+      },
+      {
+        "name": "minecraft:mob/spider/say1",
+        "pitch": 0.6
+      },
+      {
+        "name": "minecraft:mob/spider/say2",
+        "pitch": 0.6
+      },
+      {
+        "name": "minecraft:mob/spider/say3",
+        "pitch": 0.6
+      },
+      {
+        "name": "minecraft:mob/spider/say4",
+        "pitch": 0.6
+      }
+    ],
+    "subtitle": "subtitles.backrooms.entity.bacteria.ambient"
+  },
+  "entity.bacteria.hurt": {
+    "sounds": [
+      {
+        "name": "minecraft:mob/silverfish/hit1",
+        "pitch": 0.5
+      },
+      {
+        "name": "minecraft:mob/silverfish/hit2",
+        "pitch": 0.5
+      },
+      {
+        "name": "minecraft:mob/silverfish/hit3",
+        "pitch": 0.5
+      }
+    ],
+    "subtitle": "subtitles.backrooms.entity.bacteria.hurt"
+  },
+  "entity.bacteria.death": {
+    "sounds": [
+      {
+        "name": "minecraft:mob/spider/death",
+        "pitch": 0.5
+      }
+    ],
+    "subtitle": "subtitles.backrooms.entity.bacteria.death"
   }
 }

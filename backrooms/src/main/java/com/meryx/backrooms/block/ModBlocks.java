@@ -33,6 +33,13 @@ public final class ModBlocks {
     public static final Block EXIT_DOOR = register("exit_door", ExitDoorBlock::new,
             unbreakable().mapColor(MapColor.METAL).sound(SoundType.METAL).lightLevel(state -> 4));
 
+    /** A block that has come loose from reality: no collision, so you can step into it. See {@code Glitches}. */
+    public static final Block GLITCH = register("glitch", Block::new,
+            unbreakable().mapColor(MapColor.COLOR_BLACK).sound(SoundType.AMETHYST).noCollision().noOcclusion()
+                    .lightLevel(state -> 3)
+                    .isSuffocating((state, level, pos) -> false)
+                    .isViewBlocking((state, level, pos) -> false));
+
     private ModBlocks() {
     }
 

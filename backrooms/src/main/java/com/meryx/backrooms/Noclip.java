@@ -50,6 +50,11 @@ public final class Noclip {
         return true;
     }
 
+    /** Sends a player to Level 0 at the end of this tick. */
+    public static void queue(ServerPlayer player) {
+        PENDING.add(player.getUUID());
+    }
+
     public static void tick(MinecraftServer server) {
         if (PENDING.isEmpty()) {
             return;
