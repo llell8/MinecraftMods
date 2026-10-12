@@ -58,7 +58,7 @@ public class Smiler extends Monster {
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, 100.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.3)
+                .add(Attributes.MOVEMENT_SPEED, 0.42)
                 .add(Attributes.FOLLOW_RANGE, WATCH_RANGE)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
                 .add(Attributes.ATTACK_DAMAGE, DAMAGE);
@@ -88,8 +88,8 @@ public class Smiler extends Monster {
 
         if (huntTicks > 0 && prey != null && prey.isAlive() && prey.level() == level) {
             huntTicks--;
-            if (huntTicks % 10 == 0) {
-                getNavigation().moveTo(prey, 1.0);
+            if (huntTicks % 5 == 0) {
+                getNavigation().moveTo(prey, 1.4);
             }
             getLookControl().setLookAt(prey, 30.0F, 30.0F);
             if (attackCooldown == 0 && distanceTo(prey) < LUNGE_RANGE) {
@@ -156,7 +156,7 @@ public class Smiler extends Monster {
         prey = null;
         target.hurtServer(level, damageSources().mobAttack(this), DAMAGE);
         target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 120));
-        level.playSound(null, target.getX(), target.getY(), target.getZ(), ModSounds.SMILER_SCREAM, SoundSource.HOSTILE, 1.5F, 1.0F);
+        level.playSound(null, target.getX(), target.getY(), target.getZ(), ModSounds.SMILER_SCREAM, SoundSource.HOSTILE, 3.0F, 1.0F);
         slipAway(level);
     }
 

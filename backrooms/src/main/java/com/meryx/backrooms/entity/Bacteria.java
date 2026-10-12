@@ -57,7 +57,7 @@ public class Bacteria extends Monster {
     }
 
     private void scream() {
-        level().playSound(null, getX(), getY(), getZ(), ModSounds.BACTERIA_SCREAM, SoundSource.HOSTILE, 3.0F, 0.9F + random.nextFloat() * 0.2F);
+        level().playSound(null, getX(), getY(), getZ(), ModSounds.BACTERIA_SCREAM, SoundSource.HOSTILE, 4.0F, 0.9F + random.nextFloat() * 0.2F);
     }
 
     @Override

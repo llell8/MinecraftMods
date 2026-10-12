@@ -64,20 +64,16 @@
   "entity.smiler.scream": {
     "sounds": [
       {
-        "name": "minecraft:mob/endermen/scream1",
-        "pitch": 0.5
+        "name": "backrooms:scream1",
+        "pitch": 1.35
       },
       {
-        "name": "minecraft:mob/endermen/scream2",
-        "pitch": 0.5
+        "name": "backrooms:scream2",
+        "pitch": 1.35
       },
       {
-        "name": "minecraft:mob/endermen/scream3",
-        "pitch": 0.5
-      },
-      {
-        "name": "minecraft:mob/endermen/scream4",
-        "pitch": 0.5
+        "name": "backrooms:scream3",
+        "pitch": 1.35
       }
     ],
     "subtitle": "subtitles.backrooms.entity.smiler.scream"
@@ -179,37 +175,16 @@
   "entity.bacteria.scream": {
     "sounds": [
       {
-        "name": "minecraft:mob/ghast/scream1",
-        "pitch": 0.55,
+        "name": "backrooms:scream1",
         "volume": 1.0
       },
       {
-        "name": "minecraft:mob/ghast/scream2",
-        "pitch": 0.55,
+        "name": "backrooms:scream2",
         "volume": 1.0
       },
       {
-        "name": "minecraft:mob/ghast/scream3",
-        "pitch": 0.55,
+        "name": "backrooms:scream3",
         "volume": 1.0
-      },
-      {
-        "name": "minecraft:mob/ghast/scream4",
-        "pitch": 0.55,
-        "volume": 1.0
-      },
-      {
-        "name": "minecraft:mob/ghast/scream5",
-        "pitch": 0.55,
-        "volume": 1.0
-      },
-      {
-        "name": "minecraft:mob/endermen/scream1",
-        "pitch": 0.35
-      },
-      {
-        "name": "minecraft:mob/endermen/scream3",
-        "pitch": 0.35
       }
     ],
     "subtitle": "subtitles.backrooms.entity.bacteria.scream"
