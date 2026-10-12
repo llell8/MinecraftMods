@@ -14,4 +14,4 @@ Build with `gradle build`. The jar ends up in `build/libs/`.
 
 ## Credits
 
-The Bacteria's voices and screams were made with [Piper](https://github.com/rhasspy/piper) text-to-speech (MIT) using its LibriTTS voice, trained on [LibriTTS](http://www.openslr.org/60/) (CC BY 4.0), then processed with ffmpeg. The other sounds are synthesized or reuse vanilla Minecraft sounds.
+The Bacteria's voices were made with [Piper](https://github.com/rhasspy/piper) text-to-speech (MIT) using its LibriTTS voice, trained on [LibriTTS](http://www.openslr.org/60/) (CC BY 4.0). The screams are synthesized from a model of the human voice. Everything was processed with ffmpeg; the other sounds are synthesized or reuse vanilla Minecraft sounds.
