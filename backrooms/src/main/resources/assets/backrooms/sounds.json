@@ -65,15 +65,15 @@
     "sounds": [
       {
         "name": "backrooms:scream1",
-        "pitch": 1.35
+        "pitch": 1.2
       },
       {
         "name": "backrooms:scream2",
-        "pitch": 1.35
+        "pitch": 1.2
       },
       {
         "name": "backrooms:scream3",
-        "pitch": 1.35
+        "pitch": 1.2
       }
     ],
     "subtitle": "subtitles.backrooms.entity.smiler.scream"
@@ -188,5 +188,34 @@
       }
     ],
     "subtitle": "subtitles.backrooms.entity.bacteria.scream"
+  },
+  "entity.bacteria.mimic": {
+    "sounds": [
+      {
+        "name": "backrooms:mimic_hello"
+      },
+      {
+        "name": "backrooms:mimic_anyone"
+      },
+      {
+        "name": "backrooms:mimic_help"
+      },
+      {
+        "name": "backrooms:mimic_come"
+      },
+      {
+        "name": "backrooms:mimic_see"
+      },
+      {
+        "name": "backrooms:mimic_where"
+      },
+      {
+        "name": "backrooms:mimic_leave"
+      },
+      {
+        "name": "backrooms:mimic_closer"
+      }
+    ],
+    "subtitle": "subtitles.backrooms.entity.bacteria.mimic"
   }
 }

@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Three blocks of black wire with a blob for a head and arms that reach the floor. It wanders Level 0, shaking, and
- * runs you down once it has seen you, screaming. Unlike a Smiler it can be killed, but it takes a lot of hitting.
+ * calls out in voices it has stolen ("Hello?", "Help me..."), and runs you down once it has seen you, screaming. Unlike a Smiler it can be killed, but it takes a lot of hitting.
  */
 public class Bacteria extends Monster {
     public Bacteria(EntityType<? extends Bacteria> type, Level level) {
@@ -50,9 +50,15 @@ public class Bacteria extends Monster {
     @Override
     public void aiStep() {
         super.aiStep();
-        // And now and then while it hunts, or just wanders
-        if (level() instanceof ServerLevel && isAlive() && random.nextInt(getTarget() != null ? 200 : 900) == 0) {
-            scream();
+        if (level() instanceof ServerLevel && isAlive()) {
+            // And now and then while it hunts, or just wanders
+            if (random.nextInt(getTarget() != null ? 200 : 900) == 0) {
+                scream();
+            }
+            // In between, it calls out in someone else's voice, trying to draw you closer
+            if (random.nextInt(getTarget() != null ? 300 : 400) == 0) {
+                level().playSound(null, getX(), getEyeY(), getZ(), ModSounds.BACTERIA_MIMIC, SoundSource.HOSTILE, 2.5F, 0.95F + random.nextFloat() * 0.1F);
+            }
         }
     }
 
