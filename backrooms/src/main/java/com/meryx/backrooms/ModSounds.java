@@ -15,6 +15,7 @@ public final class ModSounds {
     public static final SoundEvent BACTERIA_AMBIENT = register("entity.bacteria.ambient");
     public static final SoundEvent BACTERIA_HURT = register("entity.bacteria.hurt");
     public static final SoundEvent BACTERIA_DEATH = register("entity.bacteria.death");
+    public static final SoundEvent BACTERIA_SCREAM = register("entity.bacteria.scream");
 
     private ModSounds() {
     }

@@ -1,9 +1,12 @@
 package com.meryx.backrooms.entity;
 
 import com.meryx.backrooms.ModSounds;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
@@ -15,10 +18,11 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Three blocks of black wire with a blob for a head and arms that reach the floor. It wanders Level 0, shaking, and
- * runs you down once it has seen you. Unlike a Smiler it can be killed, but it takes a lot of hitting.
+ * runs you down once it has seen you, screaming. Unlike a Smiler it can be killed, but it takes a lot of hitting.
  */
 public class Bacteria extends Monster {
     public Bacteria(EntityType<? extends Bacteria> type, Level level) {
@@ -32,6 +36,28 @@ public class Bacteria extends Monster {
                 .add(Attributes.ATTACK_DAMAGE, 9.0)
                 .add(Attributes.FOLLOW_RANGE, 48.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.6);
+    }
+
+    @Override
+    public void setTarget(@Nullable LivingEntity target) {
+        // It screams the moment it spots you
+        if (target != null && getTarget() == null) {
+            scream();
+        }
+        super.setTarget(target);
+    }
+
+    @Override
+    public void aiStep() {
+        super.aiStep();
+        // And now and then while it hunts, or just wanders
+        if (level() instanceof ServerLevel && isAlive() && random.nextInt(getTarget() != null ? 200 : 900) == 0) {
+            scream();
+        }
+    }
+
+    private void scream() {
+        level().playSound(null, getX(), getY(), getZ(), ModSounds.BACTERIA_SCREAM, SoundSource.HOSTILE, 3.0F, 0.9F + random.nextFloat() * 0.2F);
     }
 
     @Override

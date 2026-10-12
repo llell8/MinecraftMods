@@ -22,22 +22,18 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 /**
- * Reality wearing thin. At any moment a block near a player can start glitching: a see-through, flickering overlay of
- * static and torn wallpaper appears over it, then fades a little later. The overlay is a vanilla block display showing
- * the animated {@code backrooms:glitch} block, a hair bigger than the block it covers.
- * <p>
- * Sometimes two blocks one above the other glitch together. Those tear open: the blocks vanish, leaving a 1x2 doorway
- * of static. Step into it and you noclip into Level 0. The blocks come back when the glitch ends.
+ * Reality wearing thin. Once in a while, two blocks one above the other near a player start glitching: a see-through,
+ * flickering overlay of static and torn wallpaper appears over them and they tear open, leaving a 1x2 doorway of
+ * static. Step into it and you noclip into Level 0. The blocks come back when the glitch ends. The overlay is a vanilla
+ * block display showing the animated {@code backrooms:glitch} block, a hair bigger than the block it covers.
  */
 public final class Glitches {
     /** Every display this mod spawns carries this tag, so leftovers from a crash can be cleaned up. */
     public static final String TAG = "backrooms_glitch";
 
-    /** How often each player gets a chance of a glitch nearby, and the chance. */
-    private static final int ROLL_INTERVAL = 100;
-    private static final int ROLL_ONE_IN = 5;
-    /** Chance that a glitch is a 1x2 tear, a way in. */
-    private static final float PAIR_CHANCE = 0.3F;
+    /** How often each player gets a chance of a glitch nearby, and the chance: about one every five minutes. */
+    private static final int ROLL_INTERVAL = 20 * 30;
+    private static final int ROLL_ONE_IN = 10;
     private static final int RADIUS = 12;
 
     private record Glitch(ServerLevel level, BlockPos pos, BlockState original, boolean torn, String tag, int endAt) {
@@ -123,21 +119,15 @@ public final class Glitches {
         BlockPos center = player.blockPosition();
         for (int attempt = 0; attempt < 40; attempt++) {
             BlockPos pos = center.offset(random.nextInt(RADIUS * 2 + 1) - RADIUS, random.nextInt(9) - 3, random.nextInt(RADIUS * 2 + 1) - RADIUS);
-            if (!canGlitch(level, pos) || !exposed(level, pos)) {
+            // Always two tall, so every glitch is a way in
+            BlockPos above = pos.above();
+            if (!canGlitch(level, pos) || !canGlitch(level, above) || !(exposed(level, pos) && exposed(level, above))) {
                 continue;
             }
-            if (random.nextFloat() < PAIR_CHANCE) {
-                BlockPos other = canGlitch(level, pos.above()) ? pos.above() : pos.below();
-                if (canGlitch(level, other)) {
-                    int endAt = now + 20 * (40 + random.nextInt(40));
-                    start(level, pos, true, endAt);
-                    start(level, other, true, endAt);
-                    level.playSound(null, pos, ModSounds.GLITCH, SoundSource.BLOCKS, 1.4F, 0.6F);
-                    return;
-                }
-            }
-            start(level, pos, false, now + 20 * (8 + random.nextInt(22)));
-            level.playSound(null, pos, ModSounds.GLITCH, SoundSource.BLOCKS, 0.8F, 0.8F + random.nextFloat() * 0.4F);
+            int endAt = now + 20 * (40 + random.nextInt(40));
+            start(level, pos, true, endAt);
+            start(level, above, true, endAt);
+            level.playSound(null, pos, ModSounds.GLITCH, SoundSource.BLOCKS, 1.4F, 0.6F);
             return;
         }
     }

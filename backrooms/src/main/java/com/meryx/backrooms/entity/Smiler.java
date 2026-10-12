@@ -1,6 +1,8 @@
 package com.meryx.backrooms.entity;
 
 import com.meryx.backrooms.ModSounds;
+import com.meryx.backrooms.block.FluorescentLightBlock;
+import com.meryx.backrooms.block.ModBlocks;
 import com.meryx.backrooms.world.Maze;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -23,8 +25,11 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A face in the dark. It never chases: it waits where the lights are dead, watching whoever is nearest. Get too close
- * and it lunges. If light reaches it, or something hits it, it slips away to another dark spot.
+ * A face in the dark. It waits where the lights are dead, watching whoever is nearest. Get too close and it lunges. If
+ * light reaches it, or something hits it, it slips away to another dark spot.
+ * <p>
+ * The first time someone spots it, there is a chance every light around them dies at once. While the blackout lasts it
+ * comes for them through the dark, and if it reaches them before the lights come back on, it bites.
  */
 public class Smiler extends Monster {
     private static final double WATCH_RANGE = 48.0;
@@ -34,8 +39,17 @@ public class Smiler extends Monster {
     public static final int DARK = 4;
     /** Block light at or above this drives it out. */
     private static final int TOO_BRIGHT = 8;
+    /** Chance that being spotted puts the lights out, how far around the player, and for how long. */
+    private static final float BLACKOUT_CHANCE = 0.4F;
+    private static final int BLACKOUT_RADIUS = 12;
+    private static final int BLACKOUT_TICKS = 20 * 12;
+    private static final double SPOT_RANGE = 32.0;
 
     private int attackCooldown;
+    private boolean spotted;
+    private int huntTicks;
+    @Nullable
+    private ServerPlayer prey;
 
     public Smiler(EntityType<? extends Smiler> type, Level level) {
         super(type, level);
@@ -44,7 +58,7 @@ public class Smiler extends Monster {
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, 100.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.0)
+                .add(Attributes.MOVEMENT_SPEED, 0.3)
                 .add(Attributes.FOLLOW_RANGE, WATCH_RANGE)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
                 .add(Attributes.ATTACK_DAMAGE, DAMAGE);
@@ -59,11 +73,37 @@ public class Smiler extends Monster {
     }
 
     private void serverTick(ServerLevel level) {
-        Vec3 motion = getDeltaMovement();
-        setDeltaMovement(0.0, Math.min(motion.y, 0.0), 0.0);
         if (attackCooldown > 0) {
             attackCooldown--;
         }
+        if (!spotted) {
+            ServerPlayer spotter = spottedBy(level);
+            if (spotter != null) {
+                spotted = true;
+                if (random.nextFloat() < BLACKOUT_CHANCE) {
+                    blackout(level, spotter);
+                }
+            }
+        }
+
+        if (huntTicks > 0 && prey != null && prey.isAlive() && prey.level() == level) {
+            huntTicks--;
+            if (huntTicks % 10 == 0) {
+                getNavigation().moveTo(prey, 1.0);
+            }
+            getLookControl().setLookAt(prey, 30.0F, 30.0F);
+            if (attackCooldown == 0 && distanceTo(prey) < LUNGE_RANGE) {
+                lunge(level, prey);
+            }
+            return;
+        }
+        if (huntTicks > 0 || prey != null) {
+            huntTicks = 0;
+            prey = null;
+            getNavigation().stop();
+        }
+        Vec3 motion = getDeltaMovement();
+        setDeltaMovement(0.0, Math.min(motion.y, 0.0), 0.0);
 
         if (tickCount % 10 == 0 && level.getBrightness(LightLayer.BLOCK, BlockPos.containing(getEyePosition())) >= TOO_BRIGHT) {
             slipAway(level);
@@ -80,8 +120,40 @@ public class Smiler extends Monster {
         }
     }
 
+    /** A survival player looking right at it from close enough, if any. */
+    @Nullable
+    private ServerPlayer spottedBy(ServerLevel level) {
+        for (ServerPlayer player : level.players()) {
+            if (player.isSpectator() || player.isCreative() || !player.isAlive() || player.distanceTo(this) > SPOT_RANGE) {
+                continue;
+            }
+            Vec3 toSmiler = getEyePosition().subtract(player.getEyePosition()).normalize();
+            if (player.getViewVector(1.0F).normalize().dot(toSmiler) > 0.8 && player.hasLineOfSight(this)) {
+                return player;
+            }
+        }
+        return null;
+    }
+
+    /** Every working light around the player goes out, coming back on one by one when the blackout ends. */
+    private void blackout(ServerLevel level, ServerPlayer player) {
+        BlockPos center = player.blockPosition();
+        for (BlockPos pos : BlockPos.betweenClosed(center.offset(-BLACKOUT_RADIUS, -2, -BLACKOUT_RADIUS),
+                center.offset(BLACKOUT_RADIUS, 8, BLACKOUT_RADIUS))) {
+            BlockState state = level.getBlockState(pos);
+            if (state.is(ModBlocks.FLUORESCENT_LIGHT) && state.getValue(FluorescentLightBlock.LIT)) {
+                FluorescentLightBlock.flicker(level, pos.immutable(), state, BLACKOUT_TICKS + random.nextInt(60));
+            }
+        }
+        level.playSound(null, getX(), getY(), getZ(), ModSounds.SMILER_AMBIENT, SoundSource.HOSTILE, 2.0F, 0.5F);
+        prey = player;
+        huntTicks = BLACKOUT_TICKS;
+    }
+
     private void lunge(ServerLevel level, ServerPlayer target) {
         attackCooldown = 40;
+        huntTicks = 0;
+        prey = null;
         target.hurtServer(level, damageSources().mobAttack(this), DAMAGE);
         target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 120));
         level.playSound(null, target.getX(), target.getY(), target.getZ(), ModSounds.SMILER_SCREAM, SoundSource.HOSTILE, 1.5F, 1.0F);
