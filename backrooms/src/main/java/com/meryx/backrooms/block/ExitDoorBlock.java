@@ -1,5 +1,6 @@
 package com.meryx.backrooms.block;
 
+import com.meryx.backrooms.Backrooms;
 import com.meryx.backrooms.Noclip;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,7 +19,10 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
-/** A rare two-block-tall door in the walls of Level 0. Using it takes you back where you came from. */
+/**
+ * A rare two-block-tall door in the walls of the Backrooms. In Level 0 it leads deeper in, to Level 1 or Level 2; in
+ * those it leads back out to where you came from.
+ */
 public class ExitDoorBlock extends Block {
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
 
@@ -42,7 +46,11 @@ public class ExitDoorBlock extends Block {
     @Override
     public InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (player instanceof ServerPlayer serverPlayer) {
-            Noclip.leave(serverPlayer);
+            if (level.dimension().equals(Backrooms.LEVEL_0)) {
+                Noclip.deeper(serverPlayer);
+            } else {
+                Noclip.leave(serverPlayer);
+            }
         }
         return InteractionResult.SUCCESS;
     }

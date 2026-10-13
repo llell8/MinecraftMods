@@ -12,7 +12,9 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
  * a ceiling light in the middle of each cell, and zones that are open pillar halls, cramped corridors or dark.
  * Everything is a pure function of the world seed and the block position, so chunks line up wherever they generate.
  */
-public final class Maze {
+public final class Maze implements Layout {
+    public static final Maze INSTANCE = new Maze();
+
     public static final int CELL = 8;
     public static final int BOTTOM_Y = 0;
     public static final int FLOOR_Y = 1;
@@ -28,8 +30,23 @@ public final class Maze {
     private Maze() {
     }
 
+    @Override
+    public BlockState blockAt(long seed, int x, int y, int z) {
+        return at(seed, x, y, z);
+    }
+
+    @Override
+    public int bottomY() {
+        return BOTTOM_Y;
+    }
+
+    @Override
+    public int topY() {
+        return TOP_Y;
+    }
+
     /** The block at a position, or null for air. */
-    public static BlockState blockAt(long seed, int x, int y, int z) {
+    public static BlockState at(long seed, int x, int y, int z) {
         if (y == BOTTOM_Y || y == TOP_Y) {
             return Blocks.BEDROCK.defaultBlockState();
         }
@@ -133,12 +150,7 @@ public final class Maze {
         return Zone.OFFICE;
     }
 
-    /** A random number in [0, 1) for a cell and a salt. */
     private static double random(long seed, int cx, int cz, int salt) {
-        long h = seed ^ (cx * 0x9E3779B97F4A7C15L) ^ (cz * 0xC2B2AE3D27D4EB4FL) ^ (salt * 0x165667B19E3779F9L);
-        h = (h ^ (h >>> 30)) * 0xBF58476D1CE4E5B9L;
-        h = (h ^ (h >>> 27)) * 0x94D049BB133111EBL;
-        h ^= h >>> 31;
-        return (h >>> 11) * 0x1.0p-53;
+        return Layout.random(seed, cx, cz, salt);
     }
 }

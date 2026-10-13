@@ -13,11 +13,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.level.Level;
 
 /**
- * Puts Smilers in the dark places around each survival player who has wandered Level 0 for a while, and now and then
- * lets a Bacteria loose somewhere out of sight.
+ * Puts Smilers in the dark places around each survival player who has wandered the Backrooms for a while, now and then
+ * lets a Bacteria loose somewhere out of sight, and every so often screams in their ears when nothing is there at all.
  */
 public final class SmilerSpawner {
     private static final int CHECK_INTERVAL = 40;
@@ -29,6 +31,8 @@ public final class SmilerSpawner {
     private static final int BACTERIA_GRACE_TICKS = 20 * 60;
     private static final int BACTERIA_ONE_IN = 20;
     private static final double BACTERIA_RANGE = 64.0;
+    /** A Bacteria's scream with no Bacteria: about once every three minutes, per check after the grace period. */
+    private static final int PHANTOM_ONE_IN = 90;
 
     private static final Map<UUID, Integer> ENTERED_AT = new HashMap<>();
 
@@ -44,18 +48,28 @@ public final class SmilerSpawner {
         if (now % CHECK_INTERVAL != 0) {
             return;
         }
-        ServerLevel level = server.getLevel(Backrooms.LEVEL_0);
-        if (level == null || level.getDifficulty() == Difficulty.PEACEFUL) {
-            return;
+        for (ResourceKey<Level> key : Backrooms.LEVELS) {
+            ServerLevel level = server.getLevel(key);
+            if (level != null && level.getDifficulty() != Difficulty.PEACEFUL) {
+                tick(level, now);
+            }
         }
+    }
+
+    private static void tick(ServerLevel level, int now) {
         RandomSource random = level.getRandom();
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator() || player.isCreative()) {
                 continue;
             }
             int entered = ENTERED_AT.computeIfAbsent(player.getUUID(), id -> now);
+            boolean bacteriaNearby = !level.getEntitiesOfClass(Bacteria.class, player.getBoundingBox().inflate(BACTERIA_RANGE)).isEmpty();
+            if (now - entered >= GRACE_TICKS && !bacteriaNearby && random.nextInt(PHANTOM_ONE_IN) == 0) {
+                // Nothing there. It screams anyway, right in your ears.
+                ModSounds.playInEars(player, ModSounds.BACTERIA_SCREAM, 0.85F + random.nextFloat() * 0.3F);
+            }
             if (now - entered >= BACTERIA_GRACE_TICKS && random.nextInt(BACTERIA_ONE_IN) == 0
-                    && level.getEntitiesOfClass(Bacteria.class, player.getBoundingBox().inflate(BACTERIA_RANGE)).isEmpty()) {
+                    && !bacteriaNearby) {
                 spawnBacteria(level, player, random);
             }
             if (now - entered < GRACE_TICKS || random.nextInt(4) != 0) {

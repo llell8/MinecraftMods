@@ -22,5 +22,12 @@
   "subtitles.backrooms.entity.bacteria.hurt": "Bacteria hurts",
   "subtitles.backrooms.entity.bacteria.death": "Bacteria dies",
   "subtitles.backrooms.entity.bacteria.scream": "Bacteria screams",
-  "subtitles.backrooms.entity.bacteria.mimic": "Someone calls out"
+  "subtitles.backrooms.entity.bacteria.mimic": "Someone calls out",
+  "block.backrooms.concrete": "Concrete",
+  "block.backrooms.damp_concrete": "Damp Concrete",
+  "block.backrooms.crate": "Crate",
+  "block.backrooms.pipe_wall": "Pipe Wall",
+  "block.backrooms.pipe_ceiling": "Pipe Ceiling",
+  "block.backrooms.grate_floor": "Metal Grate",
+  "block.backrooms.warning_light": "Warning Light"
 }

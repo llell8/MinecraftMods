@@ -23,24 +23,39 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.blending.Blender;
 
-/** Generates the endless rooms of Level 0 from {@link Maze}. No terrain, caves, decorations or mobs. */
-public class Level0ChunkGenerator extends ChunkGenerator {
-    public static final MapCodec<Level0ChunkGenerator> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            BiomeSource.CODEC.fieldOf("biome_source").forGetter(ChunkGenerator::getBiomeSource)
-    ).apply(instance, Level0ChunkGenerator::new));
+/**
+ * Generates one level of the Backrooms from its {@link Layout}: Level 0's {@link Maze}, Level 1's {@link Level1}, or
+ * Level 2's {@link Level2}. No terrain, caves, decorations or mobs. Each level has its own generator type,
+ * {@code backrooms:level_0} and so on.
+ */
+public class BackroomsChunkGenerator extends ChunkGenerator {
+    private static final Layout[] LAYOUTS = {Maze.INSTANCE, Level1.INSTANCE, Level2.INSTANCE};
+    public static final List<MapCodec<BackroomsChunkGenerator>> CODECS = List.of(codecFor(0), codecFor(1), codecFor(2));
 
-    public Level0ChunkGenerator(BiomeSource biomeSource) {
+    private final int level;
+    private final Layout layout;
+
+    public BackroomsChunkGenerator(BiomeSource biomeSource, int level) {
         super(biomeSource);
+        this.level = level;
+        this.layout = LAYOUTS[level];
+    }
+
+    private static MapCodec<BackroomsChunkGenerator> codecFor(int level) {
+        return RecordCodecBuilder.mapCodec(instance -> instance.group(
+                BiomeSource.CODEC.fieldOf("biome_source").forGetter(ChunkGenerator::getBiomeSource)
+        ).apply(instance, biomeSource -> new BackroomsChunkGenerator(biomeSource, level)));
     }
 
     /** The maze layout is seeded by the world seed. */
     private static long seed(RandomState randomState) {
+        // Level 0's seed is kept as it was, so existing worlds keep their maze
         return randomState.getOrCreateRandomFactory(Backrooms.id("level_0")).at(0, 0, 0).nextLong();
     }
 
     @Override
     protected MapCodec<? extends ChunkGenerator> codec() {
-        return CODEC;
+        return CODECS.get(level);
     }
 
     @Override
@@ -50,11 +65,11 @@ public class Level0ChunkGenerator extends ChunkGenerator {
         int minZ = chunk.getPos().getMinBlockZ();
         Heightmap oceanFloor = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.OCEAN_FLOOR_WG);
         Heightmap worldSurface = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.WORLD_SURFACE_WG);
-        for (int y = Maze.BOTTOM_Y; y <= Maze.TOP_Y; y++) {
+        for (int y = layout.bottomY(); y <= layout.topY(); y++) {
             LevelChunkSection section = chunk.getSection(chunk.getSectionIndex(y));
             for (int x = 0; x < 16; x++) {
                 for (int z = 0; z < 16; z++) {
-                    BlockState state = Maze.blockAt(seed, minX + x, y, minZ + z);
+                    BlockState state = layout.blockAt(seed, minX + x, y, minZ + z);
                     if (state != null) {
                         section.setBlockState(x, y & 15, z, state, false);
                         oceanFloor.update(x, y, z, state);
@@ -99,7 +114,7 @@ public class Level0ChunkGenerator extends ChunkGenerator {
 
     @Override
     public int getBaseHeight(int x, int z, Heightmap.Types type, LevelHeightAccessor level, RandomState randomState) {
-        return Maze.TOP_Y + 1;
+        return layout.topY() + 1;
     }
 
     @Override
@@ -107,8 +122,8 @@ public class Level0ChunkGenerator extends ChunkGenerator {
         long seed = seed(randomState);
         BlockState[] states = new BlockState[level.getHeight()];
         Arrays.fill(states, Blocks.AIR.defaultBlockState());
-        for (int y = Maze.BOTTOM_Y; y <= Maze.TOP_Y; y++) {
-            BlockState state = Maze.blockAt(seed, x, y, z);
+        for (int y = layout.bottomY(); y <= layout.topY(); y++) {
+            BlockState state = layout.blockAt(seed, x, y, z);
             if (state != null) {
                 states[y - level.getMinY()] = state;
             }

@@ -7,7 +7,7 @@ import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundSource;
 
-/** The endless buzz of the fluorescent lights, heard everywhere in Level 0. */
+/** The endless buzz of the lights, heard everywhere in the Backrooms. */
 public class HumSound extends AbstractTickableSoundInstance {
     public HumSound() {
         super(ModSounds.HUM, SoundSource.AMBIENT, SoundInstance.createUnseededRandom());
@@ -21,7 +21,7 @@ public class HumSound extends AbstractTickableSoundInstance {
     @Override
     public void tick() {
         Minecraft client = Minecraft.getInstance();
-        if (client.level == null || !client.level.dimension().equals(Backrooms.LEVEL_0)) {
+        if (client.level == null || !Backrooms.isBackrooms(client.level.dimension())) {
             stop();
         }
     }

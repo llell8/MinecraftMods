@@ -91,6 +91,32 @@ public final class Noclip {
         SmilerSpawner.entered(player);
     }
 
+    /**
+     * Through an exit door in Level 0, deeper in: Level 1 or Level 2 at random. The way back to the overworld is
+     * remembered from where the player first fell in.
+     */
+    public static void deeper(ServerPlayer player) {
+        boolean one = player.getRandom().nextBoolean();
+        ServerLevel next = ((ServerLevel) player.level()).getServer().getLevel(one ? Backrooms.LEVEL_1 : Backrooms.LEVEL_2);
+        if (next == null) {
+            leave(player);
+            return;
+        }
+        // The middle of every cell is open floor on every level
+        int x = Math.floorDiv(player.getBlockX(), Maze.CELL) * Maze.CELL + Maze.CELL / 2;
+        int z = Math.floorDiv(player.getBlockZ(), Maze.CELL) * Maze.CELL + Maze.CELL / 2;
+        player.teleport(new TeleportTransition(next, new Vec3(x + 0.5, Maze.STAND_Y, z + 0.5), Vec3.ZERO,
+                player.getYRot(), 0.0F, TeleportTransition.DO_NOTHING));
+        player.resetFallDistance();
+        player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 80));
+        next.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.NOCLIP, SoundSource.PLAYERS, 1.0F, 0.4F);
+        player.connection.send(new ClientboundSetTitleTextPacket(Component.literal(one ? "Level 1" : "Level 2")
+                .withStyle(one ? ChatFormatting.GRAY : ChatFormatting.DARK_RED)));
+        player.connection.send(new ClientboundSetSubtitleTextPacket(Component.literal(one ? "Habitable Zone" : "Pipe Dreams")
+                .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)));
+        SmilerSpawner.entered(player);
+    }
+
     public static void leave(ServerPlayer player) {
         ServerLevel overworld = ((ServerLevel) player.level()).getServer().getLevel(Level.OVERWORLD);
         if (overworld == null) {

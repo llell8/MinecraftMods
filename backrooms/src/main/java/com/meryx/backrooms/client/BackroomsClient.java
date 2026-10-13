@@ -26,9 +26,9 @@ public class BackroomsClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(this::tick);
     }
 
-    /** Keeps the fluorescent hum playing while the player is in Level 0. */
+    /** Keeps the fluorescent hum playing while the player is in the Backrooms. */
     private void tick(Minecraft client) {
-        if (client.level == null || client.player == null || !client.level.dimension().equals(Backrooms.LEVEL_0)) {
+        if (client.level == null || client.player == null || !Backrooms.isBackrooms(client.level.dimension())) {
             return;
         }
         if (hum == null || hum.isStopped() || !client.getSoundManager().isActive(hum)) {

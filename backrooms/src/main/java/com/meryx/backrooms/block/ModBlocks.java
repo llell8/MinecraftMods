@@ -33,6 +33,24 @@ public final class ModBlocks {
     public static final Block EXIT_DOOR = register("exit_door", ExitDoorBlock::new,
             unbreakable().mapColor(MapColor.METAL).sound(SoundType.METAL).lightLevel(state -> 4));
 
+    // Level 1, the Habitable Zone
+    public static final Block CONCRETE = register("concrete", Block::new,
+            unbreakable().mapColor(MapColor.STONE).sound(SoundType.STONE));
+    public static final Block DAMP_CONCRETE = register("damp_concrete", Block::new,
+            unbreakable().mapColor(MapColor.STONE).sound(SoundType.STONE));
+    public static final Block CRATE = register("crate", Block::new,
+            unbreakable().mapColor(MapColor.WOOD).sound(SoundType.WOOD));
+
+    // Level 2, Pipe Dreams
+    public static final Block PIPE_WALL = register("pipe_wall", Block::new,
+            unbreakable().mapColor(MapColor.COLOR_GRAY).sound(SoundType.METAL));
+    public static final Block PIPE_CEILING = register("pipe_ceiling", Block::new,
+            unbreakable().mapColor(MapColor.COLOR_GRAY).sound(SoundType.METAL));
+    public static final Block GRATE_FLOOR = register("grate_floor", Block::new,
+            unbreakable().mapColor(MapColor.METAL).sound(SoundType.METAL));
+    public static final Block WARNING_LIGHT = register("warning_light", Block::new,
+            unbreakable().mapColor(MapColor.COLOR_RED).sound(SoundType.GLASS).lightLevel(state -> 9));
+
     /**
      * The animated, see-through static that {@code Glitches} lays over blocks. As a block it has no collision: stack two
      * and step in to test the way into Level 0.
