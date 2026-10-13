@@ -123,19 +123,19 @@ public final class Field implements Layout {
             return ModBlocks.EXIT_DOOR.defaultBlockState()
                     .setValue(ExitDoorBlock.HALF, y == FLOOR2 + 1 ? DoubleBlockHalf.LOWER : DoubleBlockHalf.UPPER);
         }
-        // Windows: two to a side on each floor, framed by dark shutters
+        // Windows: two wide windows on the front and back of each floor with dark shutters, one on each side
         boolean frontOrBack = Math.abs(depth) == HALF_D;
         int along = frontOrBack ? dx : Math.abs(depth);
         int sill = y > FLOOR2 ? FLOOR2 + 2 : FLOOR1 + 2;
         boolean windowRow = y == sill || y == sill + 1;
-        int[] windows = frontOrBack ? new int[] {3, 5} : new int[] {2};
-        for (int w : windows) {
-            if (windowRow && along == w && !(z == BACK_Z && y > FLOOR2 && x == 0)) {
+        if (windowRow && !(z == BACK_Z && y > FLOOR2 && x == 0)) {
+            boolean glass = frontOrBack ? along == 2 || along == 3 || along == 5 || along == 6 : along == 2;
+            if (glass) {
                 return frontOrBack
                         ? Blocks.GLASS_PANE.defaultBlockState().setValue(IronBarsBlock.EAST, true).setValue(IronBarsBlock.WEST, true)
                         : Blocks.GLASS_PANE.defaultBlockState().setValue(IronBarsBlock.NORTH, true).setValue(IronBarsBlock.SOUTH, true);
             }
-            if (windowRow && (along == w - 1 || along == w + 1) && frontOrBack) {
+            if (frontOrBack && (along == 1 || along == 4)) {
                 return Blocks.GRAY_CONCRETE.defaultBlockState();
             }
         }
