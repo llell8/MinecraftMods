@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.NoiseColumn;
@@ -39,6 +41,12 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
         super(biomeSource);
         this.level = level;
         this.layout = LAYOUTS[level];
+    }
+
+    /** The layout of a level of the Backrooms; Level 0's for any other dimension. */
+    public static Layout layout(ResourceKey<Level> dimension) {
+        int index = Backrooms.LEVELS.indexOf(dimension);
+        return LAYOUTS[Math.max(index, 0)];
     }
 
     private static MapCodec<BackroomsChunkGenerator> codecFor(int level) {

@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "backrooms:block/pipe_ceiling"
+    "model": "backrooms:block/small_pipe"
   }
 }

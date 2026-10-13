@@ -45,6 +45,11 @@ public final class Maze implements Layout {
         return TOP_Y;
     }
 
+    @Override
+    public int cell() {
+        return CELL;
+    }
+
     /** The block at a position, or null for air. */
     public static BlockState at(long seed, int x, int y, int z) {
         if (y == BOTTOM_Y || y == TOP_Y) {

@@ -3,6 +3,7 @@ package com.meryx.backrooms.entity;
 import com.meryx.backrooms.ModSounds;
 import com.meryx.backrooms.block.FluorescentLightBlock;
 import com.meryx.backrooms.block.ModBlocks;
+import com.meryx.backrooms.world.BackroomsChunkGenerator;
 import com.meryx.backrooms.world.Maze;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -191,20 +192,21 @@ public class Smiler extends Monster {
     }
 
     /**
-     * A dark cell centre in Level 0 between {@code minCells} and {@code maxCells} cells from {@code around}, where a
+     * A dark cell centre in the same level, between {@code minCells} and {@code maxCells} cells from {@code around}, where a
      * Smiler can stand, or null if a few tries find none.
      */
     @Nullable
     public static BlockPos findDarkSpot(ServerLevel level, BlockPos around, int minCells, int maxCells, RandomSource random) {
-        int cellX = Math.floorDiv(around.getX(), Maze.CELL);
-        int cellZ = Math.floorDiv(around.getZ(), Maze.CELL);
+        int cell = BackroomsChunkGenerator.layout(level.dimension()).cell();
+        int cellX = Math.floorDiv(around.getX(), cell);
+        int cellZ = Math.floorDiv(around.getZ(), cell);
         for (int attempt = 0; attempt < 24; attempt++) {
             int dx = random.nextInt(maxCells * 2 + 1) - maxCells;
             int dz = random.nextInt(maxCells * 2 + 1) - maxCells;
             if (Math.max(Math.abs(dx), Math.abs(dz)) < minCells) {
                 continue;
             }
-            BlockPos pos = new BlockPos((cellX + dx) * Maze.CELL + Maze.CELL / 2, Maze.STAND_Y, (cellZ + dz) * Maze.CELL + Maze.CELL / 2);
+            BlockPos pos = new BlockPos((cellX + dx) * cell + cell / 2, Maze.STAND_Y, (cellZ + dz) * cell + cell / 2);
             if (!level.isLoaded(pos) || !level.getBlockState(pos).isAir() || !level.getBlockState(pos.above()).isAir()) {
                 continue;
             }

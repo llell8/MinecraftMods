@@ -12,6 +12,14 @@ public interface Layout {
 
     int topY();
 
+    /** The size of the grid the level is laid out on. The middle of every cell is always open floor. */
+    int cell();
+
+    /** The middle of the cell a position is in, where it is safe to put someone. */
+    default int cellCenter(int coordinate) {
+        return Math.floorDiv(coordinate, cell()) * cell() + cell() / 2;
+    }
+
     /** A random number in [0, 1) for a cell and a salt. */
     static double random(long seed, int cx, int cz, int salt) {
         long h = seed ^ (cx * 0x9E3779B97F4A7C15L) ^ (cz * 0xC2B2AE3D27D4EB4FL) ^ (salt * 0x165667B19E3779F9L);

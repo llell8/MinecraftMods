@@ -1,5 +1,7 @@
 package com.meryx.backrooms;
 
+import com.meryx.backrooms.world.BackroomsChunkGenerator;
+import com.meryx.backrooms.world.Layout;
 import com.meryx.backrooms.world.Maze;
 import java.util.HashSet;
 import java.util.List;
@@ -103,8 +105,9 @@ public final class Noclip {
             return;
         }
         // The middle of every cell is open floor on every level
-        int x = Math.floorDiv(player.getBlockX(), Maze.CELL) * Maze.CELL + Maze.CELL / 2;
-        int z = Math.floorDiv(player.getBlockZ(), Maze.CELL) * Maze.CELL + Maze.CELL / 2;
+        Layout layout = BackroomsChunkGenerator.layout(next.dimension());
+        int x = layout.cellCenter(player.getBlockX());
+        int z = layout.cellCenter(player.getBlockZ());
         player.teleport(new TeleportTransition(next, new Vec3(x + 0.5, Maze.STAND_Y, z + 0.5), Vec3.ZERO,
                 player.getYRot(), 0.0F, TeleportTransition.DO_NOTHING));
         player.resetFallDistance();

@@ -41,13 +41,20 @@ public final class ModBlocks {
     public static final Block CRATE = register("crate", Block::new,
             unbreakable().mapColor(MapColor.WOOD).sound(SoundType.WOOD));
 
-    // Level 2, Pipe Dreams
-    public static final Block PIPE_WALL = register("pipe_wall", Block::new,
-            unbreakable().mapColor(MapColor.COLOR_GRAY).sound(SoundType.METAL));
-    public static final Block PIPE_CEILING = register("pipe_ceiling", Block::new,
-            unbreakable().mapColor(MapColor.COLOR_GRAY).sound(SoundType.METAL));
-    public static final Block GRATE_FLOOR = register("grate_floor", Block::new,
+    public static final Block HAZARD_CONCRETE = register("hazard_concrete", Block::new,
+            unbreakable().mapColor(MapColor.STONE).sound(SoundType.STONE));
+
+    // Level 2, Pipe Dreams: basements full of pipes
+    public static final Block CINDERBLOCK = register("cinderblock", Block::new,
+            unbreakable().mapColor(MapColor.COLOR_LIGHT_GRAY).sound(SoundType.STONE));
+    public static final Block BASEMENT_FLOOR = register("basement_floor", Block::new,
+            unbreakable().mapColor(MapColor.STONE).sound(SoundType.STONE));
+    public static final Block FLOOR_DRAIN = register("floor_drain", Block::new,
             unbreakable().mapColor(MapColor.METAL).sound(SoundType.METAL));
+    public static final Block PIPE = register("pipe", properties -> new PipeBlock(properties, 8.0),
+            unbreakable().mapColor(MapColor.COLOR_BROWN).sound(SoundType.METAL).noOcclusion());
+    public static final Block SMALL_PIPE = register("small_pipe", properties -> new PipeBlock(properties, 4.0),
+            unbreakable().mapColor(MapColor.TERRACOTTA_ORANGE).sound(SoundType.COPPER).noOcclusion());
     public static final Block WARNING_LIGHT = register("warning_light", Block::new,
             unbreakable().mapColor(MapColor.COLOR_RED).sound(SoundType.GLASS).lightLevel(state -> 9));
 

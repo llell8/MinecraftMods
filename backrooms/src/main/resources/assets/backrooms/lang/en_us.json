@@ -26,8 +26,11 @@
   "block.backrooms.concrete": "Concrete",
   "block.backrooms.damp_concrete": "Damp Concrete",
   "block.backrooms.crate": "Crate",
-  "block.backrooms.pipe_wall": "Pipe Wall",
-  "block.backrooms.pipe_ceiling": "Pipe Ceiling",
-  "block.backrooms.grate_floor": "Metal Grate",
-  "block.backrooms.warning_light": "Warning Light"
+  "block.backrooms.warning_light": "Warning Light",
+  "block.backrooms.hazard_concrete": "Hazard Concrete",
+  "block.backrooms.cinderblock": "Cinderblock",
+  "block.backrooms.basement_floor": "Basement Floor",
+  "block.backrooms.floor_drain": "Floor Drain",
+  "block.backrooms.pipe": "Pipe",
+  "block.backrooms.small_pipe": "Small Pipe"
 }

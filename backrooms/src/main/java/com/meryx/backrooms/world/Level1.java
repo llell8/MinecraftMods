@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
 /**
  * Level 1, the Habitable Zone: an endless concrete warehouse. Seven blocks of headroom, a 2x2 pillar at every corner of
- * the {@link #CELL}-block grid, the odd concrete wall with a wide opening, damp floors, hanging lights (many dead,
+ * the {@link #CELL}-block grid (hazard-striped at the foot), the odd concrete wall with a wide opening, damp floors, hanging lights (many dead,
  * whole stretches dark) and stacks of crates.
  */
 public final class Level1 implements Layout {
@@ -32,6 +32,11 @@ public final class Level1 implements Layout {
     }
 
     @Override
+    public int cell() {
+        return CELL;
+    }
+
+    @Override
     public BlockState blockAt(long seed, int x, int y, int z) {
         if (y == 0 || y == CEILING_Y + 1) {
             return Blocks.BEDROCK.defaultBlockState();
@@ -51,9 +56,9 @@ public final class Level1 implements Layout {
             }
             return ModBlocks.CONCRETE.defaultBlockState();
         }
-        // Pillars
+        // Pillars, with a band of hazard paint at the bottom
         if (lx <= 1 && lz <= 1) {
-            return ModBlocks.CONCRETE.defaultBlockState();
+            return (y == FLOOR_Y + 1 ? ModBlocks.HAZARD_CONCRETE : ModBlocks.CONCRETE).defaultBlockState();
         }
         if (lx == 0) {
             return wall(seed, cx, cz, 0, lz, y);

@@ -3,6 +3,7 @@ package com.meryx.backrooms;
 import com.meryx.backrooms.entity.Bacteria;
 import com.meryx.backrooms.entity.ModEntities;
 import com.meryx.backrooms.entity.Smiler;
+import com.meryx.backrooms.world.BackroomsChunkGenerator;
 import com.meryx.backrooms.world.Maze;
 import java.util.HashMap;
 import java.util.Map;
@@ -98,15 +99,16 @@ public final class SmilerSpawner {
 
     /** Somewhere a few rooms away that the player cannot see. */
     private static void spawnBacteria(ServerLevel level, ServerPlayer player, RandomSource random) {
-        int cellX = Math.floorDiv(player.getBlockX(), Maze.CELL);
-        int cellZ = Math.floorDiv(player.getBlockZ(), Maze.CELL);
+        int cell = BackroomsChunkGenerator.layout(level.dimension()).cell();
+        int cellX = Math.floorDiv(player.getBlockX(), cell);
+        int cellZ = Math.floorDiv(player.getBlockZ(), cell);
         for (int attempt = 0; attempt < 10; attempt++) {
             int dx = random.nextInt(9) - 4;
             int dz = random.nextInt(9) - 4;
             if (Math.max(Math.abs(dx), Math.abs(dz)) < 3) {
                 continue;
             }
-            BlockPos pos = new BlockPos((cellX + dx) * Maze.CELL + Maze.CELL / 2, Maze.STAND_Y, (cellZ + dz) * Maze.CELL + Maze.CELL / 2);
+            BlockPos pos = new BlockPos((cellX + dx) * cell + cell / 2, Maze.STAND_Y, (cellZ + dz) * cell + cell / 2);
             if (!level.isLoaded(pos) || !level.getBlockState(pos).isAir() || !level.getBlockState(pos.above(2)).isAir()) {
                 continue;
             }
