@@ -1,7 +1,18 @@
 {
   "variants": {
-    "": {
-      "model": "backrooms:block/cinderblock"
-    }
+    "": [
+      {
+        "model": "backrooms:block/cinderblock",
+        "weight": 5
+      },
+      {
+        "model": "backrooms:block/cinderblock_2",
+        "weight": 2
+      },
+      {
+        "model": "backrooms:block/cinderblock_3",
+        "weight": 2
+      }
+    ]
   }
 }

@@ -1,7 +1,18 @@
 {
   "variants": {
-    "": {
-      "model": "backrooms:block/moist_carpet"
-    }
+    "": [
+      {
+        "model": "backrooms:block/moist_carpet",
+        "weight": 6
+      },
+      {
+        "model": "backrooms:block/moist_carpet_2",
+        "weight": 2
+      },
+      {
+        "model": "backrooms:block/moist_carpet_3",
+        "weight": 1
+      }
+    ]
   }
 }

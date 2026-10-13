@@ -1,6 +1,7 @@
 package com.meryx.backrooms;
 
 import com.meryx.backrooms.world.BackroomsChunkGenerator;
+import com.meryx.backrooms.world.Field;
 import com.meryx.backrooms.world.Layout;
 import com.meryx.backrooms.world.Maze;
 import java.util.HashSet;
@@ -36,6 +37,8 @@ public final class Noclip {
     private static final String RETURN_TAG = "backrooms_return:";
 
     private static final Set<UUID> PENDING = new HashSet<>();
+    /** After the first night: the chance a noclip lands in The Field instead of Level 0. */
+    private static final float FIELD_CHANCE = 0.35F;
 
     private Noclip() {
     }
@@ -64,7 +67,12 @@ public final class Noclip {
         for (UUID id : PENDING) {
             ServerPlayer player = server.getPlayerList().getPlayer(id);
             if (player != null && player.isAlive()) {
-                enter(player);
+                // Once the overworld has seen its first night through, sometimes you fall somewhere else entirely
+                if (server.overworld().getDayTime() >= 24000L && player.getRandom().nextFloat() < FIELD_CHANCE) {
+                    enterField(player);
+                } else {
+                    enter(player);
+                }
             }
         }
         PENDING.clear();
@@ -91,6 +99,24 @@ public final class Noclip {
         player.connection.send(new ClientboundSetSubtitleTextPacket(
                 Component.literal("You noclipped out of reality.").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)));
         SmilerSpawner.entered(player);
+    }
+
+    /** The Field: always arriving at the same spot, facing the house far off to the north. */
+    public static void enterField(ServerPlayer player) {
+        ServerLevel field = ((ServerLevel) player.level()).getServer().getLevel(Backrooms.THE_FIELD);
+        if (field == null) {
+            enter(player);
+            return;
+        }
+        clearReturnTag(player);
+        player.addTag(RETURN_TAG + player.getBlockX() + "," + player.getBlockZ());
+        player.teleport(new TeleportTransition(field, new Vec3(0.5, Field.GROUND_Y + 1, 0.5), Vec3.ZERO,
+                180.0F, 0.0F, TeleportTransition.DO_NOTHING));
+        player.resetFallDistance();
+        player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 40));
+        player.connection.send(new ClientboundSetTitleTextPacket(Component.empty()));
+        player.connection.send(new ClientboundSetSubtitleTextPacket(
+                Component.literal("You've been here before.").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)));
     }
 
     /**

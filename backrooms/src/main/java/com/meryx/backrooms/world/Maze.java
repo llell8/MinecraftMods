@@ -9,7 +9,8 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
 /**
  * The layout of Level 0: a grid of {@link #CELL}-block cells whose edges are randomly walled, with doorway gaps,
- * a ceiling light in the middle of each cell, and zones that are open pillar halls, cramped corridors or dark.
+ * a ceiling light in the middle of each cell, lone pillars and old cubicle partitions, and zones that are open pillar
+ * halls, cramped corridors, dark, or under a lower ceiling.
  * Everything is a pure function of the world seed and the block position, so chunks line up wherever they generate.
  */
 public final class Maze implements Layout {
@@ -25,7 +26,7 @@ public final class Maze implements Layout {
 
     private static final int ZONE_SIZE = 5;
 
-    private enum Zone { OFFICE, OFFICE2, HALL, CRAMPED, DARK }
+    private enum Zone { OFFICE, OFFICE2, HALL, CRAMPED, DARK, LOW }
 
     private Maze() {
     }
@@ -58,10 +59,15 @@ public final class Maze implements Layout {
         if (y == FLOOR_Y) {
             return ModBlocks.MOIST_CARPET.defaultBlockState();
         }
-        if (y == CEILING_Y) {
+        // In low zones the ceiling comes down a block, close over your head
+        int ceiling = zone(seed, Math.floorDiv(x, CELL), Math.floorDiv(z, CELL)) == Zone.LOW ? CEILING_Y - 1 : CEILING_Y;
+        if (y == ceiling) {
             return ceilingAt(seed, x, z);
         }
-        if (y > FLOOR_Y && y < CEILING_Y) {
+        if (y > ceiling) {
+            return ModBlocks.CEILING_TILE.defaultBlockState();
+        }
+        if (y > FLOOR_Y) {
             return wallAt(seed, x, y, z);
         }
         return null;
@@ -102,6 +108,33 @@ public final class Maze implements Layout {
         if (lz == 0) {
             return edgeBlock(seed, cx, cz, 1, lx, y, wall);
         }
+        return furniture(seed, cx, cz, lx, lz, y, wall);
+    }
+
+    /**
+     * Things inside a room, kept clear of its middle: a lone pillar, or in offices the waist-high partitions of
+     * cubicles that are long gone.
+     */
+    private static BlockState furniture(long seed, int cx, int cz, int lx, int lz, int y, BlockState wall) {
+        Zone zone = zone(seed, cx, cz);
+        if (zone == Zone.HALL || zone == Zone.CRAMPED) {
+            return null;
+        }
+        if (random(seed, cx, cz, 20) < 0.12) {
+            int px = random(seed, cx, cz, 21) < 0.5 ? 2 : 6;
+            int pz = random(seed, cx, cz, 22) < 0.5 ? 2 : 6;
+            if (lx == px && lz == pz) {
+                return wall;
+            }
+        }
+        if ((zone == Zone.OFFICE || zone == Zone.OFFICE2) && y == STAND_Y && random(seed, cx, cz, 23) < 0.25) {
+            // An L of partition: along one side of the room and round the corner
+            boolean along = lz == 2 && lx >= 2 && lx <= 5;
+            boolean down = lx == 2 && lz >= 2 && lz <= 3;
+            if (along || down) {
+                return wall;
+            }
+        }
         return null;
     }
 
@@ -118,9 +151,10 @@ public final class Maze implements Layout {
             return wall;
         }
         if (random(seed, cx, cz, 2 + axis) < 0.55) {
-            // A doorway: a two-wide gap, three blocks tall
-            int gap = 1 + (int) (random(seed, cx, cz, 4 + axis) * (CELL - 3));
-            if ((along == gap || along == gap + 1) && y <= STAND_Y + 2) {
+            // A doorway, one to three wide, three blocks tall (two where the ceiling is low)
+            int width = 1 + (int) (random(seed, cx, cz, 6 + axis) * 3);
+            int gap = 1 + (int) (random(seed, cx, cz, 4 + axis) * (CELL - 1 - width));
+            if (along >= gap && along < gap + width && y <= STAND_Y + 2) {
                 return null;
             }
         }
@@ -143,8 +177,8 @@ public final class Maze implements Layout {
     private static Zone zone(long seed, int cx, int cz) {
         double r = random(seed, Math.floorDiv(cx, ZONE_SIZE), Math.floorDiv(cz, ZONE_SIZE), 100);
         Zone[] zones = Zone.values();
-        // Offices are the most common; halls, cramped mazes and dark zones break them up
-        double[] weights = {0.35, 0.25, 0.15, 0.15, 0.10};
+        // Offices are the most common; halls, cramped mazes, dark zones and low ceilings break them up
+        double[] weights = {0.30, 0.22, 0.14, 0.14, 0.10, 0.10};
         double sum = 0;
         for (int i = 0; i < zones.length; i++) {
             sum += weights[i];

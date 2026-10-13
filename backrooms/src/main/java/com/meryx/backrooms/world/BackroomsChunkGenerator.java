@@ -27,12 +27,12 @@ import net.minecraft.world.level.levelgen.blending.Blender;
 
 /**
  * Generates one level of the Backrooms from its {@link Layout}: Level 0's {@link Maze}, Level 1's {@link Level1}, or
- * Level 2's {@link Level2}. No terrain, caves, decorations or mobs. Each level has its own generator type,
+ * Level 2's {@link Level2}, or The Field's {@link Field}. No terrain, caves, decorations or mobs. Each level has its own generator type,
  * {@code backrooms:level_0} and so on.
  */
 public class BackroomsChunkGenerator extends ChunkGenerator {
-    private static final Layout[] LAYOUTS = {Maze.INSTANCE, Level1.INSTANCE, Level2.INSTANCE};
-    public static final List<MapCodec<BackroomsChunkGenerator>> CODECS = List.of(codecFor(0), codecFor(1), codecFor(2));
+    private static final Layout[] LAYOUTS = {Maze.INSTANCE, Level1.INSTANCE, Level2.INSTANCE, Field.INSTANCE};
+    public static final List<MapCodec<BackroomsChunkGenerator>> CODECS = List.of(codecFor(0), codecFor(1), codecFor(2), codecFor(3));
 
     private final int level;
     private final Layout layout;
@@ -45,7 +45,7 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 
     /** The layout of a level of the Backrooms; Level 0's for any other dimension. */
     public static Layout layout(ResourceKey<Level> dimension) {
-        int index = Backrooms.LEVELS.indexOf(dimension);
+        int index = Backrooms.DIMENSIONS.indexOf(dimension);
         return LAYOUTS[Math.max(index, 0)];
     }
 

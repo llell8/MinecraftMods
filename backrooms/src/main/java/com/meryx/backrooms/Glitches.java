@@ -51,7 +51,7 @@ public final class Glitches {
         endDue(now, false);
 
         for (ServerLevel level : server.getAllLevels()) {
-            if (level.dimension().equals(Backrooms.LEVEL_0)) {
+            if (Backrooms.isBackrooms(level.dimension())) {
                 continue;
             }
             for (ServerPlayer player : level.players()) {

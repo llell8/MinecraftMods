@@ -23,6 +23,10 @@ public class Backrooms implements ModInitializer {
     public static final ResourceKey<Level> LEVEL_1 = ResourceKey.create(Registries.DIMENSION, id("level_1"));
     public static final ResourceKey<Level> LEVEL_2 = ResourceKey.create(Registries.DIMENSION, id("level_2"));
     public static final List<ResourceKey<Level>> LEVELS = List.of(LEVEL_0, LEVEL_1, LEVEL_2);
+    /** Flat grass, a house in the distance, and music from somewhere. Not one of the levels: nothing hunts you there. */
+    public static final ResourceKey<Level> THE_FIELD = ResourceKey.create(Registries.DIMENSION, id("the_field"));
+    /** Every dimension this mod generates, in the order of their generator types. */
+    public static final List<ResourceKey<Level>> DIMENSIONS = List.of(LEVEL_0, LEVEL_1, LEVEL_2, THE_FIELD);
 
     /** Whether a dimension is one of the levels of the Backrooms. */
     public static boolean isBackrooms(ResourceKey<Level> dimension) {
@@ -38,8 +42,9 @@ public class Backrooms implements ModInitializer {
         ModSounds.init();
         ModBlocks.init();
         ModEntities.init();
-        for (int i = 0; i < BackroomsChunkGenerator.CODECS.size(); i++) {
-            Registry.register(BuiltInRegistries.CHUNK_GENERATOR, id("level_" + i), BackroomsChunkGenerator.CODECS.get(i));
+        List<String> generators = List.of("level_0", "level_1", "level_2", "the_field");
+        for (int i = 0; i < generators.size(); i++) {
+            Registry.register(BuiltInRegistries.CHUNK_GENERATOR, id(generators.get(i)), BackroomsChunkGenerator.CODECS.get(i));
         }
 
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(Noclip::onDamage);

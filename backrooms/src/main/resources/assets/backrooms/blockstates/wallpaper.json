@@ -1,7 +1,22 @@
 {
   "variants": {
-    "": {
-      "model": "backrooms:block/wallpaper"
-    }
+    "": [
+      {
+        "model": "backrooms:block/wallpaper",
+        "weight": 8
+      },
+      {
+        "model": "backrooms:block/wallpaper_2",
+        "weight": 2
+      },
+      {
+        "model": "backrooms:block/wallpaper_3",
+        "weight": 1
+      },
+      {
+        "model": "backrooms:block/wallpaper_4",
+        "weight": 2
+      }
+    ]
   }
 }

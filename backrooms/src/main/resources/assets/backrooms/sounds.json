@@ -217,5 +217,13 @@
       }
     ],
     "subtitle": "subtitles.backrooms.entity.bacteria.mimic"
+  },
+  "music.the_field": {
+    "sounds": [
+      {
+        "name": "backrooms:music/the_field",
+        "stream": true
+      }
+    ]
   }
 }

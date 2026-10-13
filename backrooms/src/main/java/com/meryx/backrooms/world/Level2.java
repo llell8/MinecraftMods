@@ -13,7 +13,9 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
  * Level 2, Pipe Dreams: one low basement after another, painted cinderblock walls with doorways between them, stained
  * concrete floors with drains and puddles, and pipes everywhere. Big mains run along the ceiling for several rooms at a
  * time, straight through the walls; pairs of small pipes run beside them; more pipes hug the walls at head height, and
- * risers climb the corners. The lights are a bare few: dead or flickering fluorescents, and red warning lamps.
+ * risers climb the corners. Some basements run together where a wall was never built; some are stacked with crates,
+ * flooded, crossed by a low tangle of pipes, or have a bundle of pipes rising where a boiler stood. The lights are a
+ * bare few: dead or flickering fluorescents, and red warning lamps.
  */
 public final class Level2 implements Layout {
     public static final Level2 INSTANCE = new Level2();
@@ -21,7 +23,18 @@ public final class Level2 implements Layout {
     private static final int FLOOR_Y = 1;
     private static final int CEILING_Y = 6;
 
+    private enum Room { PLAIN, STORAGE, FLOODED, DENSE, BOILER }
+
     private Level2() {
+    }
+
+    private static Room room(long seed, int cx, int cz) {
+        double r = Layout.random(seed, cx, cz, 505);
+        if (r < 0.45) return Room.PLAIN;
+        if (r < 0.60) return Room.STORAGE;
+        if (r < 0.75) return Room.FLOODED;
+        if (r < 0.90) return Room.DENSE;
+        return Room.BOILER;
     }
 
     @Override
@@ -53,8 +66,9 @@ public final class Level2 implements Layout {
             if (lx == mid && lz == mid && Layout.random(seed, cx, cz, 500) < 0.4) {
                 return ModBlocks.FLOOR_DRAIN.defaultBlockState();
             }
-            // Puddles where water has gathered
-            return (Layout.random(seed, Math.floorDiv(x, 3), Math.floorDiv(z, 3), 501) < 0.12 ? ModBlocks.DAMP_CONCRETE
+            // Puddles where water has gathered; some basements are wet all over
+            boolean wet = room(seed, cx, cz) == Room.FLOODED || Layout.random(seed, Math.floorDiv(x, 3), Math.floorDiv(z, 3), 501) < 0.12;
+            return (wet ? ModBlocks.DAMP_CONCRETE
                     : ModBlocks.BASEMENT_FLOOR).defaultBlockState();
         }
         if (y == CEILING_Y) {
@@ -88,6 +102,10 @@ public final class Level2 implements Layout {
         }
         int axis = lx == 0 ? 0 : 1;
         int along = lx == 0 ? lz : lx;
+        // Some walls were never built, and two basements run together into one
+        if (Layout.random(seed, cx, cz, 515 + axis) < 0.2) {
+            return null;
+        }
         boolean doorway = Layout.random(seed, cx, cz, 510 + axis) < 0.75;
         if (doorway) {
             return along >= 4 && along <= 5 && y <= FLOOR_Y + 3 ? null : block;
@@ -101,6 +119,22 @@ public final class Level2 implements Layout {
 
     private static BlockState pipes(long seed, int x, int y, int z, int lx, int lz, int cx, int cz) {
         int top = CEILING_Y - 1;
+        Room room = room(seed, cx, cz);
+        if (room == Room.STORAGE && (lx == 1 || lx == CELL - 1) && lz >= 2 && lz <= CELL - 2) {
+            // Crates stacked against two walls
+            int height = 1 + (int) (Layout.random(seed, cx * 11 + lx, cz * 5 + lz, 570) * 3);
+            if (y - FLOOR_Y <= height) {
+                return ModBlocks.CRATE.defaultBlockState();
+            }
+        }
+        if (room == Room.BOILER && lx >= 6 && lx <= 8 && lz >= 6 && lz <= 8) {
+            // A bundle of pipes rising out of the floor in one corner, where a boiler used to be
+            return pipe((lx + lz) % 2 == 0 ? ModBlocks.PIPE.defaultBlockState() : ModBlocks.SMALL_PIPE.defaultBlockState(), Direction.Axis.Y);
+        }
+        if (room == Room.DENSE && y == top - 1 && lz % 2 == 1 && lz >= 1 && lz <= CELL - 1) {
+            // A low tangle of pipes crossing the whole room, just over your head
+            return pipe(((lz / 2) % 2 == 0 ? ModBlocks.SMALL_PIPE : ModBlocks.PIPE).defaultBlockState(), Direction.Axis.X);
+        }
         // Risers climbing a corner of some rooms
         boolean riser = (lx == 1 && lz == 1 && Layout.random(seed, cx, cz, 530) < 0.45)
                 || (lx == CELL - 1 && lz == CELL - 1 && Layout.random(seed, cx, cz, 531) < 0.35);

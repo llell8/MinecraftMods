@@ -1,7 +1,18 @@
 {
   "variants": {
-    "": {
-      "model": "backrooms:block/basement_floor"
-    }
+    "": [
+      {
+        "model": "backrooms:block/basement_floor",
+        "weight": 5
+      },
+      {
+        "model": "backrooms:block/basement_floor_2",
+        "weight": 2
+      },
+      {
+        "model": "backrooms:block/basement_floor_3",
+        "weight": 2
+      }
+    ]
   }
 }

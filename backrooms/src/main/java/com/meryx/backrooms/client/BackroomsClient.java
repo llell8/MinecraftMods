@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 
 public class BackroomsClient implements ClientModInitializer {
     private HumSound hum;
+    private FieldMusic music;
 
     @Override
     public void onInitializeClient() {
@@ -28,7 +29,19 @@ public class BackroomsClient implements ClientModInitializer {
 
     /** Keeps the fluorescent hum playing while the player is in the Backrooms. */
     private void tick(Minecraft client) {
-        if (client.level == null || client.player == null || !Backrooms.isBackrooms(client.level.dimension())) {
+        if (client.level == null || client.player == null) {
+            return;
+        }
+        if (client.level.dimension().equals(Backrooms.THE_FIELD)) {
+            // Only this record, nothing else
+            client.getMusicManager().stopPlaying();
+            if (music == null || music.isStopped() || !client.getSoundManager().isActive(music)) {
+                music = new FieldMusic();
+                client.getSoundManager().play(music);
+            }
+            return;
+        }
+        if (!Backrooms.isBackrooms(client.level.dimension())) {
             return;
         }
         if (hum == null || hum.isStopped() || !client.getSoundManager().isActive(hum)) {
