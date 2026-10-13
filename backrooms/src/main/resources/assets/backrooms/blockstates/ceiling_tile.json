@@ -1,18 +1,7 @@
 {
   "variants": {
-    "": [
-      {
-        "model": "backrooms:block/ceiling_tile",
-        "weight": 8
-      },
-      {
-        "model": "backrooms:block/ceiling_tile_2",
-        "weight": 2
-      },
-      {
-        "model": "backrooms:block/ceiling_tile_3",
-        "weight": 1
-      }
-    ]
+    "": {
+      "model": "backrooms:block/ceiling_tile"
+    }
   }
 }

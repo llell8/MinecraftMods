@@ -6,10 +6,6 @@
         "weight": 6
       },
       {
-        "model": "backrooms:block/damp_concrete_2",
-        "weight": 1
-      },
-      {
         "model": "backrooms:block/damp_concrete_3",
         "weight": 2
       },

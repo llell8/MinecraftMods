@@ -8,9 +8,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
 /**
- * The layout of Level 0: a grid of {@link #CELL}-block cells whose edges are randomly walled, with doorway gaps,
- * a ceiling light in the middle of each cell, lone pillars and old cubicle partitions, and zones that are open pillar
- * halls, cramped corridors, dark, or under a lower ceiling.
+ * The layout of Level 0: a grid of {@link #CELL}-block cells whose edges are randomly walled, with doorways one to
+ * three wide and a ceiling light in the middle of each cell. Zones a few cells across change the character of the
+ * place: ordinary offices, open halls of pillars, cramped mazes, dark stretches, rooms where the ceiling comes down low
+ * or rises high overhead, long parallel hallways, and the pitfalls, an open floor broken by square holes that drop into
+ * the dark below.
  * Everything is a pure function of the world seed and the block position, so chunks line up wherever they generate.
  */
 public final class Maze implements Layout {
@@ -22,11 +24,16 @@ public final class Maze implements Layout {
     /** The first air block above the floor, where players and Smilers stand. */
     public static final int STAND_Y = 2;
     public static final int CEILING_Y = 6;
-    public static final int TOP_Y = 7;
+    private static final int LOW_CEILING_Y = 5;
+    private static final int TALL_CEILING_Y = 10;
+    /** Fall this far below the floor, through a pitfall, and you come out somewhere deeper. */
+    public static final int PIT_BOTTOM_Y = -16;
 
     private static final int ZONE_SIZE = 5;
 
-    private enum Zone { OFFICE, OFFICE2, HALL, CRAMPED, DARK, LOW }
+    private enum Zone { OFFICE, OFFICE2, HALL, CRAMPED, DARK, LOW, TALL, HALLWAYS, PITFALLS }
+
+    private static final double[] ZONE_WEIGHTS = {0.24, 0.16, 0.10, 0.10, 0.08, 0.08, 0.08, 0.08, 0.08};
 
     private Maze() {
     }
@@ -43,7 +50,7 @@ public final class Maze implements Layout {
 
     @Override
     public int topY() {
-        return TOP_Y;
+        return TALL_CEILING_Y + 1;
     }
 
     @Override
@@ -53,27 +60,47 @@ public final class Maze implements Layout {
 
     /** The block at a position, or null for air. */
     public static BlockState at(long seed, int x, int y, int z) {
-        if (y == BOTTOM_Y || y == TOP_Y) {
+        int cx = Math.floorDiv(x, CELL);
+        int cz = Math.floorDiv(z, CELL);
+        Zone zone = zone(seed, cx, cz);
+        if (y <= FLOOR_Y && zone == Zone.PITFALLS && isPit(seed, x, z)) {
+            return null;
+        }
+        if (y == BOTTOM_Y) {
             return Blocks.BEDROCK.defaultBlockState();
         }
         if (y == FLOOR_Y) {
             return ModBlocks.MOIST_CARPET.defaultBlockState();
         }
-        // In low zones the ceiling comes down a block, close over your head
-        int ceiling = zone(seed, Math.floorDiv(x, CELL), Math.floorDiv(z, CELL)) == Zone.LOW ? CEILING_Y - 1 : CEILING_Y;
-        if (y == ceiling) {
-            return ceilingAt(seed, x, z);
+        int ceiling = switch (zone) {
+            case LOW -> LOW_CEILING_Y;
+            case TALL -> TALL_CEILING_Y;
+            default -> CEILING_Y;
+        };
+        if (y == ceiling + 1) {
+            return Blocks.BEDROCK.defaultBlockState();
         }
         if (y > ceiling) {
-            return ModBlocks.CEILING_TILE.defaultBlockState();
+            return null;
         }
-        if (y > FLOOR_Y) {
-            return wallAt(seed, x, y, z);
+        if (y == ceiling) {
+            return ceilingAt(seed, x, z, zone);
         }
-        return null;
+        return wallAt(seed, x, y, z, zone);
     }
 
-    private static BlockState ceilingAt(long seed, int x, int z) {
+    /** A square hole two blocks across in the pitfalls, never in the middle of a cell. */
+    private static boolean isPit(long seed, int x, int z) {
+        int lx = Math.floorMod(x, CELL);
+        int lz = Math.floorMod(z, CELL);
+        if (lx >= 3 && lx <= 5 && lz >= 3 && lz <= 5) {
+            return false;
+        }
+        return Math.floorMod(x, 3) < 2 && Math.floorMod(z, 3) < 2
+                && random(seed, Math.floorDiv(x, 3), Math.floorDiv(z, 3), 700) < 0.3;
+    }
+
+    private static BlockState ceilingAt(long seed, int x, int z, Zone zone) {
         int lx = Math.floorMod(x, CELL);
         int lz = Math.floorMod(z, CELL);
         if (lx != CELL / 2 || (lz != CELL / 2 && lz != CELL / 2 - 1)) {
@@ -81,12 +108,16 @@ public final class Maze implements Layout {
         }
         int cx = Math.floorDiv(x, CELL);
         int cz = Math.floorDiv(z, CELL);
-        double deadChance = zone(seed, cx, cz) == Zone.DARK ? 0.8 : 0.1;
+        double deadChance = switch (zone) {
+            case DARK -> 0.8;
+            case PITFALLS -> 0.45;
+            default -> 0.1;
+        };
         boolean lit = random(seed, cx, cz, 7) >= deadChance;
         return ModBlocks.FLUORESCENT_LIGHT.defaultBlockState().setValue(FluorescentLightBlock.LIT, lit);
     }
 
-    private static BlockState wallAt(long seed, int x, int y, int z) {
+    private static BlockState wallAt(long seed, int x, int y, int z, Zone zone) {
         int lx = Math.floorMod(x, CELL);
         int lz = Math.floorMod(z, CELL);
         int cx = Math.floorDiv(x, CELL);
@@ -95,7 +126,7 @@ public final class Maze implements Layout {
 
         if (lx == 0 && lz == 0) {
             // A corner post: there if the zone has pillars or any wall meets here
-            if (zone(seed, cx, cz) == Zone.HALL
+            if (zone == Zone.HALL || zone == Zone.TALL
                     || hasWall(seed, cx, cz, 0) || hasWall(seed, cx, cz - 1, 0)
                     || hasWall(seed, cx, cz, 1) || hasWall(seed, cx - 1, cz, 1)) {
                 return wall;
@@ -107,33 +138,6 @@ public final class Maze implements Layout {
         }
         if (lz == 0) {
             return edgeBlock(seed, cx, cz, 1, lx, y, wall);
-        }
-        return furniture(seed, cx, cz, lx, lz, y, wall);
-    }
-
-    /**
-     * Things inside a room, kept clear of its middle: a lone pillar, or in offices the waist-high partitions of
-     * cubicles that are long gone.
-     */
-    private static BlockState furniture(long seed, int cx, int cz, int lx, int lz, int y, BlockState wall) {
-        Zone zone = zone(seed, cx, cz);
-        if (zone == Zone.HALL || zone == Zone.CRAMPED) {
-            return null;
-        }
-        if (random(seed, cx, cz, 20) < 0.12) {
-            int px = random(seed, cx, cz, 21) < 0.5 ? 2 : 6;
-            int pz = random(seed, cx, cz, 22) < 0.5 ? 2 : 6;
-            if (lx == px && lz == pz) {
-                return wall;
-            }
-        }
-        if ((zone == Zone.OFFICE || zone == Zone.OFFICE2) && y == STAND_Y && random(seed, cx, cz, 23) < 0.25) {
-            // An L of partition: along one side of the room and round the corner
-            boolean along = lz == 2 && lx >= 2 && lx <= 5;
-            boolean down = lx == 2 && lz >= 2 && lz <= 3;
-            if (along || down) {
-                return wall;
-            }
         }
         return null;
     }
@@ -150,7 +154,8 @@ public final class Maze implements Layout {
             }
             return wall;
         }
-        if (random(seed, cx, cz, 2 + axis) < 0.55) {
+        double doorwayChance = zone(seed, cx, cz) == Zone.HALLWAYS ? 0.2 : 0.55;
+        if (random(seed, cx, cz, 2 + axis) < doorwayChance) {
             // A doorway, one to three wide, three blocks tall (two where the ceiling is low)
             int width = 1 + (int) (random(seed, cx, cz, 6 + axis) * 3);
             int gap = 1 + (int) (random(seed, cx, cz, 4 + axis) * (CELL - 1 - width));
@@ -162,26 +167,28 @@ public final class Maze implements Layout {
     }
 
     private static boolean hasWall(long seed, int cx, int cz, int axis) {
-        double chance = switch (zone(seed, cx, cz)) {
-            case HALL -> 0.0;
+        Zone zone = zone(seed, cx, cz);
+        double chance = switch (zone) {
+            case HALL, TALL, PITFALLS -> 0.0;
             case CRAMPED -> 0.8;
+            // Walls only one way: long hallways running north-south, side by side
+            case HALLWAYS -> axis == 0 ? 1.0 : 0.0;
             default -> 0.5;
         };
         return random(seed, cx, cz, axis) < chance || isExit(seed, cx, cz, axis);
     }
 
     private static boolean isExit(long seed, int cx, int cz, int axis) {
-        return zone(seed, cx, cz) != Zone.HALL && random(seed, cx, cz, 10 + axis) < 0.0015;
+        Zone zone = zone(seed, cx, cz);
+        return zone != Zone.HALL && zone != Zone.TALL && zone != Zone.PITFALLS && random(seed, cx, cz, 10 + axis) < 0.0015;
     }
 
     private static Zone zone(long seed, int cx, int cz) {
         double r = random(seed, Math.floorDiv(cx, ZONE_SIZE), Math.floorDiv(cz, ZONE_SIZE), 100);
         Zone[] zones = Zone.values();
-        // Offices are the most common; halls, cramped mazes, dark zones and low ceilings break them up
-        double[] weights = {0.30, 0.22, 0.14, 0.14, 0.10, 0.10};
         double sum = 0;
         for (int i = 0; i < zones.length; i++) {
-            sum += weights[i];
+            sum += ZONE_WEIGHTS[i];
             if (r < sum) {
                 return zones[i];
             }

@@ -6,10 +6,6 @@
         "weight": 6
       },
       {
-        "model": "backrooms:block/concrete_2",
-        "weight": 1
-      },
-      {
         "model": "backrooms:block/concrete_3",
         "weight": 2
       },

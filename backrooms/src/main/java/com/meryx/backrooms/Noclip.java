@@ -61,6 +61,15 @@ public final class Noclip {
     }
 
     public static void tick(MinecraftServer server) {
+        // Fell down a pitfall in Level 0: you come out somewhere deeper
+        ServerLevel level0 = server.getLevel(Backrooms.LEVEL_0);
+        if (level0 != null) {
+            for (ServerPlayer player : List.copyOf(level0.players())) {
+                if (player.getY() < Maze.PIT_BOTTOM_Y && player.isAlive()) {
+                    deeper(player);
+                }
+            }
+        }
         if (PENDING.isEmpty()) {
             return;
         }
