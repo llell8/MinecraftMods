@@ -18,7 +18,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - potions: amber glass bottles with netherite stoppers
 - diamond tools, spear and armor icons: same flames, handles and gem as netherite
 - elytra (item, broken item, worn wings): phoenix wings on the fire palette
-- bow, crossbow (all states): vanilla wood, banded blaze rod string/metal
+- crossbow (all states): vanilla wood, banded blaze rod string/metal
 - arrows: banded blaze rod shaft, fire-coloured head and fletching
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
@@ -173,16 +173,14 @@ DIAMOND_ARMOR = ["diamond_helmet", "diamond_chestplate", "diamond_leggings", "di
 # the item icon also gets flame tongues.
 ELYTRA = {"elytra.png": "item/elytra.png", "elytra_broken.png": "item/elytra_broken.png",
           "elytra_wings.png": "entity/equipment/wings/elytra.png"}
-# Bow and crossbow: vanilla wood, with the string and metal made of blaze rod
-# (real blaze rod colours with its glowing banded segments).
+# Crossbow: vanilla wood, with the string and metal made of blaze rod (real
+# blaze rod colours with its glowing banded segments). The bow stays vanilla.
 # Arrows: blaze rod shaft, with the head and fletching on the fire ramp.
 # Mapping is by brightness; anything else (firework colours) is left alone.
 BLAZE_RAMP = [(120, 40, 0), (174, 60, 0), (191, 90, 0), (216, 174, 38), (255, 243, 45), (255, 248, 126)]
 BLAZE_BANDS = 3  # every third diagonal row glows brighter, like the rod's segments
 ARROWS = {"arrow", "arrow_entity"}
 RANGED = {
-    "bow": "item/bow.png", "bow_pulling_0": "item/bow_pulling_0.png",
-    "bow_pulling_1": "item/bow_pulling_1.png", "bow_pulling_2": "item/bow_pulling_2.png",
     "crossbow_standby": "item/crossbow_standby.png", "crossbow_pulling_0": "item/crossbow_pulling_0.png",
     "crossbow_pulling_1": "item/crossbow_pulling_1.png", "crossbow_pulling_2": "item/crossbow_pulling_2.png",
     "crossbow_arrow": "item/crossbow_arrow.png", "crossbow_firework": "item/crossbow_firework.png",
@@ -581,7 +579,7 @@ def ranged(name, dest):
                     img.putpixel((x, y), rgba(ramp(LAVA, lum * 1.15), a))
                 elif wood:
                     img.putpixel((x, y), rgba(ramp(BLAZE_RAMP, lum * 2.4 + band), a))
-            elif grey:  # bow/crossbow wood stays vanilla
+            elif grey:  # crossbow wood stays vanilla
                 img.putpixel((x, y), rgba(ramp(BLAZE_RAMP, lum * 1.3 + 0.15 + band), a))
     save_texture(img, dest)
 
