@@ -1,4 +1,24 @@
-# Phoenix PvP resource pack
+# Resource packs
+
+## Void PvP
+
+Minecraft Java 1.21.11 (pack format 75). Purple, white and black, black hole / void themed.
+
+- `VoidPvP/` – pack source, `VoidPvP.zip` – ready to drop into `.minecraft/resourcepacks`
+- Generator: `python3 tools/gen_void.py` (reuses `gen_textures.py` with void palettes)
+
+Same pieces as Phoenix PvP below, re-themed:
+- Instead of flames, a "void pull": dotted particle rings ripple inward toward tools, the mace,
+  armor icons, apples and the elytra, with twinkling white stars (items are never covered)
+- Dark void-rod handles, violet gem
+- Totem – an animated black hole (dark core, white photon ring, spinning accretion disk)
+- Hearts fade from lilac to near-black; hunger icons are small black holes (AppleSkin outline too)
+- Pearl / wind charge orbited by a white-to-purple accretion disk; violet cobwebs and wind
+- Pale lilac gap, deep violet egap; smoky violet potion glass with obsidian stoppers
+- Violet-tinted bow with a white string; crossbow and arrows in violet/white
+- Violet glint, white/violet crit X, dark purple hit hearts, low fire, small totem and shield
+
+## Phoenix PvP
 
 Minecraft Java 1.21.11 (pack format 75).
 
