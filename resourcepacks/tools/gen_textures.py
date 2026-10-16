@@ -86,6 +86,9 @@ MACE = (range(5, 16), (8, 7))  # flame columns, gem where the handle meets the h
 # shows the Danish flag on its head (item definition selects on custom_name).
 DANISH_MACE = False
 DANISH_NAME = "Crushing Swedes"
+# Accept a few capitalisations, each as a plain string and as a text
+# component object (both decode to the same name).
+DANISH_NAMES = [DANISH_NAME, DANISH_NAME.lower(), DANISH_NAME.upper(), "Crushing swedes", "crushing Swedes"]
 DANNEBROG_EDGE = (96, 4, 20)
 DANNEBROG_RED = [(150, 8, 30), (200, 16, 46), (232, 40, 64)]
 DANNEBROG_WHITE = [(205, 205, 210), (245, 245, 248), (255, 255, 255)]
@@ -642,7 +645,8 @@ def danish_mace():
     with open(os.path.join(items_dir, "mace.json"), "w") as fh:
         json.dump({"model": {
             "type": "minecraft:select", "property": "minecraft:component", "component": "minecraft:custom_name",
-            "cases": [{"when": DANISH_NAME, "model": {"type": "minecraft:model", "model": "minecraft:item/mace_danish"}}],
+            "cases": [{"when": DANISH_NAMES + [{"text": n} for n in DANISH_NAMES],
+                       "model": {"type": "minecraft:model", "model": "minecraft:item/mace_danish"}}],
             "fallback": {"type": "minecraft:model", "model": "minecraft:item/mace"},
         }}, fh, indent=2)
         fh.write("\n")

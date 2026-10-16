@@ -5,7 +5,28 @@
     "component": "minecraft:custom_name",
     "cases": [
       {
-        "when": "Crushing Swedes",
+        "when": [
+          "Crushing Swedes",
+          "crushing swedes",
+          "CRUSHING SWEDES",
+          "Crushing swedes",
+          "crushing Swedes",
+          {
+            "text": "Crushing Swedes"
+          },
+          {
+            "text": "crushing swedes"
+          },
+          {
+            "text": "CRUSHING SWEDES"
+          },
+          {
+            "text": "Crushing swedes"
+          },
+          {
+            "text": "crushing Swedes"
+          }
+        ],
         "model": {
           "type": "minecraft:model",
           "model": "minecraft:item/mace_danish"
