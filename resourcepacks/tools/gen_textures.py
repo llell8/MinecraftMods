@@ -4,6 +4,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - netherite tools and weapons: vanilla texture with a blaze rod handle,
   animated fire on the head and an orange gem where the head meets the handle
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
+- netherite armor: flames on the icons, molten seams on the worn armor
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
 """
@@ -43,12 +44,20 @@ BLAZE_ROD = {
 }
 # Blaze rod toned down to a dim copper: (saturation, brightness, hue shift).
 # The hue shift pulls the yellow toward orange so it doesn't go olive.
-ROD_TONE = (0.55, 0.62, -0.035)
+ROD_TONE = (0.85, 0.8, -0.02)
 # The black outline around the handle becomes the blaze rod's dark edge,
 # and the end cap on the bottom row its darker tip.
 ROD_EDGE = (174, 60, 0)
 ROD_END = (149, 51, 0)
 OUTLINE = {(35, 16, 18), (27, 20, 21), (22, 8, 20)}
+# Netherite armor icons get the same flames along their top edge.
+ARMOR_ITEMS = ["netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"]
+# Worn armor (vanilla file -> pack path). Entity textures can't animate, so the
+# armor gets lava glowing between its plates instead of flames.
+WORN_ARMOR = {
+    "humanoid_netherite.png": "entity/equipment/humanoid/netherite.png",
+    "humanoid_leggings_netherite.png": "entity/equipment/humanoid_leggings/netherite.png",
+}
 MAX_OVERLAP = 2  # deepest the flames start inside the head
 
 
@@ -74,12 +83,12 @@ def fire(frame, base, columns):
                 break
             frac = k / (h - 1) if h > 1 else 0
             if frac < 0.34:
-                c, a = LAVA[3], 200
+                c = LAVA[3]
             elif frac < 0.67:
-                c, a = LAVA[2], 190
+                c = LAVA[2]
             else:
-                c, a = LAVA[1], 150
-            px[(x, y)] = rgba(c, a)
+                c = LAVA[1]
+            px[(x, y)] = rgba(c)
     # Embers rise up-left off the head and loop every FRAMES.
     rng = random.Random(1337)
     for _ in range(4):
@@ -88,7 +97,7 @@ def fire(frame, base, columns):
         t = (frame + rng.randint(0, FRAMES - 1)) % FRAMES
         p = (sx - t // 3, sy - t)
         if t < FRAMES - 2 and p[0] >= 0 and p[1] >= 0 and p not in px and base.getpixel(p)[3] == 0:
-            px[p] = rgba(LAVA[4] if t < 3 else LAVA[2], 230 - t * 25)
+            px[p] = rgba(LAVA[4] if t < 3 else LAVA[2])
     return px
 
 
@@ -195,6 +204,26 @@ def render_frame(frame, base, columns, gem):
     return img
 
 
+# Darkest netherite tones (the recesses between plates) -> molten glow.
+MOLTEN = {
+    (36, 31, 32): (186, 46, 8),
+    (23, 17, 17): LAVA[0], (36, 25, 25): LAVA[0], (10, 10, 10): LAVA[0], (17, 17, 17): LAVA[0],
+}
+
+
+def molten_seams(name, dest):
+    """Lava glowing through the gaps between the armor plates."""
+    img = Image.open(os.path.join(VANILLA, name)).convert("RGBA")
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = img.getpixel((x, y))
+            if a and (r, g, b) in MOLTEN:
+                img.putpixel((x, y), rgba(MOLTEN[(r, g, b)], a))
+    path = os.path.join(TEX, dest)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    img.save(path)
+
+
 def orange_glint(name):
     src = Image.open(os.path.join(VANILLA, name)).convert("RGB")
     out = Image.new("RGB", src.size)
@@ -219,6 +248,19 @@ def main():
         with open(os.path.join(item_dir, name + ".png.mcmeta"), "w") as fh:
             json.dump({"animation": {"frametime": 2}}, fh, indent=2)
             fh.write("\n")
+
+    for name in ARMOR_ITEMS:
+        base = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
+        columns = [x for x in range(base.width) if any(base.getpixel((x, y))[3] for y in range(base.height))]
+        strip = Image.new("RGBA", (base.width, base.height * FRAMES))
+        for f in range(FRAMES):
+            strip.paste(render_frame(f, base, columns, None), (0, f * base.height))
+        strip.save(os.path.join(item_dir, name + ".png"))
+        with open(os.path.join(item_dir, name + ".png.mcmeta"), "w") as fh:
+            json.dump({"animation": {"frametime": 2}}, fh, indent=2)
+            fh.write("\n")
+    for name, dest in WORN_ARMOR.items():
+        molten_seams(name, dest)
 
     phoenix = draw_phoenix()
     size = PHOENIX_SIZE

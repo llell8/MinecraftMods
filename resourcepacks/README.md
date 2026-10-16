@@ -12,6 +12,7 @@ Textures so far:
   head meets the handle
 - Totem of undying – 16x16 dragon-rune style phoenix in the tools' fire colours: serpent body,
   solid spread wings, legs with talons, fanned tail feathers
+- Netherite armor – animated flames on the icons; lava glowing between the plates when worn
 - Enchant glint – orange (items and armor)
 
 `tools/vanilla/` holds the vanilla 1.21.11 textures the generator starts from.
