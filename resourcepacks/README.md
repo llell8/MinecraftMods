@@ -13,7 +13,7 @@ Textures so far:
 - Diamond sword, axe, pickaxe, shovel, hoe, spear and armor icons – same treatment as netherite
   (blaze rod handles, animated flames, gem)
 - Elytra – phoenix wings on the fire palette (worn wings, item with flames, broken item)
-- Bow and crossbow (all pull/loaded states) – dark orange wood with blaze rod string and metal
+- Bow and crossbow (all pull/loaded states) – vanilla wood with blaze rod string and metal
   (real blaze rod colours with glowing banded segments)
 - Arrows (item and stuck in things) – blaze rod shaft, glowing tip, flame-coloured fletching
 - Mace – netherite head with a glowing molten crack, copper blaze rod handle, animated flames
