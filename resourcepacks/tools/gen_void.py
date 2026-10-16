@@ -12,8 +12,9 @@ few drawing functions before running it with VoidPvP as the output folder:
 - phoenix totem -> an animated black hole
 - feathers (hunger) -> small black-hole orbs, with the AppleSkin outline traced around them
 - orange glint -> violet glint
-- netherite sword: galaxy blade (drifting nebula, twinkling stars, bright edge)
-- all gear (netherite/diamond tools, spears, mace, armor icons): stardust twinkling
+- netherite sword and axe: galaxy head (drifting nebula, twinkling stars, bright edge)
+- mace: black hole head (void core, pulsing photon ring, orbiting accretion comets)
+- all other gear (netherite/diamond tools, spears, armor icons): stardust twinkling
   around the head and a pulsing star gem, instead of the void pull
 """
 import math
@@ -198,7 +199,7 @@ g.engulf_frame = void_engulf
 g.HEART_FLAME_COLUMNS = []  # hearts keep their shimmer but lose the flame tongues
 
 
-# The netherite sword gets a galaxy head: the inside of the blade is deep
+# The netherite sword and axe get a galaxy head: the inside of the blade is deep
 # space with a purple nebula drifting along it and white stars twinkling,
 # a bright violet edge and a white-hot tip. Instead of the void pull it has a
 # light sprinkle of stardust twinkling around the blade, and a star for a gem.
@@ -212,6 +213,7 @@ ROD_COLOURS = {ROD_DARK, ROD_MID, ROD_LIGHT, (16, 8, 24), (8, 4, 14)}
 # handle, outline and gem pixels are always left alone.
 GALAXY_ITEMS = {  # items whose head is recoloured as a galaxy
     "netherite_sword": (range(6, 16), 9),
+    "netherite_axe": (range(6, 15), 8),
 }
 
 
@@ -219,7 +221,7 @@ GALAXY_ITEMS = {  # items whose head is recoloured as a galaxy
 # twinkling around the head and (tools/weapons) a pulsing star gem. Its head
 # area is found by colour (see galaxy_region). Pearls and wind charges keep
 # their accretion disk.
-GALAXY_GEAR = (list(g.TOOLS) + list(g.DIAMOND_TOOLS) + ["mace"]
+GALAXY_GEAR = (list(g.TOOLS) + list(g.DIAMOND_TOOLS)
                + g.ARMOR_ITEMS + g.DIAMOND_ARMOR)
 
 
@@ -321,6 +323,53 @@ def galaxy_item(name):
     g.save_animation(frames, "item/" + name + ".png")
 
 
+# The mace is its own thing: its head is a small black hole (a void core
+# shading to deep purple, rimmed by a pulsing white photon ring) with two
+# accretion comets orbiting the head. Handle and gem stay.
+MACE_FRAMES = 16
+
+
+def black_hole_mace():
+    base, gem = g.load_mace(), g.MACE[1]
+    # the whole head as one solid shape: every non-handle pixel up top
+    head = {(x, y) for y in range(11) for x in range(5, 16) if (x, y) != gem
+            and base.getpixel((x, y))[3] and base.getpixel((x, y))[:3] not in ROD_COLOURS}
+    cx = sum(x for x, _ in head) / len(head)
+    cy = sum(y for _, y in head) / len(head)
+    rim = {p for p in head if any((p[0] + dx, p[1] + dy) not in head
+                                  for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))}
+    solid = {(x, y) for y in range(16) for x in range(16) if base.getpixel((x, y))[3]}
+    orbit = [(x, y) for y in range(16) for x in range(16) if (x, y) not in solid
+             and min(max(abs(x - hx), abs(y - hy)) for hx, hy in head) == 1]
+    frames = []
+    for f in range(MACE_FRAMES):
+        phase = f / MACE_FRAMES * 2 * math.pi
+        img = base.copy()
+        for x, y in head:
+            d = math.hypot(x - cx, y - cy)
+            img.putpixel((x, y), g.rgba(g.ramp([HOLE_CORE, (30, 10, 56), (70, 28, 124)], d / 5)))
+        for x, y in rim:
+            glow = 0.5 + 0.5 * math.sin(phase * 2 + math.atan2(y - cy, x - cx) * 2)
+            img.putpixel((x, y), g.rgba(g.ramp([VOID[3], (255, 255, 255)], glow)))
+        head_angle = f / MACE_FRAMES * math.pi       # half a turn per loop, two comets
+        for x, y in orbit:
+            angle = math.atan2(y - cy, x - cx)
+            for comet in (head_angle, head_angle + math.pi):
+                behind = (comet - angle) % (2 * math.pi)
+                if behind < 1.6:
+                    img.putpixel((x, y), g.rgba(g.ORBIT_FIRE[min(4, int(behind / 1.6 * 5))]))
+        pulse = 0.5 + 0.5 * math.sin(phase)
+        img.putpixel(gem, g.rgba((255, 255, 255) if pulse > 0.5 else VOID[3]))
+        frames.append(img)
+    w, h = frames[0].size
+    strip = Image.new("RGBA", (w, h * MACE_FRAMES))
+    for i, fr in enumerate(frames):
+        strip.paste(fr, (0, i * h))
+    g.save_texture(strip, "item/mace.png")
+    with open(os.path.join(g.TEX, "item", "mace.png.mcmeta"), "w") as fh:
+        fh.write('{\n  "animation": {\n    "frametime": 2\n  }\n}\n')
+
+
 def violet_glint(name):
     src = Image.open(os.path.join(g.VANILLA, name)).convert("RGB")
     out = Image.new("RGB", src.size)
@@ -339,6 +388,7 @@ def main():
     g.main()
     for name in dict.fromkeys(list(GALAXY_ITEMS) + GALAXY_GEAR):
         galaxy_item(name)
+    black_hole_mace()
     # pack.png: the black hole on a deep violet gradient; pack.mcmeta.
     icon = Image.new("RGBA", (64, 64))
     for y in range(64):
