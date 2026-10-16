@@ -156,7 +156,6 @@ PHOENIX = [
     ".w..ro.oy.or..w.",
     "....y..ww..y....",
 ]
-MEMBRANE_ALPHA = 230
 # Heat shimmer: a band runs down the dragon, briefly heating hot colours.
 SHIMMER = {"o": "y", "y": "w"}
 
@@ -172,7 +171,7 @@ def phoenix_frame(frame, grid):
     for (x, y), key in grid.items():
         if key in SHIMMER and math.sin(phase - y * 8 / PHOENIX_SIZE) > 0.85:
             key = SHIMMER[key]
-        img.putpixel((x, y), rgba(PHOENIX_COLOURS[key], MEMBRANE_ALPHA if key in "mM" else 255))
+        img.putpixel((x, y), rgba(PHOENIX_COLOURS[key]))
     # Embers rising off the wing peaks.
     rng = random.Random(7)
     for _ in range(4):
@@ -180,7 +179,7 @@ def phoenix_frame(frame, grid):
         t = (frame + rng.randint(0, FRAMES - 1)) % FRAMES
         p = (sx, 2 - t)
         if t < 3 and p[1] >= 0 and img.getpixel(p)[3] == 0:
-            img.putpixel(p, rgba(LAVA[4] if t < 2 else LAVA[3], 240 - t * 30))
+            img.putpixel(p, rgba(LAVA[4] if t < 2 else LAVA[3]))
     return img
 
 
