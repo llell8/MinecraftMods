@@ -16,7 +16,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - block/fire_0, fire_1: low fire (squashed frames)
 - models/item: smaller first-person totem and shield
 - potions: amber glass bottles with netherite stoppers
-- diamond tools, spear and armor icons: like netherite but in blue soul fire
+- diamond tools, spear and armor icons: like netherite but in royal-blue fire
 - elytra (item, broken item, worn wings): phoenix wings on the fire palette
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
@@ -37,8 +37,9 @@ TEX = os.path.join(ROOT, "assets", "minecraft", "textures")
 FRAMES = 8
 
 LAVA = [(140, 24, 6), (196, 52, 8), (240, 110, 16), (255, 170, 40), (255, 228, 120)]
-# Blue soul fire, same five steps dark to bright, for the diamond set.
-SOUL = [(16, 52, 84), (24, 98, 146), (40, 160, 205), (100, 220, 240), (215, 255, 255)]
+# Deep royal-blue fire, same five steps dark to bright, for the diamond set
+# (indigo rather than cyan so it doesn't blend into the diamond).
+SOUL = [(30, 14, 96), (52, 38, 170), (76, 82, 232), (140, 160, 255), (225, 230, 255)]
 # texture name -> (columns the flames rise from, gem pixel where head meets handle)
 TOOLS = {
     "netherite_sword": (range(7, 14), (5, 9)),
