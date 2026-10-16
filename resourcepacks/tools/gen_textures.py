@@ -8,7 +8,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - gui/sprites/hud: animated flaming hearts, phoenix feathers for the hunger bar
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
 - mace.png: netherite head with a molten crack, blaze rod handle, flames
-- netherite armor icons: wrapped in flames that leave the armor visible
+- netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
 """
@@ -66,7 +66,8 @@ MACE_ROD = {  # breeze rod colours -> blaze rod colours (toned like the other ha
     (122, 130, 196): (216, 174, 38), (181, 165, 202): (255, 243, 45),
 }
 MACE = (range(5, 16), (8, 7))  # flame columns, gem where the handle meets the head
-# Netherite armor icons are wrapped in flames that never cover the armor.
+# Netherite armor icons get flame tongues rising off their top edge, never
+# covering the armor.
 ARMOR_ITEMS = ["netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"]
 # HUD: fiery hearts (vanilla shape, fire gradient top to bottom, little flame
 # licks above the lobes) and phoenix feathers instead of drumsticks.
@@ -250,29 +251,20 @@ def phoenix_frame(frame, grid):
 
 
 def engulf_frame(frame, base):
-    """Flames wrapped around an item without covering it: they only fill the
-    empty pixels next to it, flickering up the sides and rising off the top."""
+    """A few flame tongues rising off the item's top edge without covering it:
+    smooth waves so neighbouring columns form tongues instead of speckles."""
     img = base.copy()
-    w, h = base.size
-    solid = {(x, y) for y in range(h) for x in range(w) if base.getpixel((x, y))[3]}
     phase = frame / FRAMES * 2 * math.pi
-    for y in range(h):
-        for x in range(w):
-            if (x, y) in solid:
-                continue
-            d = min((max(abs(x - sx), abs(y - sy)) for sx, sy in solid), default=9)
-            above = any((x, y + k) in solid for k in range(1, 4))
-            below = any((x, y - k) in solid for k in range(1, 4))
-            if below and not above:
-                continue  # fire rises: nothing under the item
-            if d > 2 and not (d == 3 and above):
-                continue
-            # flicker pattern drifting upward
-            v = 0.5 + 0.5 * math.sin(phase * 2 - y * 1.1 + x * 2.3) * math.sin(phase + x * 1.3 + y * 0.4)
-            if above:
-                v += 0.15
-            if v > {1: 0.55, 2: 0.78, 3: 0.85}[d]:
-                img.putpixel((x, y), rgba({1: LAVA[3], 2: LAVA[2], 3: LAVA[1]}[d]))
+    for x in range(base.width):
+        tops = [y for y in range(base.height) if base.getpixel((x, y))[3]]
+        if not tops:
+            continue
+        h = 1.2 * math.sin(phase + x * 0.9) + 0.5 * math.sin(phase * 2 - x * 0.6) + 1.0
+        for k in range(max(0, min(3, round(h)))):
+            y = tops[0] - 1 - k
+            if y < 0:
+                break
+            img.putpixel((x, y), rgba((LAVA[3], LAVA[2], LAVA[1])[k]))
     return img
 
 
