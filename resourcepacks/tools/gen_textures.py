@@ -136,9 +136,11 @@ def load_tool(name):
 # resolution, then reduced to 32x32 by majority colour per pixel.
 PHOENIX_SIZE = 32
 PHOENIX_SCALE = 12
+# Same fire palette as the flames on the tools, plus a near-black ember for
+# the legs.
 PHOENIX_COLOURS = {
-    "M": (130, 20, 10), "m": (175, 38, 12), "r": (205, 60, 16),
-    "o": (240, 120, 20), "y": (255, 190, 50), "w": (255, 240, 170),
+    "M": (110, 16, 6), "m": LAVA[0], "r": LAVA[1], "o": LAVA[2], "y": LAVA[3], "w": LAVA[4],
+    "L": (60, 12, 8),
 }
 MEMBRANE_ALPHA = 230
 # Heat shimmer: a band runs down the dragon, briefly heating hot colours.
@@ -233,6 +235,14 @@ def draw_phoenix():
             d.polygon([edge, inner, at(t + 0.12, side)], fill=0)
         d.line([spine[3], spine[-2]], fill=fill("y"), width=int(0.5 * k))
         d.line([spine[-6], spine[-1]], fill=fill("w"), width=int(0.6 * k))
+    # Two dark legs hanging below the body over the tail, each ending in
+    # three talons.
+    for hip, knee, foot, toes in [((14, 16), (12, 19), (11, 22.5), [(9.2, 24), (10.6, 24.8), (12.2, 24.4)]),
+                                  ((17, 16), (19, 19), (20, 22.5), [(18.8, 24.4), (20.4, 24.8), (21.8, 24)])]:
+        d.line([(hip[0] * k, hip[1] * k), (knee[0] * k, knee[1] * k), (foot[0] * k, foot[1] * k)],
+               fill=fill("L"), width=int(1.3 * k), joint="curve")
+        for toe in toes:
+            d.line([(foot[0] * k, foot[1] * k), (toe[0] * k, toe[1] * k)], fill=fill("L"), width=int(0.9 * k))
     # Head, snout, crest flames streaming back.
     d.ellipse([16 * k, 1.5 * k, 21.5 * k, 6 * k], fill=fill("o"))
     d.polygon([(20.5 * k, 2.4 * k), (25.5 * k, 3.6 * k), (20.5 * k, 5.4 * k)], fill=fill("o"))
