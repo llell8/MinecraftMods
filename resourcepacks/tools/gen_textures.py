@@ -15,7 +15,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
   soul-fire enchanted sparkle, plain dark orange hearts when you hit something
 - block/fire_0, fire_1: low fire (squashed frames)
 - models/item: smaller first-person totem and shield
-- potions: amber glass bottles with blaze rod corks
+- potions: amber glass bottles with netherite stoppers
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -148,15 +148,15 @@ TOTEM_FIRST_PERSON = {"rotation": [0, -90, 25], "translation": [1.13, 1.2, 1.13]
 SHIELD_SCALE = 0.85      # vanilla first person is 1.25
 SHIELD_DROP = 5          # pixels lower on screen (vanilla y + this many down)
 SHIELD_BLOCKING_DROP = 2  # a little lower while blocking, so it stays visible
-# Potions: warm amber glass with a copper blaze rod cork. The liquid keeps its
+# Potions: warm amber glass with a dark netherite stopper. The liquid keeps its
 # effect colour.
 BOTTLE_COLOURS = {
     (212, 229, 247): (255, 236, 200), (179, 207, 236): (232, 182, 128),  # glass highlights
     (139, 173, 208): (200, 128, 78), (93, 143, 194): (130, 56, 28),      # glass shade, edge
 }
-CORK_COLOURS = {  # cork -> blaze rod (toned like the handles)
-    (212, 109, 73): (255, 243, 45), (204, 175, 165): (255, 243, 45),
-    (169, 71, 37): (216, 174, 38), (151, 55, 22): (179, 107, 25),
+CORK_COLOURS = {  # cork -> netherite stopper (same tones as the tools)
+    (212, 109, 73): (134, 123, 134), (204, 175, 165): (112, 103, 112),
+    (169, 71, 37): (79, 60, 62), (151, 55, 22): (50, 39, 39),
 }
 BOTTLES = ["potion", "splash_potion", "lingering_potion", "glass_bottle"]
 # Netherite armor icons get flame tongues rising off their top edge, never
@@ -510,7 +510,7 @@ def potions():
                 if a and (r, g, b) in BOTTLE_COLOURS:
                     img.putpixel((x, y), rgba(BOTTLE_COLOURS[(r, g, b)], a))
                 elif a and (r, g, b) in CORK_COLOURS:
-                    img.putpixel((x, y), rgba(tone(CORK_COLOURS[(r, g, b)], *ROD_TONE), a))
+                    img.putpixel((x, y), rgba(CORK_COLOURS[(r, g, b)], a))
         save_texture(img, "item/" + name + ".png")
 
 
