@@ -19,7 +19,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - diamond tools, spear and armor icons: same flames, handles and gem as netherite
 - elytra (item, broken item, worn wings): phoenix wings on the fire palette
 - crossbow (all states): vanilla wood, banded blaze rod string/metal
-- bow (all states): vanilla with a yellow string
+- bow (all states): slightly orange wood, yellow string
 - arrows: banded blaze rod shaft, fire-coloured head and fletching
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
@@ -176,7 +176,8 @@ ELYTRA = {"elytra.png": "item/elytra.png", "elytra_broken.png": "item/elytra_bro
           "elytra_wings.png": "entity/equipment/wings/elytra.png"}
 # Crossbow: vanilla wood, with the string and metal made of blaze rod (real
 # blaze rod colours with its glowing banded segments).
-# Bow: fully vanilla except the string (its only (68, 68, 68) pixels), which is yellow.
+# Bow: vanilla with its wood nudged a little toward orange, and a yellow string
+# (the string is its only (68, 68, 68) pixels).
 # Arrows: blaze rod shaft, with the head and fletching on the fire ramp.
 # Mapping is by brightness; anything else (firework colours) is left alone.
 BLAZE_RAMP = [(120, 40, 0), (174, 60, 0), (191, 90, 0), (216, 174, 38), (255, 243, 45), (255, 248, 126)]
@@ -185,6 +186,8 @@ ARROWS = {"arrow", "arrow_entity"}
 BOWS = ["bow", "bow_pulling_0", "bow_pulling_1", "bow_pulling_2"]
 BOW_STRING = (68, 68, 68)
 BOW_STRING_YELLOW = (255, 214, 50)
+BOW_WOOD = {(73, 54, 21), (137, 103, 39), (104, 78, 30), (40, 30, 11)}
+BOW_WOOD_TONE = (1.35, 1.0, -0.035)  # saturation, brightness, hue shift toward orange
 RANGED = {
     "crossbow_standby": "item/crossbow_standby.png", "crossbow_pulling_0": "item/crossbow_pulling_0.png",
     "crossbow_pulling_1": "item/crossbow_pulling_1.png", "crossbow_pulling_2": "item/crossbow_pulling_2.png",
@@ -758,6 +761,8 @@ def main():
                 r, g, b, a = img.getpixel((x, y))
                 if a and (r, g, b) == BOW_STRING:
                     img.putpixel((x, y), rgba(BOW_STRING_YELLOW, a))
+                elif a and (r, g, b) in BOW_WOOD:
+                    img.putpixel((x, y), rgba(tone((r, g, b), *BOW_WOOD_TONE), a))
         save_texture(img, "item/" + name + ".png")
 
     mace = load_mace()
