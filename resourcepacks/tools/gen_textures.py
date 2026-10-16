@@ -1,7 +1,8 @@
 """Generates the Phoenix PvP textures from the vanilla 1.21.11 ones in tools/vanilla.
 
-Run: python3 resourcepacks/tools/gen_fiery_netherite_sword.py
-- netherite_sword.png: vanilla sword with animated fire and an orange guard gem
+Run: python3 resourcepacks/tools/gen_textures.py
+- netherite tools and weapons: vanilla texture with animated fire on the head
+  and an orange gem where the head meets the handle
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
 """
@@ -17,26 +18,33 @@ VANILLA = os.path.join(HERE, "vanilla")
 ROOT = os.path.join(HERE, "..", "PhoenixPvP")
 TEX = os.path.join(ROOT, "assets", "minecraft", "textures")
 FRAMES = 8
-S = 16
 
 LAVA = [(140, 24, 6), (196, 52, 8), (240, 110, 16), (255, 170, 40), (255, 228, 120)]
-GEM = (5, 9)  # where the blade meets the cross-guard
-BLADE_COLUMNS = range(7, 14)  # columns the flames rise from
-MAX_OVERLAP = 2  # deepest the flames start inside the blade
+# texture name -> (columns the flames rise from, gem pixel where head meets handle)
+TOOLS = {
+    "netherite_sword": (range(7, 14), (5, 9)),
+    "netherite_axe": (range(6, 13), (9, 7)),
+    "netherite_pickaxe": (range(5, 14), (10, 5)),
+    "netherite_shovel": (range(8, 15), (10, 6)),
+    "netherite_hoe": (range(6, 14), (12, 4)),
+    "netherite_spear": (range(7, 14), (8, 7)),
+    "netherite_spear_in_hand": (range(0, 9), (7, 7)),
+}
+MAX_OVERLAP = 2  # deepest the flames start inside the head
 
 
 def rgba(c, a=255):
     return (c[0], c[1], c[2], a)
 
 
-def fire(frame, base):
-    """Flames licking up off the blade's top edge, plus drifting embers."""
+def fire(frame, base, columns):
+    """Flames licking up off the head's top edge, plus drifting embers."""
     px = {}
     phase = frame / FRAMES * 2 * math.pi
-    for x in BLADE_COLUMNS:
-        top = next(y for y in range(S) if base.getpixel((x, y))[3])
+    for x in columns:
+        top = next(y for y in range(base.height) if base.getpixel((x, y))[3])
         h = 1.6 + 1.2 * math.sin(phase + x * 1.9) + 0.6 * math.sin(phase * 2 + x * 0.7)
-        # Where each flame starts wanders between the blade's edge and
+        # Where each flame starts wanders between the head's edge and
         # MAX_OVERLAP pixels inside it, so the base shifts frame to frame.
         start = 1.2 + 0.9 * math.sin(phase * 2 + x * 2.7 + 1.0)
         overlap = max(0, min(MAX_OVERLAP, int(round(start))))
@@ -53,25 +61,26 @@ def fire(frame, base):
             else:
                 c, a = LAVA[1], 150
             px[(x, y)] = rgba(c, a)
-    # Embers rise up-left and loop every FRAMES.
+    # Embers rise up-left off the head and loop every FRAMES.
     rng = random.Random(1337)
     for _ in range(4):
-        sx, sy = rng.randint(6, 12), rng.randint(2, 6)
+        sx = rng.choice(list(columns))
+        sy = next(y for y in range(base.height) if base.getpixel((sx, y))[3]) - rng.randint(1, 2)
         t = (frame + rng.randint(0, FRAMES - 1)) % FRAMES
         p = (sx - t // 3, sy - t)
-        if t < FRAMES - 2 and p[1] >= 0 and p not in px and base.getpixel(p)[3] == 0:
+        if t < FRAMES - 2 and p[0] >= 0 and p[1] >= 0 and p not in px and base.getpixel(p)[3] == 0:
             px[p] = rgba(LAVA[4] if t < 3 else LAVA[2], 230 - t * 25)
     return px
 
 
-def render_frame(frame, base):
+def render_frame(frame, base, columns, gem):
     img = base.copy()
-    flames = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    for p, c in fire(frame, base).items():
+    flames = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    for p, c in fire(frame, base, columns).items():
         flames.putpixel(p, c)
     img.alpha_composite(flames)
     pulse = 0.5 + 0.5 * math.sin(frame / FRAMES * 2 * math.pi)
-    img.putpixel(GEM, rgba(LAVA[3] if pulse > 0.5 else LAVA[2]))
+    img.putpixel(gem, rgba(LAVA[3] if pulse > 0.5 else LAVA[2]))
     return img
 
 
@@ -87,16 +96,18 @@ def orange_glint(name):
 
 
 def main():
-    base = Image.open(os.path.join(VANILLA, "netherite_sword.png")).convert("RGBA")
     item_dir = os.path.join(TEX, "item")
     os.makedirs(item_dir, exist_ok=True)
-    strip = Image.new("RGBA", (S, S * FRAMES))
-    for f in range(FRAMES):
-        strip.paste(render_frame(f, base), (0, f * S))
-    strip.save(os.path.join(item_dir, "netherite_sword.png"))
-    with open(os.path.join(item_dir, "netherite_sword.png.mcmeta"), "w") as fh:
-        json.dump({"animation": {"frametime": 2}}, fh, indent=2)
-        fh.write("\n")
+    for name, (columns, gem) in TOOLS.items():
+        base = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
+        w, h = base.size
+        strip = Image.new("RGBA", (w, h * FRAMES))
+        for f in range(FRAMES):
+            strip.paste(render_frame(f, base, columns, gem), (0, f * h))
+        strip.save(os.path.join(item_dir, name + ".png"))
+        with open(os.path.join(item_dir, name + ".png.mcmeta"), "w") as fh:
+            json.dump({"animation": {"frametime": 2}}, fh, indent=2)
+            fh.write("\n")
 
     orange_glint("enchanted_glint_item.png")
     orange_glint("enchanted_glint_armor.png")
@@ -107,7 +118,9 @@ def main():
         t = y / 63
         for x in range(64):
             icon.putpixel((x, y), (int(30 + 90 * t), int(8 + 20 * t), 10, 255))
-    icon.alpha_composite(render_frame(0, base).resize((64, 64), Image.NEAREST))
+    sword = Image.open(os.path.join(VANILLA, "netherite_sword.png")).convert("RGBA")
+    frame = render_frame(0, sword, *TOOLS["netherite_sword"])
+    icon.alpha_composite(frame.resize((64, 64), Image.NEAREST))
     icon.save(os.path.join(ROOT, "pack.png"))
 
 
