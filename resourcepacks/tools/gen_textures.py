@@ -11,8 +11,8 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - mace.png: netherite head with a molten crack, blaze rod handle, flames
 - ender pearl, cobweb, wind charge (item + projectile + burst particles):
   recoloured orange; flickering fires orbit the pearl and wind charge items
-- particle/critical_hit, enchanted_hit, damage: fiery crit sparks, blue
-  soul-fire enchanted crits, flaming hearts when you hit something
+- particle/critical_hit, enchanted_hit, damage: thin fiery crit X, thin blue
+  soul-fire enchanted sparkle, plain dark ember hearts when you hit something
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -101,36 +101,37 @@ GUST_PARTICLES = [f"gust_{i}" for i in range(12)] + [f"small_gust_{i}" for i in 
 PARTICLE_COLOURS = {
     "W": (255, 255, 235), "y": (255, 220, 110), "o": (255, 150, 50), "r": (225, 70, 25),
     "w": (255, 255, 255), "l": (215, 215, 215), "g": (160, 160, 160),
+    "H": (150, 32, 16), "h": (100, 18, 10),  # plain dark ember heart
 }
 PARTICLE_SPRITES = {
-    "critical_hit": [  # fiery star spark
-        "...o....",
-        ".o.y.o..",
-        "..yWy...",
-        "oyWWWyo.",
-        "..yWy...",
-        ".o.y.o..",
-        "...o....",
+    "critical_hit": [  # thin fiery X spark
+        "o.....o.",
+        ".y...y..",
+        "..y.y...",
+        "...W....",
+        "..y.y...",
+        ".y...y..",
+        "o.....o.",
         "........",
     ],
-    "enchanted_hit": [  # soul-fire flame (greys; the game tints it blue)
-        "..w..l..",
-        "..wl.w..",
-        ".lww.wl.",
-        ".wwwlww.",
-        "lwwggwwl",
-        "lwwggwwl",
-        ".lwwwwl.",
-        "..lggl..",
+    "enchanted_hit": [  # thin soul-fire sparkle (greys; the game tints it blue)
+        "...w....",
+        "...l....",
+        "........",
+        "wl.w.lw.",
+        "........",
+        "...l....",
+        "...w....",
+        "........",
     ],
-    "damage": [  # flaming heart popping out of whatever you hit
-        ".oo.oo..",
-        "oyyoyyo.",
-        "oyWyyyo.",
-        "royyyor.",
-        ".rooor..",
-        "..ror...",
-        "...r....",
+    "damage": [  # plain dark ember heart
+        ".hh.hh..",
+        "hHHhHHh.",
+        "hHHHHHh.",
+        "hHHHHHh.",
+        ".hHHHh..",
+        "..hHh...",
+        "...h....",
         "........",
     ],
 }

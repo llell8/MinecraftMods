@@ -23,8 +23,8 @@ Textures so far:
   hardcore + damage flash too
 - Hunger bar – phoenix feathers instead of drumsticks (green when you have Hunger)
 - Saturation (needs the AppleSkin mod) – gold outline traced around the feathers
-- Hit particles – fiery star sparks for crits, blue soul-fire flames for enchanted crits
-  (the game tints those blue, so they can't be orange), flaming hearts when you hit something
+- Hit particles – thin orange X for crits, thin blue soul-fire sparkle for enchanted crits
+  (the game tints those blue, so they can't be orange), plain dark ember hearts when you hit something
 - Enchant glint – orange (items and armor)
 
 `tools/vanilla/` holds the vanilla 1.21.11 textures the generator starts from
