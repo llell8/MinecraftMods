@@ -18,8 +18,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - potions: amber glass bottles with netherite stoppers
 - diamond tools, spear and armor icons: same flames, handles and gem as netherite
 - elytra (item, broken item, worn wings): phoenix wings on the fire palette
-- bow, crossbow (all states), arrows: blaze rod wood, glowing string/metal/fletching
-- shield: charred wood, netherite rim, flame emblem (plain shield)
+- bow, crossbow (all states), arrows: banded blaze rod wood, glowing string/metal/fletching
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -173,10 +172,12 @@ DIAMOND_ARMOR = ["diamond_helmet", "diamond_chestplate", "diamond_leggings", "di
 # the item icon also gets flame tongues.
 ELYTRA = {"elytra.png": "item/elytra.png", "elytra_broken.png": "item/elytra_broken.png",
           "elytra_wings.png": "entity/equipment/wings/elytra.png"}
-# Bow, crossbow, arrows: warm browns (wood) go onto the copper blaze rod ramp,
-# neutral greys/whites (string, metal, arrowheads, fletching) onto the fire
-# ramp, by brightness; anything else (firework colours) is left alone.
-ROD_RAMP = [(110, 34, 0), (174, 60, 0), (179, 107, 25), (216, 174, 38), (255, 243, 45)]
+# Bow, crossbow, arrows: warm browns (wood) become blaze rod, using the real
+# blaze rod colours with its glowing banded segments; neutral greys/whites
+# (string, metal, arrowheads, fletching) go onto the fire ramp, by brightness;
+# anything else (firework colours) is left alone.
+BLAZE_RAMP = [(120, 40, 0), (174, 60, 0), (191, 90, 0), (216, 174, 38), (255, 243, 45), (255, 248, 126)]
+BLAZE_BANDS = 3  # every third diagonal row glows brighter, like the rod's segments
 RANGED = {
     "bow": "item/bow.png", "bow_pulling_0": "item/bow_pulling_0.png",
     "bow_pulling_1": "item/bow_pulling_1.png", "bow_pulling_2": "item/bow_pulling_2.png",
@@ -185,25 +186,6 @@ RANGED = {
     "crossbow_arrow": "item/crossbow_arrow.png", "crossbow_firework": "item/crossbow_firework.png",
     "arrow": "item/arrow.png", "arrow_entity": "entity/projectiles/arrow.png",
 }
-# Shield: charred wood, netherite rim, and a glowing flame on the front face
-# (the plain shield only; the banner base keeps its white face for patterns).
-SHIELD_RIM = {
-    (87, 87, 94): (50, 39, 39), (101, 102, 109): (79, 60, 62), (110, 112, 119): (93, 86, 93),
-    (120, 121, 129): (112, 103, 112), (145, 147, 155): (134, 123, 134), (163, 164, 170): (150, 140, 150),
-}
-CHARRED = [(26, 12, 9), (48, 20, 12), (74, 30, 14), (104, 42, 16)]
-SHIELD_FLAME = [  # 6x9, centred on the 12x22 front face at (1, 1)
-    "..y...",
-    "..yy..",
-    ".yyo..",
-    ".yoWy.",
-    "yoWWoy",
-    "yoWWoy",
-    "ooyyoo",
-    ".orro.",
-    "..rr..",
-]
-SHIELDS = {"shield_base_nopattern": True, "shield_base": False}  # name: draw the emblem
 # Netherite armor icons get flame tongues rising off their top edge, never
 # covering the armor.
 ARMOR_ITEMS = ["netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"]
@@ -583,7 +565,6 @@ def ramp(stops, t):
 
 def ranged(name, dest):
     img = Image.open(os.path.join(VANILLA, "ranged", name + ".png")).convert("RGBA")
-    rod = [tone(c, *ROD_TONE) for c in ROD_RAMP]
     for y in range(img.height):
         for x in range(img.width):
             r, g, b, a = img.getpixel((x, y))
@@ -593,28 +574,9 @@ def ranged(name, dest):
             if max(r, g, b) - min(r, g, b) < 12:          # grey/white: glowing string, metal, fletching
                 img.putpixel((x, y), rgba(ramp(LAVA, lum * 1.15), a))
             elif r > g > b and r - b > 25:                  # warm brown: wood -> blaze rod
-                img.putpixel((x, y), rgba(ramp(rod, lum * 2.3), a))
+                band = 0.22 if (x + y) % BLAZE_BANDS == 0 else -0.05
+                img.putpixel((x, y), rgba(ramp(BLAZE_RAMP, lum * 2.4 + band), a))
     save_texture(img, dest)
-
-
-def shield(name, emblem):
-    img = Image.open(os.path.join(VANILLA, "ranged", name + ".png")).convert("RGBA")
-    for y in range(img.height):
-        for x in range(img.width):
-            r, g, b, a = img.getpixel((x, y))
-            if not a:
-                continue
-            if (r, g, b) in SHIELD_RIM:
-                img.putpixel((x, y), rgba(SHIELD_RIM[(r, g, b)], a))
-            elif r > g > b:                                 # wood -> charred
-                img.putpixel((x, y), rgba(ramp(CHARRED, (0.3 * r + 0.59 * g + 0.11 * b) / 140), a))
-    if emblem:
-        colours = {"W": LAVA[4], "y": LAVA[3], "o": LAVA[2], "r": LAVA[1]}
-        for y, row in enumerate(SHIELD_FLAME):
-            for x, ch in enumerate(row):
-                if ch != ".":
-                    img.putpixel((1 + 3 + x, 1 + 7 + y), rgba(colours[ch]))
-    save_texture(img, "entity/" + name + ".png")
 
 
 def load_mace():
@@ -779,8 +741,6 @@ def main():
 
     for name, dest in RANGED.items():
         ranged(name, dest)
-    for name, emblem in SHIELDS.items():
-        shield(name, emblem)
 
     mace = load_mace()
     strip = Image.new("RGBA", (16, 16 * FRAMES))

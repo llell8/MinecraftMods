@@ -13,10 +13,9 @@ Textures so far:
 - Diamond sword, axe, pickaxe, shovel, hoe, spear and armor icons – same treatment as netherite
   (blaze rod handles, animated flames, gem)
 - Elytra – phoenix wings on the fire palette (worn wings, item with flames, broken item)
-- Bow and crossbow (all pull/loaded states) – blaze rod wood, glowing orange string and metal
+- Bow and crossbow (all pull/loaded states) – made of blaze rods (real blaze rod colours with glowing
+  banded segments), glowing orange string and metal
 - Arrows (item and stuck in things) – blaze rod shaft, glowing tip, flame-coloured fletching
-- Shield – charred wood, netherite rim, glowing flame emblem (plain shield; banner shields keep
-  their white base so patterns still show)
 - Mace – netherite head with a glowing molten crack, copper blaze rod handle, animated flames
 - Totem of undying – 16x16 dragon-rune style phoenix in the tools' fire colours: serpent body,
   solid spread wings, legs with talons, fanned tail feathers
