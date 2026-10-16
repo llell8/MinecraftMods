@@ -7,7 +7,6 @@ Run: python3 resourcepacks/tools/gen_textures.py
   flame, red-hot egap with a crown of flames (own model + texture)
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
 - netherite armor icons: flames along the top
-- trims/: blank textures so smithing armor trims don't show
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
 """
@@ -55,11 +54,6 @@ ROD_END = (149, 51, 0)
 OUTLINE = {(35, 16, 18), (27, 20, 21), (22, 8, 20)}
 # Netherite armor icons get the same flames along their top edge.
 ARMOR_ITEMS = ["netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"]
-# Smithing armor trims are hidden: every trim pattern (worn) and the trim
-# overlays on armor icons are replaced with blank textures.
-TRIM_PATTERNS = ["sentry", "dune", "coast", "wild", "ward", "eye", "vex", "tide", "snout", "rib",
-                 "spire", "wayfinder", "shaper", "silence", "raiser", "host", "flow", "bolt"]
-TRIM_ITEMS = ["helmet_trim", "chestplate_trim", "leggings_trim", "boots_trim"]
 # Golden apple recolours (vanilla colour -> new). The gap goes molten gold with
 # a small flame at the stem; the egap gets its own red-hot texture with a full
 # crown of flames so the two are easy to tell apart.
@@ -289,15 +283,6 @@ def main():
         json.dump({"parent": "minecraft:item/generated",
                    "textures": {"layer0": "minecraft:item/enchanted_golden_apple"}}, fh, indent=2)
         fh.write("\n")
-
-    trims = os.path.join(TEX, "trims")
-    for layer in ("humanoid", "humanoid_leggings"):
-        os.makedirs(os.path.join(trims, "entity", layer), exist_ok=True)
-        for pattern in TRIM_PATTERNS:
-            Image.new("RGBA", (64, 32)).save(os.path.join(trims, "entity", layer, pattern + ".png"))
-    os.makedirs(os.path.join(trims, "items"), exist_ok=True)
-    for name in TRIM_ITEMS:
-        Image.new("RGBA", (16, 16)).save(os.path.join(trims, "items", name + ".png"))
 
     phoenix = draw_phoenix()
     size = PHOENIX_SIZE
