@@ -38,6 +38,9 @@ BLAZE_ROD = {
     (115, 69, 67): (255, 243, 45),
 }
 BLAZE_SATURATION = 0.7  # tone the blaze rod colours down a bit
+# The black end cap at the bottom of the stick becomes the blaze rod's orange tip.
+ROD_END = (149, 51, 0)
+ROD_END_TOOLS = {"netherite_axe", "netherite_pickaxe", "netherite_shovel", "netherite_hoe"}
 MAX_OVERLAP = 2  # deepest the flames start inside the head
 
 
@@ -94,6 +97,11 @@ def load_tool(name):
             r, g, b, a = img.getpixel((x, y))
             if a and (r, g, b) in BLAZE_ROD:
                 img.putpixel((x, y), rgba(desaturate(BLAZE_ROD[(r, g, b)], BLAZE_SATURATION), a))
+    if name in ROD_END_TOOLS:
+        bottom = max(y for y in range(img.height) for x in range(img.width) if img.getpixel((x, y))[3])
+        for x in range(img.width):
+            if img.getpixel((x, bottom))[3]:
+                img.putpixel((x, bottom), rgba(desaturate(ROD_END, BLAZE_SATURATION)))
     return img
 
 
