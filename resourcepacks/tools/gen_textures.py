@@ -41,6 +41,11 @@ BLAZE_ROD = {
     (67, 64, 67): (255, 243, 45),
 }
 BLAZE_SATURATION = 0.7  # tone the blaze rod colours down a bit
+# Everything but the sword gets a duller, darker rod so it doesn't steal focus.
+MUTED_SATURATION = 0.55
+MUTED_BRIGHTNESS = 0.62
+MUTED_HUE_SHIFT = -0.035  # pull the yellow toward ember orange so it doesn't go olive
+LOUD_HANDLES = {"netherite_sword"}
 # The black outline around the handle becomes the blaze rod's dark edge,
 # and the end cap on the bottom row its darker tip.
 ROD_EDGE = (174, 60, 0)
@@ -89,21 +94,26 @@ def fire(frame, base, columns):
     return px
 
 
-def desaturate(c, factor):
+def desaturate(c, factor, brightness=1.0, hue_shift=0.0):
     h, l, s = colorsys.rgb_to_hls(*(v / 255 for v in c))
-    return tuple(round(v * 255) for v in colorsys.hls_to_rgb(h, l, s * factor))
+    h = (h + hue_shift) % 1.0
+    return tuple(round(v * 255) for v in colorsys.hls_to_rgb(h, l * brightness, s * factor))
 
 
 def load_tool(name):
     """Vanilla texture with the wooden stick swapped for a blaze rod."""
     img = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
+    if name in LOUD_HANDLES:
+        tone = (BLAZE_SATURATION, 1.0)
+    else:
+        tone = (MUTED_SATURATION, MUTED_BRIGHTNESS, MUTED_HUE_SHIFT)
     handle = set()
     for y in range(img.height):
         for x in range(img.width):
             r, g, b, a = img.getpixel((x, y))
             if a and (r, g, b) in BLAZE_ROD:
                 handle.add((x, y))
-                img.putpixel((x, y), rgba(desaturate(BLAZE_ROD[(r, g, b)], BLAZE_SATURATION), a))
+                img.putpixel((x, y), rgba(desaturate(BLAZE_ROD[(r, g, b)], *tone), a))
     # Outline pixels that only border the handle (not the head) take the rod's
     # edge colour, or its tip colour on the bottom row.
     bottom = max(y for y in range(img.height) for x in range(img.width) if img.getpixel((x, y))[3])
@@ -122,7 +132,7 @@ def load_tool(name):
                 if any(p in handle or p in edges for p in near) and not touches_head:
                     edges[(x, y)] = ROD_END if y == bottom else ROD_EDGE
     for p, c in edges.items():
-        img.putpixel(p, rgba(desaturate(c, BLAZE_SATURATION)))
+        img.putpixel(p, rgba(desaturate(c, *tone)))
     return img
 
 
