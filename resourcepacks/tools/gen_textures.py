@@ -1,8 +1,8 @@
 """Generates the Phoenix PvP textures from the vanilla 1.21.11 ones in tools/vanilla.
 
 Run: python3 resourcepacks/tools/gen_textures.py
-- netherite tools and weapons: vanilla texture with animated fire on the head
-  and an orange gem where the head meets the handle
+- netherite tools and weapons: vanilla texture with a blaze rod handle,
+  animated fire on the head and an orange gem where the head meets the handle
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
 """
@@ -29,6 +29,12 @@ TOOLS = {
     "netherite_hoe": (range(6, 14), (12, 4)),
     "netherite_spear": (range(7, 14), (8, 7)),
     "netherite_spear_in_hand": (range(0, 9), (7, 7)),
+}
+# Vanilla stick colours on netherite tools -> blaze rod colours.
+BLAZE_ROD = {
+    (47, 33, 34): (179, 107, 25),
+    (96, 52, 50): (216, 174, 38),
+    (115, 69, 67): (255, 243, 45),
 }
 MAX_OVERLAP = 2  # deepest the flames start inside the head
 
@@ -73,6 +79,17 @@ def fire(frame, base, columns):
     return px
 
 
+def load_tool(name):
+    """Vanilla texture with the wooden stick swapped for a blaze rod."""
+    img = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = img.getpixel((x, y))
+            if a and (r, g, b) in BLAZE_ROD:
+                img.putpixel((x, y), rgba(BLAZE_ROD[(r, g, b)], a))
+    return img
+
+
 def render_frame(frame, base, columns, gem):
     img = base.copy()
     flames = Image.new("RGBA", base.size, (0, 0, 0, 0))
@@ -99,7 +116,7 @@ def main():
     item_dir = os.path.join(TEX, "item")
     os.makedirs(item_dir, exist_ok=True)
     for name, (columns, gem) in TOOLS.items():
-        base = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
+        base = load_tool(name)
         w, h = base.size
         strip = Image.new("RGBA", (w, h * FRAMES))
         for f in range(FRAMES):
@@ -118,8 +135,7 @@ def main():
         t = y / 63
         for x in range(64):
             icon.putpixel((x, y), (int(30 + 90 * t), int(8 + 20 * t), 10, 255))
-    sword = Image.open(os.path.join(VANILLA, "netherite_sword.png")).convert("RGBA")
-    frame = render_frame(0, sword, *TOOLS["netherite_sword"])
+    frame = render_frame(0, load_tool("netherite_sword"), *TOOLS["netherite_sword"])
     icon.alpha_composite(frame.resize((64, 64), Image.NEAREST))
     icon.save(os.path.join(ROOT, "pack.png"))
 
