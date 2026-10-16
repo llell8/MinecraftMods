@@ -11,6 +11,8 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - mace.png: netherite head with a molten crack, blaze rod handle, flames
 - ender pearl, cobweb, wind charge (item + projectile + burst particles):
   recoloured orange; flickering fires orbit the pearl and wind charge items
+- particle/critical_hit, enchanted_hit, damage: fiery crit sparks, blue
+  soul-fire enchanted crits, flaming hearts when you hit something
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -92,6 +94,46 @@ ORBIT_FRAMETIME = 3  # ticks per frame: 2.4 s per half turn
 # Wind charge burst particles: their own textures, mapped by absolute
 # brightness (frames are only one or two greys each).
 GUST_PARTICLES = [f"gust_{i}" for i in range(12)] + [f"small_gust_{i}" for i in range(7)]
+# Hit particles (8x8). The game tints these: crit and damage-indicator
+# particles are dimmed to 60-90%, so they are drawn extra bright; enchanted-hit
+# particles are multiplied by (0.3, 0.8, 1.0) on top of that, which removes
+# most red, so they are drawn in greys and come out as blue soul fire.
+PARTICLE_COLOURS = {
+    "W": (255, 255, 235), "y": (255, 220, 110), "o": (255, 150, 50), "r": (225, 70, 25),
+    "w": (255, 255, 255), "l": (215, 215, 215), "g": (160, 160, 160),
+}
+PARTICLE_SPRITES = {
+    "critical_hit": [  # fiery star spark
+        "...o....",
+        ".o.y.o..",
+        "..yWy...",
+        "oyWWWyo.",
+        "..yWy...",
+        ".o.y.o..",
+        "...o....",
+        "........",
+    ],
+    "enchanted_hit": [  # soul-fire flame (greys; the game tints it blue)
+        "..w..l..",
+        "..wl.w..",
+        ".lww.wl.",
+        ".wwwlww.",
+        "lwwggwwl",
+        "lwwggwwl",
+        ".lwwwwl.",
+        "..lggl..",
+    ],
+    "damage": [  # flaming heart popping out of whatever you hit
+        ".oo.oo..",
+        "oyyoyyo.",
+        "oyWyyyo.",
+        "royyyor.",
+        ".rooor..",
+        "..ror...",
+        "...r....",
+        "........",
+    ],
+}
 # Netherite armor icons get flame tongues rising off their top edge, never
 # covering the armor.
 ARMOR_ITEMS = ["netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"]
@@ -556,6 +598,13 @@ def main():
         ember_recolour(name, dest, lo, hi)
     for name, dest, lo, hi, size in BURNING_RECOLOURS:
         burning_recolour(name, dest, lo, hi, size)
+    for name, rows in PARTICLE_SPRITES.items():
+        img = Image.new("RGBA", (8, 8), (0, 0, 0, 0))
+        for y, row in enumerate(rows):
+            for x, ch in enumerate(row):
+                if ch != ".":
+                    img.putpixel((x, y), rgba(PARTICLE_COLOURS[ch]))
+        save_texture(img, "particle/" + name + ".png")
     for name in GUST_PARTICLES:
         ember_recolour(os.path.join("particle", name + ".png"), "particle/" + name + ".png", 0.1, 0.9, absolute=True)
 
