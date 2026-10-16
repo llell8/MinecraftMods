@@ -9,7 +9,8 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - appleskin/textures/icons.png: AppleSkin saturation outline traced around the feathers
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
 - mace.png: netherite head with a molten crack, blaze rod handle, flames
-- ender pearl, cobweb, wind charge (item + projectile): recoloured orange
+- ender pearl, cobweb, wind charge (item + projectile + burst particles):
+  recoloured orange; the pearl and wind charge items are animated
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -73,11 +74,19 @@ MACE = (range(5, 16), (8, 7))  # flame columns, gem where the handle meets the h
 # shading survives. (vanilla file, pack path, ramp start, ramp end)
 EMBER_RAMP = [(50, 10, 4), LAVA[0], LAVA[1], LAVA[2], LAVA[3], LAVA[4]]
 ORANGE_RECOLOURS = [
-    ("ender_pearl.png", "item/ender_pearl.png", 0.15, 1.0),
     ("cobweb.png", "block/cobweb.png", 0.55, 1.0),  # stays bright so webs are easy to spot
-    ("wind_charge.png", "item/wind_charge.png", 0.3, 1.0),
     ("wind_charge_entity.png", "entity/projectiles/wind_charge.png", 0.35, 1.0),
 ]
+# Animated orange items: (vanilla file, pack path, ramp start, ramp end, motion)
+#   "orbit": a glow circling the rim with a pulsing core (ender pearl)
+#   "swirl": a two-armed bright spiral spinning around the centre (wind charge)
+ANIMATED_RECOLOURS = [
+    ("ender_pearl.png", "item/ender_pearl.png", 0.15, 1.0, "orbit"),
+    ("wind_charge.png", "item/wind_charge.png", 0.3, 1.0, "swirl"),
+]
+# Wind charge burst particles: their own textures, mapped by absolute
+# brightness (frames are only one or two greys each).
+GUST_PARTICLES = [f"gust_{i}" for i in range(12)] + [f"small_gust_{i}" for i in range(7)]
 # Netherite armor icons get flame tongues rising off their top edge, never
 # covering the armor.
 ARMOR_ITEMS = ["netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"]
@@ -285,24 +294,60 @@ def engulf_frame(frame, base):
     return img
 
 
-def ember_recolour(name, dest, lo, hi):
-    img = Image.open(os.path.join(VANILLA, name)).convert("RGBA")
+def ember_colour(t):
+    t = max(0.0, min(1.0, t))
+    i = min(len(EMBER_RAMP) - 2, int(t * (len(EMBER_RAMP) - 1)))
+    f = t * (len(EMBER_RAMP) - 1) - i
+    return tuple(round(a + (b - a) * f) for a, b in zip(EMBER_RAMP[i], EMBER_RAMP[i + 1]))
+
+
+def ember_levels(img, lo, hi, absolute=False):
+    """{(x, y): position along EMBER_RAMP} from each pixel's brightness."""
     lum = {}
     for y in range(img.height):
         for x in range(img.width):
             r, g, b, a = img.getpixel((x, y))
             if a:
                 lum[(x, y)] = 0.3 * r + 0.59 * g + 0.11 * b
-    darkest, brightest = min(lum.values()), max(lum.values())
-    for (x, y), l in lum.items():
-        t = lo + (hi - lo) * (l - darkest) / max(1, brightest - darkest)
-        i = min(len(EMBER_RAMP) - 2, int(t * (len(EMBER_RAMP) - 1)))
-        f = t * (len(EMBER_RAMP) - 1) - i
-        c = tuple(round(a + (b - a) * f) for a, b in zip(EMBER_RAMP[i], EMBER_RAMP[i + 1]))
-        img.putpixel((x, y), c + (img.getpixel((x, y))[3],))
+    darkest, brightest = (0, 255) if absolute else (min(lum.values()), max(lum.values()))
+    return {p: lo + (hi - lo) * (l - darkest) / max(1, brightest - darkest) for p, l in lum.items()}
+
+
+def save_texture(img, dest):
     path = os.path.join(TEX, dest)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     img.save(path)
+
+
+def ember_recolour(name, dest, lo, hi, absolute=False):
+    img = Image.open(os.path.join(VANILLA, name)).convert("RGBA")
+    for p, t in ember_levels(img, lo, hi, absolute).items():
+        img.putpixel(p, ember_colour(t) + (img.getpixel(p)[3],))
+    save_texture(img, dest)
+
+
+def animated_recolour(name, dest, lo, hi, motion):
+    base = Image.open(os.path.join(VANILLA, name)).convert("RGBA")
+    levels = ember_levels(base, lo, hi)
+    cx, cy = (base.width - 1) / 2, (base.height - 1) / 2
+    strip = Image.new("RGBA", (base.width, base.height * FRAMES))
+    for f in range(FRAMES):
+        phase = f / FRAMES * 2 * math.pi
+        for (x, y), t in levels.items():
+            angle = math.atan2(y - cy, x - cx)
+            radius = math.hypot(x - cx, y - cy)
+            if motion == "orbit":
+                if radius > 4.5:  # rim: a glow travelling round it
+                    t += 0.22 * math.cos(angle - phase)
+                else:             # core: slow pulse
+                    t += 0.08 * math.sin(phase)
+            else:                 # swirl: two spiral arms spinning
+                t += 0.2 * math.cos(2 * angle - phase * 2 + radius * 0.9)
+            strip.putpixel((x, y + f * base.height), ember_colour(t) + (base.getpixel((x, y))[3],))
+    save_texture(strip, dest)
+    with open(os.path.join(TEX, dest) + ".mcmeta", "w") as fh:
+        json.dump({"animation": {"frametime": 2}}, fh, indent=2)
+        fh.write("\n")
 
 
 def load_mace():
@@ -464,6 +509,10 @@ def main():
 
     for name, dest, lo, hi in ORANGE_RECOLOURS:
         ember_recolour(name, dest, lo, hi)
+    for name, dest, lo, hi, motion in ANIMATED_RECOLOURS:
+        animated_recolour(name, dest, lo, hi, motion)
+    for name in GUST_PARTICLES:
+        ember_recolour(os.path.join("particle", name + ".png"), "particle/" + name + ".png", 0.1, 0.9, absolute=True)
 
     for name in ARMOR_ITEMS:
         base = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
