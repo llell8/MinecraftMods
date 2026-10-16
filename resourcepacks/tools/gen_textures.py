@@ -10,7 +10,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
 - mace.png: netherite head with a molten crack, blaze rod handle, flames
 - ender pearl, cobweb, wind charge (item + projectile + burst particles):
-  recoloured orange; the pearl and wind charge items have flames rising off them
+  recoloured orange; fire comets orbit the pearl and wind charge items
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -77,8 +77,8 @@ ORANGE_RECOLOURS = [
     ("cobweb.png", "block/cobweb.png", 0.55, 1.0),  # stays bright so webs are easy to spot
     ("wind_charge_entity.png", "entity/projectiles/wind_charge.png", 0.35, 1.0),
 ]
-# Orange items that burn: recoloured, then flame tongues rising off their top
-# edge without covering them (like the armor icons), so they stay readable.
+# Orange items that burn: recoloured, then two comets of fire orbiting them in
+# the empty ring of pixels around their edge, so the item stays readable.
 # (vanilla file, pack path, ramp start, ramp end)
 BURNING_RECOLOURS = [
     ("ender_pearl.png", "item/ender_pearl.png", 0.15, 1.0),
@@ -335,11 +335,34 @@ def burning_recolour(name, dest, lo, hi):
         base.putpixel(p, ember_colour(t) + (base.getpixel(p)[3],))
     strip = Image.new("RGBA", (base.width, base.height * FRAMES))
     for f in range(FRAMES):
-        strip.paste(engulf_frame(f, base, crown=1), (0, f * base.height))
+        strip.paste(orbit_frame(f, base), (0, f * base.height))
     save_texture(strip, dest)
     with open(os.path.join(TEX, dest) + ".mcmeta", "w") as fh:
         json.dump({"animation": {"frametime": 2}}, fh, indent=2)
         fh.write("\n")
+
+
+def orbit_frame(frame, base):
+    """Two fire comets (white-hot head, fading tail) circling the item in the
+    empty pixels touching its edge. Half a turn per loop; the comets are half
+    a turn apart, so the animation loops seamlessly."""
+    img = base.copy()
+    w, h = base.size
+    solid = {(x, y) for y in range(h) for x in range(w) if base.getpixel((x, y))[3]}
+    cx = sum(x for x, _ in solid) / len(solid)
+    cy = sum(y for _, y in solid) / len(solid)
+    head = frame / FRAMES * math.pi
+    for y in range(h):
+        for x in range(w):
+            if (x, y) in solid or not any((x + dx, y + dy) in solid for dx in (-1, 0, 1) for dy in (-1, 0, 1)):
+                continue
+            angle = math.atan2(y - cy, x - cx)
+            for comet in (head, head + math.pi):
+                behind = (comet - angle) % (2 * math.pi)  # how far behind the head
+                if behind < 1.8:
+                    colour = LAVA[4] if behind < 0.3 else LAVA[3] if behind < 0.8 else LAVA[2] if behind < 1.3 else LAVA[1]
+                    img.putpixel((x, y), rgba(colour))
+    return img
 
 
 def load_mace():
