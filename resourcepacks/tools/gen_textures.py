@@ -10,7 +10,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
 - mace.png: netherite head with a molten crack, blaze rod handle, flames
 - ender pearl, cobweb, wind charge (item + projectile + burst particles):
-  recoloured orange; blue soul-fire comets orbit the pearl and wind charge items
+  recoloured orange; flickering fires orbit the pearl and wind charge items
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -77,11 +77,11 @@ ORANGE_RECOLOURS = [
     ("cobweb.png", "block/cobweb.png", 0.55, 1.0),  # stays bright so webs are easy to spot
     ("wind_charge_entity.png", "entity/projectiles/wind_charge.png", 0.35, 1.0),
 ]
-# Orange items that burn: recoloured, then two comets of blue soul fire
-# orbiting them in the empty ring of pixels around their edge. The blue
-# contrasts with the orange item, so the orbit reads clearly and the item
-# stays visible. Head to tail:
-SOUL_FIRE = [(225, 255, 255), (110, 225, 240), (45, 170, 205), (25, 105, 150)]
+# Orange items that burn: recoloured, then two flickering fires orbiting them
+# in the empty pixels around their edge. Their own hotter shades (lemon-yellow
+# head burning down to deep crimson) set them apart from the item's orange.
+# Head to tail:
+ORBIT_FIRE = [(255, 250, 190), (255, 222, 60), (255, 140, 20), (215, 40, 20), (140, 10, 20)]
 # (vanilla file, pack path, ramp start, ramp end)
 BURNING_RECOLOURS = [
     ("ender_pearl.png", "item/ender_pearl.png", 0.15, 1.0),
@@ -346,9 +346,9 @@ def burning_recolour(name, dest, lo, hi):
 
 
 def orbit_frame(frame, base):
-    """Two soul-fire comets (bright head, fading tail) circling the item in the
-    empty pixels touching its edge. Half a turn per loop; the comets are half
-    a turn apart, so the animation loops seamlessly."""
+    """Two flickering fires circling the item in the empty pixels around its
+    edge, with flame tongues bulging outward near each head. Half a turn per
+    loop; the fires are half a turn apart, so the loop is seamless."""
     img = base.copy()
     w, h = base.size
     solid = {(x, y) for y in range(h) for x in range(w) if base.getpixel((x, y))[3]}
@@ -357,14 +357,26 @@ def orbit_frame(frame, base):
     head = frame / FRAMES * math.pi
     for y in range(h):
         for x in range(w):
-            if (x, y) in solid or not any((x + dx, y + dy) in solid for dx in (-1, 0, 1) for dy in (-1, 0, 1)):
+            if (x, y) in solid:
+                continue
+            d = min(max(abs(x - sx), abs(y - sy)) for sx, sy in solid)
+            if d > 2:
                 continue
             angle = math.atan2(y - cy, x - cx)
-            for comet in (head, head + math.pi):
-                behind = (comet - angle) % (2 * math.pi)  # how far behind the head
-                if behind < 1.8:
-                    colour = SOUL_FIRE[0 if behind < 0.3 else 1 if behind < 0.8 else 2 if behind < 1.3 else 3]
-                    img.putpixel((x, y), rgba(colour))
+            for fire in (head, head + math.pi):
+                behind = (fire - angle) % (2 * math.pi)  # how far behind the head
+                reach = 2.4 if d == 1 else 0.9          # outer tongues only near the head
+                if behind >= reach:
+                    continue
+                i = min(len(ORBIT_FIRE) - 1, int(behind / reach * len(ORBIT_FIRE)) + (d - 1))
+                flicker = math.sin(frame * 2.1 + x * 3.7 + y * 5.3)
+                if flicker > 0.6:
+                    i = max(0, i - 1)
+                elif flicker < -0.7:
+                    i = min(len(ORBIT_FIRE) - 1, i + 1)
+                if d == 2 and flicker < -0.2:
+                    continue  # ragged outer edge
+                img.putpixel((x, y), rgba(ORBIT_FIRE[i]))
     return img
 
 
