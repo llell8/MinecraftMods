@@ -16,6 +16,8 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - block/fire_0, fire_1: low fire (squashed frames)
 - models/item: smaller first-person totem and shield
 - potions: amber glass bottles with netherite stoppers
+- diamond tools, spear and armor icons: like netherite but in blue soul fire
+- elytra (item, broken item, worn wings): phoenix wings on the fire palette
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -35,6 +37,8 @@ TEX = os.path.join(ROOT, "assets", "minecraft", "textures")
 FRAMES = 8
 
 LAVA = [(140, 24, 6), (196, 52, 8), (240, 110, 16), (255, 170, 40), (255, 228, 120)]
+# Blue soul fire, same five steps dark to bright, for the diamond set.
+SOUL = [(16, 52, 84), (24, 98, 146), (40, 160, 205), (100, 220, 240), (215, 255, 255)]
 # texture name -> (columns the flames rise from, gem pixel where head meets handle)
 TOOLS = {
     "netherite_sword": (range(7, 14), (5, 9)),
@@ -53,6 +57,9 @@ BLAZE_ROD = {
     # netherite grip wrap on the lower handle
     (59, 57, 59): (216, 174, 38),
     (67, 64, 67): (255, 243, 45),
+    # diamond tools' stick
+    (73, 54, 21): (179, 107, 25), (104, 78, 30): (216, 174, 38), (137, 103, 39): (255, 243, 45),
+    (40, 30, 11): (174, 60, 0),
 }
 # Blaze rod toned down to a dim copper: (saturation, brightness, hue shift).
 # The hue shift pulls the yellow toward orange so it doesn't go olive.
@@ -159,6 +166,14 @@ CORK_COLOURS = {  # cork -> netherite stopper (same tones as the tools)
     (169, 71, 37): (79, 60, 62), (151, 55, 22): (50, 39, 39),
 }
 BOTTLES = ["potion", "splash_potion", "lingering_potion", "glass_bottle"]
+# Diamond set: same treatment as netherite (blaze rod handles, flames, gem),
+# but in blue soul fire so the two tiers are easy to tell apart.
+DIAMOND_TOOLS = {name.replace("netherite", "diamond"): spec for name, spec in TOOLS.items()}
+DIAMOND_ARMOR = ["diamond_helmet", "diamond_chestplate", "diamond_leggings", "diamond_boots"]
+# Elytra: phoenix wings on the fire palette (vanilla feather shading kept);
+# the item icon also gets flame tongues.
+ELYTRA = {"elytra.png": "item/elytra.png", "elytra_broken.png": "item/elytra_broken.png",
+          "elytra_wings.png": "entity/equipment/wings/elytra.png"}
 # Netherite armor icons get flame tongues rising off their top edge, never
 # covering the armor.
 ARMOR_ITEMS = ["netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"]
@@ -221,7 +236,7 @@ def rgba(c, a=255):
     return (c[0], c[1], c[2], a)
 
 
-def fire(frame, base, columns):
+def fire(frame, base, columns, flame=LAVA):
     """Flames licking up off the head's top edge, plus drifting embers."""
     px = {}
     phase = frame / FRAMES * 2 * math.pi
@@ -239,11 +254,11 @@ def fire(frame, base, columns):
                 break
             frac = k / (h - 1) if h > 1 else 0
             if frac < 0.34:
-                c = LAVA[3]
+                c = flame[3]
             elif frac < 0.67:
-                c = LAVA[2]
+                c = flame[2]
             else:
-                c = LAVA[1]
+                c = flame[1]
             px[(x, y)] = rgba(c)
     # Embers rise up-left off the head and loop every FRAMES.
     rng = random.Random(1337)
@@ -253,7 +268,7 @@ def fire(frame, base, columns):
         t = (frame + rng.randint(0, FRAMES - 1)) % FRAMES
         p = (sx - t // 3, sy - t)
         if t < FRAMES - 2 and p[0] >= 0 and p[1] >= 0 and p not in px and base.getpixel(p)[3] == 0:
-            px[p] = rgba(LAVA[4] if t < 3 else LAVA[2])
+            px[p] = rgba(flame[4] if t < 3 else flame[2])
     return px
 
 
@@ -348,7 +363,7 @@ def phoenix_frame(frame, grid):
     return img
 
 
-def engulf_frame(frame, base, crown=None):
+def engulf_frame(frame, base, crown=None, flame=LAVA):
     """A few flame tongues rising off the item's top edge without covering it:
     smooth waves so neighbouring columns form tongues instead of speckles.
     With crown=n, only columns whose top is within n rows of the highest point
@@ -365,7 +380,7 @@ def engulf_frame(frame, base, crown=None):
             y = tops[0] - 1 - k
             if y < 0:
                 break
-            img.putpixel((x, y), rgba((LAVA[3], LAVA[2], LAVA[1])[k]))
+            img.putpixel((x, y), rgba((flame[3], flame[2], flame[1])[k]))
     return img
 
 
@@ -394,11 +409,26 @@ def save_texture(img, dest):
     img.save(path)
 
 
-def ember_recolour(name, dest, lo, hi, absolute=False):
+def ember_image(name, lo, hi, absolute=False):
     img = Image.open(os.path.join(VANILLA, name)).convert("RGBA")
     for p, t in ember_levels(img, lo, hi, absolute).items():
         img.putpixel(p, ember_colour(t) + (img.getpixel(p)[3],))
-    save_texture(img, dest)
+    return img
+
+
+def ember_recolour(name, dest, lo, hi, absolute=False):
+    save_texture(ember_image(name, lo, hi, absolute), dest)
+
+
+def save_animation(frames, dest):
+    w, h = frames[0].size
+    strip = Image.new("RGBA", (w, h * len(frames)))
+    for i, f in enumerate(frames):
+        strip.paste(f, (0, i * h))
+    save_texture(strip, dest)
+    with open(os.path.join(TEX, dest) + ".mcmeta", "w") as fh:
+        json.dump({"animation": {"frametime": 2}}, fh, indent=2)
+        fh.write("\n")
 
 
 def shrink(img, size):
@@ -526,15 +556,15 @@ def load_mace():
     return img
 
 
-def render_frame(frame, base, columns, gem):
+def render_frame(frame, base, columns, gem, flame=LAVA):
     img = base.copy()
     flames = Image.new("RGBA", base.size, (0, 0, 0, 0))
-    for p, c in fire(frame, base, columns).items():
+    for p, c in fire(frame, base, columns, flame).items():
         flames.putpixel(p, c)
     img.alpha_composite(flames)
     if gem:
         pulse = 0.5 + 0.5 * math.sin(frame / FRAMES * 2 * math.pi)
-        img.putpixel(gem, rgba(LAVA[3] if pulse > 0.5 else LAVA[2]))
+        img.putpixel(gem, rgba(flame[3] if pulse > 0.5 else flame[2]))
     return img
 
 
@@ -661,6 +691,18 @@ def main():
         with open(os.path.join(item_dir, name + ".png.mcmeta"), "w") as fh:
             json.dump({"animation": {"frametime": 2}}, fh, indent=2)
             fh.write("\n")
+
+    for name, (columns, gem) in DIAMOND_TOOLS.items():
+        base = load_tool(name)
+        save_animation([render_frame(f, base, columns, gem, SOUL) for f in range(FRAMES)], "item/" + name + ".png")
+    for name in DIAMOND_ARMOR:
+        base = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
+        save_animation([engulf_frame(f, base, flame=SOUL) for f in range(FRAMES)], "item/" + name + ".png")
+
+    elytra = ember_image("elytra.png", 0.1, 1.0)
+    save_animation([engulf_frame(f, elytra) for f in range(FRAMES)], ELYTRA["elytra.png"])
+    ember_recolour("elytra_broken.png", ELYTRA["elytra_broken.png"], 0.05, 0.8)
+    ember_recolour("elytra_wings.png", ELYTRA["elytra_wings.png"], 0.05, 1.0)
 
     mace = load_mace()
     strip = Image.new("RGBA", (16, 16 * FRAMES))

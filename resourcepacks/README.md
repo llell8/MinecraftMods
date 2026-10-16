@@ -10,6 +10,9 @@ Textures so far:
 - Netherite sword, axe, pickaxe, shovel, hoe and spear (icon + in-hand) – vanilla
   textures with blaze rod handles, animated fire on the head and an orange gem where the
   head meets the handle
+- Diamond sword, axe, pickaxe, shovel, hoe, spear and armor icons – same treatment as netherite
+  (blaze rod handles, flames, gem) but in blue soul fire, so the tiers are easy to tell apart
+- Elytra – phoenix wings on the fire palette (worn wings, item with flames, broken item)
 - Mace – netherite head with a glowing molten crack, copper blaze rod handle, animated flames
 - Totem of undying – 16x16 dragon-rune style phoenix in the tools' fire colours: serpent body,
   solid spread wings, legs with talons, fanned tail feathers
