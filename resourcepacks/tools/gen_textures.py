@@ -174,8 +174,8 @@ def draw_phoenix():
         def at(x, y):
             return ((PHOENIX_SIZE - 0.01 - x) * k if mirror else x * k, y * k)
         shoulder, wrist, peak, outer = (14.5, 9.5), (8, 6), (3, 3.5), (0.8, 6.5)
-        root = (15, 18)  # where the wing's trailing edge meets the body
-        points = [(0.8, 20.5), (5.5, 23.5), (10.5, 21.5)]  # hanging points
+        root = (15, 15.5)  # where the wing's trailing edge meets the body
+        points = [(0.8, 18), (5.5, 20.5), (10.5, 18.5)]  # hanging points
         # Solid membrane, its trailing edge scalloped gently between points.
         poly = [shoulder, wrist, peak, outer]
         prev = outer
@@ -198,28 +198,41 @@ def draw_phoenix():
     wing(False)
     wing(True)
     # Serpent body: an S from the head down to the tail, belly highlight inside.
-    s1 = _bezier((18, 4.5), (14, 6), (11.5, 9), (14.5, 12.5))
-    s2 = _bezier((14.5, 12.5), (18, 16), (20.5, 17), (17.5, 20.5))
-    s3 = _bezier((17.5, 20.5), (16, 22), (15, 22), (15, 23))
+    s1 = _bezier((18, 4.5), (14, 6), (11.5, 8.5), (14.5, 11))
+    s2 = _bezier((14.5, 11), (18, 13.5), (20, 14.5), (17, 17.5))
+    s3 = _bezier((17, 17.5), (15.8, 18.6), (15, 18.6), (15, 19.2))
     stroke(s1, 1.6, 2.0, "r")
     stroke(s2, 2.0, 2.2, "r")
     stroke(s3, 2.2, 1.6, "r")
     stroke([(x + 0.6, y - 0.4) for x, y in s1], 0.7, 0.9, "o")
     stroke([(x + 0.6, y - 0.2) for x, y in s2], 0.9, 1.0, "o")
     stroke([(x + 0.5, y) for x, y in s3], 1.0, 0.7, "o")
-    # Tail feathers fanning out from the end of the tail: long leaf shapes
-    # with a bright quill and hot tips.
-    base = (15, 23)
-    for tip, half_width in [((7, 30), 1.5), ((10.5, 31.8), 1.6), ((15, 32), 1.7), ((19.5, 31.8), 1.6), ((23, 30), 1.5)]:
+    # Tail feathers fanning out from the end of the tail: long two-tone vanes
+    # either side of a bright quill, with notches cut into the edges where
+    # the barbs split.
+    base = (15, 19)
+    for tip, half_width in [((3.5, 28.5), 1.7), ((8.5, 31.5), 1.9), ((15, 32.5), 2.0),
+                            ((21.5, 31.5), 1.9), ((26.5, 28.5), 1.7)]:
         dx, dy = tip[0] - base[0], tip[1] - base[1]
         length = math.hypot(dx, dy)
-        nx, ny = -dy / length * half_width, dx / length * half_width
-        mid = (base[0] + dx * 0.68, base[1] + dy * 0.68)
-        d.polygon([(base[0] * k, base[1] * k), ((mid[0] + nx) * k, (mid[1] + ny) * k), (tip[0] * k, tip[1] * k),
-                   ((mid[0] - nx) * k, (mid[1] - ny) * k)], fill=fill("o"))
-        d.line([(base[0] * k, base[1] * k), (tip[0] * k, tip[1] * k)], fill=fill("y"), width=int(0.6 * k))
-        end = (base[0] + dx * 0.8, base[1] + dy * 0.8)
-        d.line([(end[0] * k, end[1] * k), (tip[0] * k, tip[1] * k)], fill=fill("w"), width=int(0.9 * k))
+        ux, uy = dx / length, dy / length
+        nx, ny = -uy, ux
+
+        def at(t, side):
+            # narrow quill near the body, widest about two thirds of the way out
+            w = half_width * math.sin(math.pi * min(1, t ** 1.6)) * side
+            return ((base[0] + dx * t + nx * w) * k, (base[1] + dy * t + ny * w) * k)
+
+        ts = [i / 20 for i in range(21)]
+        spine = [((base[0] + dx * t) * k, (base[1] + dy * t) * k) for t in ts]
+        d.polygon(spine + [at(t, 1) for t in reversed(ts)], fill=fill("o"))
+        d.polygon(spine + [at(t, -1) for t in reversed(ts)], fill=fill("r"))
+        for t, side in [(0.55, 1), (0.7, -1)]:
+            edge = at(t, side)
+            inner = at(t + 0.08, side * 0.35)
+            d.polygon([edge, inner, at(t + 0.12, side)], fill=0)
+        d.line([spine[3], spine[-2]], fill=fill("y"), width=int(0.5 * k))
+        d.line([spine[-6], spine[-1]], fill=fill("w"), width=int(0.6 * k))
     # Head, snout, crest flames streaming back.
     d.ellipse([16 * k, 1.5 * k, 21.5 * k, 6 * k], fill=fill("o"))
     d.polygon([(20.5 * k, 2.4 * k), (25.5 * k, 3.6 * k), (20.5 * k, 5.4 * k)], fill=fill("o"))
