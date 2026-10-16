@@ -21,6 +21,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - crossbow (all states): vanilla wood, banded blaze rod string/metal
 - bow (all states): slightly orange wood, yellow string
 - arrows: banded blaze rod shaft, fire-coloured head and fletching
+- mace renamed "Crushing Swedes": Danish flag head (items/mace.json selects on custom_name)
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -82,6 +83,11 @@ MACE_ROD = {  # breeze rod colours -> blaze rod colours (toned like the other ha
     (122, 130, 196): (216, 174, 38), (181, 165, 202): (255, 243, 45),
 }
 MACE = (range(5, 16), (8, 7))  # flame columns, gem where the handle meets the head
+# Easter egg: a mace renamed "Crushing Swedes" shows the Danish flag on its
+# head (picked by the item definition with a select on custom_name).
+DANISH_NAME = "Crushing Swedes"
+DANNEBROG_RED = [(150, 8, 30), (200, 16, 46), (232, 40, 64)]
+DANNEBROG_WHITE = [(205, 205, 210), (245, 245, 248), (255, 255, 255)]
 # Orange recolours by gradient map: each pixel's brightness (relative to the
 # texture's own darkest/brightest) picks a colour along EMBER_RAMP, so the
 # shading survives. (vanilla file, pack path, ramp start, ramp end)
@@ -604,6 +610,38 @@ def load_mace():
     return img
 
 
+def danish_mace():
+    """The mace's head painted as the Dannebrog (red, off-centre white cross)."""
+    img = load_mace()
+    handle = {tone(c, *ROD_TONE) for c in MACE_ROD.values()}
+    head = [(x, y) for y in range(11) for x in range(5, 16)
+            if img.getpixel((x, y))[3] and img.getpixel((x, y))[:3] not in handle]
+    x0, x1 = min(x for x, _ in head), max(x for x, _ in head)
+    y0, y1 = min(y for _, y in head), max(y for _, y in head)
+    cross_x = x0 + round((x1 - x0) * 0.36)  # Nordic cross sits toward the hoist
+    cross_y = (y0 + y1) // 2
+    for x, y in head:
+        r, g, b, a = img.getpixel((x, y))
+        lum = (0.3 * r + 0.59 * g + 0.11 * b) / 255
+        if lum < 0.18:
+            continue  # keep the dark outline
+        white = x == cross_x or y == cross_y
+        shades = DANNEBROG_WHITE if white else DANNEBROG_RED
+        img.putpixel((x, y), rgba(shades[1 if lum > 0.3 else 0], a))
+    save_texture(img, "item/mace_danish.png")
+    write_model("mace_danish", {"parent": "minecraft:item/handheld_mace",
+                                "textures": {"layer0": "minecraft:item/mace_danish"}})
+    items_dir = os.path.join(ROOT, "assets", "minecraft", "items")
+    os.makedirs(items_dir, exist_ok=True)
+    with open(os.path.join(items_dir, "mace.json"), "w") as fh:
+        json.dump({"model": {
+            "type": "minecraft:select", "property": "minecraft:component", "component": "minecraft:custom_name",
+            "cases": [{"when": DANISH_NAME, "model": {"type": "minecraft:model", "model": "minecraft:item/mace_danish"}}],
+            "fallback": {"type": "minecraft:model", "model": "minecraft:item/mace"},
+        }}, fh, indent=2)
+        fh.write("\n")
+
+
 def render_frame(frame, base, columns, gem, flame=LAVA):
     img = base.copy()
     flames = Image.new("RGBA", base.size, (0, 0, 0, 0))
@@ -773,6 +811,8 @@ def main():
     with open(os.path.join(item_dir, "mace.png.mcmeta"), "w") as fh:
         json.dump({"animation": {"frametime": 2}}, fh, indent=2)
         fh.write("\n")
+
+    danish_mace()
 
     for name in FIRE_TEXTURES:
         low_fire(name)
