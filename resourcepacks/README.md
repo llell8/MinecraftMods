@@ -23,7 +23,7 @@ Same pieces as Phoenix PvP below, re-themed:
 - Pale lilac gap, deep violet egap; smoky violet potion glass with obsidian stoppers
 - Violet-tinted bow with a white string; crossbow and arrows in violet/white
 - Violet glint, white/violet crit X, dark purple hit hearts, low fire, small totem and shield
-- Easter egg: rename a mace to `Crushing Swedes` and its head shows the Danish flag (both packs)
+- Easter egg: rename a mace to `Crushing Swedes` and its head shows the Danish flag
 
 ## Phoenix PvP
 
@@ -62,7 +62,6 @@ Textures so far:
   (the game tints those blue, so they can't be orange), plain dark orange hearts when you hit something
 - Low fire – the burning overlay (and fire blocks) squashed to 60% height
 - Small totem and shield in first person (smaller and lower; blocking pose only slightly lower)
-- Easter egg – rename a mace to `Crushing Swedes` for a Danish-flag head
 - Enchant glint – orange (items and armor)
 
 `tools/vanilla/` holds the vanilla 1.21.11 textures the generator starts from

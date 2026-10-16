@@ -12,6 +12,7 @@ few drawing functions before running it with VoidPvP as the output folder:
 - phoenix totem -> an animated black hole
 - feathers (hunger) -> small black-hole orbs, with the AppleSkin outline traced around them
 - orange glint -> violet glint
+- easter egg: a mace renamed "Crushing Swedes" gets a Danish-flag head
 - netherite sword and axe: galaxy head (drifting nebula, twinkling stars, bright edge)
 - mace: black hole head (void core, pulsing photon ring, orbiting accretion comets)
 - all other gear (netherite/diamond tools, spears, armor icons): stardust twinkling
@@ -47,6 +48,7 @@ g.ROD_END = (8, 4, 14)
 g.MACE_ROD = {(35, 66, 105): (16, 8, 24), (80, 99, 144): ROD_DARK,
               (122, 130, 196): ROD_MID, (181, 165, 202): ROD_LIGHT}
 g.MACE_COLOURS[(191, 206, 231)] = VOID[3]  # the crack glows violet
+g.DANISH_MACE = True  # rename a mace to "Crushing Swedes" for a Danish-flag head
 
 # Accretion disk orbiting the pearl and wind charge, head to tail.
 g.ORBIT_FIRE = [(255, 255, 255), (225, 200, 255), (170, 110, 245), (110, 50, 190), (55, 20, 100)]
