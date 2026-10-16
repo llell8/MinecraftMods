@@ -20,8 +20,9 @@ FRAMES = 8
 S = 16
 
 LAVA = [(140, 24, 6), (196, 52, 8), (240, 110, 16), (255, 170, 40), (255, 228, 120)]
-GEM = (4, 8)  # middle of the cross-guard
-BLADE_COLUMNS = range(7, 13)  # columns with open space above the blade
+GEM = (5, 9)  # where the blade meets the cross-guard
+BLADE_COLUMNS = range(7, 14)  # columns the flames rise from
+OVERLAP = 2  # how many pixels the flames reach down over the blade
 
 
 def rgba(c, a=255):
@@ -33,18 +34,19 @@ def fire(frame, base):
     px = {}
     phase = frame / FRAMES * 2 * math.pi
     for x in BLADE_COLUMNS:
-        top = next(y for y in range(S) if base.getpixel((x, y))[3]) - 1
+        top = next(y for y in range(S) if base.getpixel((x, y))[3])
         h = 1.6 + 1.2 * math.sin(phase + x * 1.9) + 0.6 * math.sin(phase * 2 + x * 0.7)
-        h = max(0, int(round(h)))
+        h = max(0, int(round(h))) + OVERLAP
+        # Flames start inside the blade and lick up past its edge.
         for k in range(h):
-            y = top - k
+            y = top + OVERLAP - 1 - k
             if y < 0:
                 break
             frac = k / (h - 1) if h > 1 else 0
             if frac < 0.34:
-                c, a = LAVA[3], 235
+                c, a = LAVA[3], 200
             elif frac < 0.67:
-                c, a = LAVA[2], 200
+                c, a = LAVA[2], 190
             else:
                 c, a = LAVA[1], 150
             px[(x, y)] = rgba(c, a)
@@ -61,8 +63,10 @@ def fire(frame, base):
 
 def render_frame(frame, base):
     img = base.copy()
+    flames = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     for p, c in fire(frame, base).items():
-        img.putpixel(p, c)
+        flames.putpixel(p, c)
+    img.alpha_composite(flames)
     pulse = 0.5 + 0.5 * math.sin(frame / FRAMES * 2 * math.pi)
     img.putpixel(GEM, rgba(LAVA[3] if pulse > 0.5 else LAVA[2]))
     return img
