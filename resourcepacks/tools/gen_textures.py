@@ -6,6 +6,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - golden_apple.png / enchanted_golden_apple.png: molten gold gap with a stem
   flame, red-hot egap with a crown of flames (own model + texture)
 - gui/sprites/hud: animated flaming hearts, phoenix feathers for the hunger bar
+- appleskin/textures/icons.png: AppleSkin saturation outline traced around the feathers
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
 - mace.png: netherite head with a molten crack, blaze rod handle, flames
 - netherite armor icons: flame tongues rising off the top, armor left visible
@@ -97,6 +98,11 @@ FEATHER_COLOURS = {
     "w": LAVA[4], "y": LAVA[3], "o": LAVA[2], "r": LAVA[1], "q": (236, 200, 150),
 }
 FEATHER_HUNGER_TINT = (110, 140, 60)
+# AppleSkin's saturation overlay (assets/appleskin/textures/icons.png, row 0:
+# four 9x9 stages from <=25% to full) redrawn as a gold outline traced around
+# the feather, growing from the quill end toward the tip.
+SATURATION_GOLD = (255, 226, 110)
+SATURATION_STAGES = [0.25, 0.5, 0.75, 1.0]
 # Golden apple recolours (vanilla colour -> new). The gap goes molten gold with
 # a small flame at the stem; the egap gets its own red-hot texture with a full
 # crown of flames so the two are easy to tell apart.
@@ -374,6 +380,23 @@ def feather(kind):
     return img
 
 
+def saturation_overlay():
+    icons = Image.open(os.path.join(VANILLA, "appleskin", "icons.png")).convert("RGBA")
+    shape = {(x, y) for y, row in enumerate(FEATHER) for x, ch in enumerate(row) if ch != "."}
+    ring = sorted({(x + dx, y + dy) for x, y in shape for dx in (-1, 0, 1) for dy in (-1, 0, 1)
+                   if 0 <= x + dx < 9 and 0 <= y + dy < 9 and (x + dx, y + dy) not in shape},
+                  key=lambda p: -(p[0] + p[1]))  # quill end first
+    for i, fraction in enumerate(SATURATION_STAGES):
+        for y in range(9):
+            for x in range(9):
+                icons.putpixel((i * 9 + x, y), (0, 0, 0, 0))
+        for x, y in ring[:max(1, round(len(ring) * fraction))]:
+            icons.putpixel((i * 9 + x, y), rgba(SATURATION_GOLD))
+    path = os.path.join(ROOT, "assets", "appleskin", "textures", "icons.png")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    icons.save(path)
+
+
 def orange_glint(name):
     src = Image.open(os.path.join(VANILLA, name)).convert("RGB")
     out = Image.new("RGB", src.size)
@@ -451,6 +474,7 @@ def main():
     for kind in ["full", "half", "empty"]:
         feather(kind).save(os.path.join(hud, "food_" + kind + ".png"))
         feather(kind + "_hunger").save(os.path.join(hud, "food_" + kind + "_hunger.png"))
+    saturation_overlay()
 
     phoenix = draw_phoenix()
     size = PHOENIX_SIZE

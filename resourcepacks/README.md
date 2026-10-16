@@ -19,6 +19,8 @@ Textures so far:
 - Hearts – animated flaming hearts: fire gradient, flickering flame tongues and heat shimmer;
   hardcore + damage flash too
 - Hunger bar – phoenix feathers instead of drumsticks (green when you have Hunger)
+- Saturation (needs the AppleSkin mod) – gold outline traced around the feathers
 - Enchant glint – orange (items and armor)
 
-`tools/vanilla/` holds the vanilla 1.21.11 textures the generator starts from.
+`tools/vanilla/` holds the vanilla 1.21.11 textures the generator starts from
+(`tools/vanilla/appleskin/` is AppleSkin's 1.21.11 `icons.png`).
