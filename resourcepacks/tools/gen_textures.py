@@ -10,7 +10,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
 - mace.png: netherite head with a molten crack, blaze rod handle, flames
 - ender pearl, cobweb, wind charge (item + projectile + burst particles):
-  recoloured orange; the pearl and wind charge items are animated
+  recoloured orange; the pearl and wind charge items burn with animated flames
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -77,12 +77,11 @@ ORANGE_RECOLOURS = [
     ("cobweb.png", "block/cobweb.png", 0.55, 1.0),  # stays bright so webs are easy to spot
     ("wind_charge_entity.png", "entity/projectiles/wind_charge.png", 0.35, 1.0),
 ]
-# Animated orange items: (vanilla file, pack path, ramp start, ramp end, motion)
-#   "orbit": a glow circling the rim with a pulsing core (ender pearl)
-#   "swirl": a two-armed bright spiral spinning around the centre (wind charge)
-ANIMATED_RECOLOURS = [
-    ("ender_pearl.png", "item/ender_pearl.png", 0.15, 1.0, "orbit"),
-    ("wind_charge.png", "item/wind_charge.png", 0.3, 1.0, "swirl"),
+# Orange items that burn: recoloured, then the same animated flames as the
+# tools rising off their top edge. (vanilla file, pack path, ramp start, end)
+BURNING_RECOLOURS = [
+    ("ender_pearl.png", "item/ender_pearl.png", 0.15, 1.0),
+    ("wind_charge.png", "item/wind_charge.png", 0.3, 1.0),
 ]
 # Wind charge burst particles: their own textures, mapped by absolute
 # brightness (frames are only one or two greys each).
@@ -326,24 +325,14 @@ def ember_recolour(name, dest, lo, hi, absolute=False):
     save_texture(img, dest)
 
 
-def animated_recolour(name, dest, lo, hi, motion):
+def burning_recolour(name, dest, lo, hi):
     base = Image.open(os.path.join(VANILLA, name)).convert("RGBA")
-    levels = ember_levels(base, lo, hi)
-    cx, cy = (base.width - 1) / 2, (base.height - 1) / 2
+    for p, t in ember_levels(base, lo, hi).items():
+        base.putpixel(p, ember_colour(t) + (base.getpixel(p)[3],))
+    columns = [x for x in range(base.width) if any(base.getpixel((x, y))[3] for y in range(base.height))]
     strip = Image.new("RGBA", (base.width, base.height * FRAMES))
     for f in range(FRAMES):
-        phase = f / FRAMES * 2 * math.pi
-        for (x, y), t in levels.items():
-            angle = math.atan2(y - cy, x - cx)
-            radius = math.hypot(x - cx, y - cy)
-            if motion == "orbit":
-                if radius > 4.5:  # rim: a glow travelling round it
-                    t += 0.22 * math.cos(angle - phase)
-                else:             # core: slow pulse
-                    t += 0.08 * math.sin(phase)
-            else:                 # swirl: two spiral arms spinning
-                t += 0.2 * math.cos(2 * angle - phase * 2 + radius * 0.9)
-            strip.putpixel((x, y + f * base.height), ember_colour(t) + (base.getpixel((x, y))[3],))
+        strip.paste(render_frame(f, base, columns, None), (0, f * base.height))
     save_texture(strip, dest)
     with open(os.path.join(TEX, dest) + ".mcmeta", "w") as fh:
         json.dump({"animation": {"frametime": 2}}, fh, indent=2)
@@ -509,8 +498,8 @@ def main():
 
     for name, dest, lo, hi in ORANGE_RECOLOURS:
         ember_recolour(name, dest, lo, hi)
-    for name, dest, lo, hi, motion in ANIMATED_RECOLOURS:
-        animated_recolour(name, dest, lo, hi, motion)
+    for name, dest, lo, hi in BURNING_RECOLOURS:
+        burning_recolour(name, dest, lo, hi)
     for name in GUST_PARTICLES:
         ember_recolour(os.path.join("particle", name + ".png"), "particle/" + name + ".png", 0.1, 0.9, absolute=True)
 
