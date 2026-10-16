@@ -18,7 +18,8 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - potions: amber glass bottles with netherite stoppers
 - diamond tools, spear and armor icons: same flames, handles and gem as netherite
 - elytra (item, broken item, worn wings): phoenix wings on the fire palette
-- bow, crossbow (all states), arrows: banded blaze rod wood, glowing string/metal/fletching
+- bow, crossbow (all states): dark orange wood, banded blaze rod string/metal
+- arrows: banded blaze rod shaft, fire-coloured head and fletching
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -172,12 +173,14 @@ DIAMOND_ARMOR = ["diamond_helmet", "diamond_chestplate", "diamond_leggings", "di
 # the item icon also gets flame tongues.
 ELYTRA = {"elytra.png": "item/elytra.png", "elytra_broken.png": "item/elytra_broken.png",
           "elytra_wings.png": "entity/equipment/wings/elytra.png"}
-# Bow, crossbow, arrows: warm browns (wood) become blaze rod, using the real
-# blaze rod colours with its glowing banded segments; neutral greys/whites
-# (string, metal, arrowheads, fletching) go onto the fire ramp, by brightness;
-# anything else (firework colours) is left alone.
+# Bow and crossbow: dark orange wood, with the string and metal made of blaze
+# rod (real blaze rod colours with its glowing banded segments).
+# Arrows: blaze rod shaft, with the head and fletching on the fire ramp.
+# Mapping is by brightness; anything else (firework colours) is left alone.
 BLAZE_RAMP = [(120, 40, 0), (174, 60, 0), (191, 90, 0), (216, 174, 38), (255, 243, 45), (255, 248, 126)]
 BLAZE_BANDS = 3  # every third diagonal row glows brighter, like the rod's segments
+DARK_ORANGE = [(64, 20, 4), (104, 36, 6), (142, 56, 10), (178, 78, 16), (208, 102, 24)]
+ARROWS = {"arrow", "arrow_entity"}
 RANGED = {
     "bow": "item/bow.png", "bow_pulling_0": "item/bow_pulling_0.png",
     "bow_pulling_1": "item/bow_pulling_1.png", "bow_pulling_2": "item/bow_pulling_2.png",
@@ -571,11 +574,18 @@ def ranged(name, dest):
             if not a:
                 continue
             lum = (0.3 * r + 0.59 * g + 0.11 * b) / 255
-            if max(r, g, b) - min(r, g, b) < 12:          # grey/white: glowing string, metal, fletching
-                img.putpixel((x, y), rgba(ramp(LAVA, lum * 1.15), a))
-            elif r > g > b and r - b > 25:                  # warm brown: wood -> blaze rod
-                band = 0.22 if (x + y) % BLAZE_BANDS == 0 else -0.05
-                img.putpixel((x, y), rgba(ramp(BLAZE_RAMP, lum * 2.4 + band), a))
+            band = 0.22 if (x + y) % BLAZE_BANDS == 0 else -0.05
+            grey = max(r, g, b) - min(r, g, b) < 12      # string, metal, arrowheads, fletching
+            wood = r > g > b and r - b > 25
+            if name in ARROWS:
+                if grey:
+                    img.putpixel((x, y), rgba(ramp(LAVA, lum * 1.15), a))
+                elif wood:
+                    img.putpixel((x, y), rgba(ramp(BLAZE_RAMP, lum * 2.4 + band), a))
+            elif grey:
+                img.putpixel((x, y), rgba(ramp(BLAZE_RAMP, lum * 1.3 + 0.15 + band), a))
+            elif wood:
+                img.putpixel((x, y), rgba(ramp(DARK_ORANGE, lum * 2.3), a))
     save_texture(img, dest)
 
 
