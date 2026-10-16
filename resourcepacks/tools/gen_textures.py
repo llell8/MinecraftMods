@@ -173,21 +173,22 @@ def draw_phoenix():
     def wing(mirror):
         def at(x, y):
             return ((PHOENIX_SIZE - 0.01 - x) * k if mirror else x * k, y * k)
-        shoulder, wrist, peak, outer = (14.5, 13), (8, 6), (3, 3.5), (0.8, 6.5)
+        shoulder, wrist, peak, outer = (14.5, 9.5), (8, 6), (3, 3.5), (0.8, 6.5)
+        root = (15, 18)  # where the wing's trailing edge meets the body
         points = [(0.8, 20.5), (5.5, 23.5), (10.5, 21.5)]  # hanging points
-        # Membrane, its trailing edge scalloped in toward the wrist between points.
+        # Solid membrane, its trailing edge scalloped gently between points.
         poly = [shoulder, wrist, peak, outer]
         prev = outer
-        for tip in points + [(15, 17)]:
+        for tip in points + [root]:
             mx, my = (prev[0] + tip[0]) / 2, (prev[1] + tip[1]) / 2
-            cx, cy = mx + (wrist[0] - mx) * 0.42, my + (wrist[1] - my) * 0.42
+            cx, cy = mx + (wrist[0] - mx) * 0.18, my + (wrist[1] - my) * 0.18
             for i in range(1, 11):
                 t = i / 10
                 poly.append(((1 - t)**2 * prev[0] + 2 * (1 - t) * t * cx + t * t * tip[0],
                              (1 - t)**2 * prev[1] + 2 * (1 - t) * t * cy + t * t * tip[1]))
             prev = tip
         d.polygon([at(*q) for q in poly], fill=fill("m"))
-        d.polygon([at(*q) for q in [shoulder, (10, 9), (9, 16), (15, 17)]], fill=fill("M"))
+        d.polygon([at(*q) for q in [shoulder, (10, 8.5), (9, 16), root]], fill=fill("M"))
         # Bright leading edge, and finger bones out to the other points.
         for a, b, w in [(shoulder, wrist, 1.5), (wrist, peak, 1.3), (peak, outer, 1.1), (outer, points[0], 0.9)]:
             d.line([at(*a), at(*b)], fill=fill("y"), width=int(w * k))
@@ -197,22 +198,33 @@ def draw_phoenix():
     wing(False)
     wing(True)
     # Serpent body: an S from the head down to the tail, belly highlight inside.
-    s1 = _bezier((18, 4.5), (14, 6), (11.5, 9), (14.5, 13.5))
-    s2 = _bezier((14.5, 13.5), (18, 18), (21, 19), (17.5, 23.5))
-    s3 = _bezier((17.5, 23.5), (14.5, 27), (12, 28), (12.5, 31))
+    s1 = _bezier((18, 4.5), (14, 6), (11.5, 9), (14.5, 12.5))
+    s2 = _bezier((14.5, 12.5), (18, 16), (20.5, 17), (17.5, 20.5))
+    s3 = _bezier((17.5, 20.5), (16, 22), (15, 22), (15, 23))
     stroke(s1, 1.6, 2.0, "r")
     stroke(s2, 2.0, 2.2, "r")
-    stroke(s3, 2.2, 1.0, "r")
+    stroke(s3, 2.2, 1.6, "r")
     stroke([(x + 0.6, y - 0.4) for x, y in s1], 0.7, 0.9, "o")
     stroke([(x + 0.6, y - 0.2) for x, y in s2], 0.9, 1.0, "o")
-    stroke([(x + 0.5, y) for x, y in s3], 1.0, 0.4, "o")
-    # Head, snout, crest flames streaming back, tail flame.
+    stroke([(x + 0.5, y) for x, y in s3], 1.0, 0.7, "o")
+    # Tail feathers fanning out from the end of the tail: long leaf shapes
+    # with a bright quill and hot tips.
+    base = (15, 23)
+    for tip, half_width in [((7, 30), 1.5), ((10.5, 31.8), 1.6), ((15, 32), 1.7), ((19.5, 31.8), 1.6), ((23, 30), 1.5)]:
+        dx, dy = tip[0] - base[0], tip[1] - base[1]
+        length = math.hypot(dx, dy)
+        nx, ny = -dy / length * half_width, dx / length * half_width
+        mid = (base[0] + dx * 0.68, base[1] + dy * 0.68)
+        d.polygon([(base[0] * k, base[1] * k), ((mid[0] + nx) * k, (mid[1] + ny) * k), (tip[0] * k, tip[1] * k),
+                   ((mid[0] - nx) * k, (mid[1] - ny) * k)], fill=fill("o"))
+        d.line([(base[0] * k, base[1] * k), (tip[0] * k, tip[1] * k)], fill=fill("y"), width=int(0.6 * k))
+        end = (base[0] + dx * 0.8, base[1] + dy * 0.8)
+        d.line([(end[0] * k, end[1] * k), (tip[0] * k, tip[1] * k)], fill=fill("w"), width=int(0.9 * k))
+    # Head, snout, crest flames streaming back.
     d.ellipse([16 * k, 1.5 * k, 21.5 * k, 6 * k], fill=fill("o"))
     d.polygon([(20.5 * k, 2.4 * k), (25.5 * k, 3.6 * k), (20.5 * k, 5.4 * k)], fill=fill("o"))
     d.polygon([(17 * k, 3 * k), (13 * k, 0), (16.5 * k, 0.6 * k), (19.5 * k, 2 * k)], fill=fill("y"))
     d.polygon([(18 * k, 2 * k), (17.5 * k, 0), (20 * k, 1.6 * k)], fill=fill("w"))
-    d.polygon([(11 * k, 29.5 * k), (9.5 * k, 32 * k), (12.5 * k, 31 * k), (14 * k, 32 * k), (14 * k, 29.5 * k)],
-              fill=fill("y"))
 
     grid = {}
     for y in range(PHOENIX_SIZE):
