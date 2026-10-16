@@ -6,6 +6,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
 """
+import colorsys
 import json
 import math
 import os
@@ -36,6 +37,7 @@ BLAZE_ROD = {
     (96, 52, 50): (216, 174, 38),
     (115, 69, 67): (255, 243, 45),
 }
+BLAZE_SATURATION = 0.7  # tone the blaze rod colours down a bit
 MAX_OVERLAP = 2  # deepest the flames start inside the head
 
 
@@ -79,6 +81,11 @@ def fire(frame, base, columns):
     return px
 
 
+def desaturate(c, factor):
+    h, l, s = colorsys.rgb_to_hls(*(v / 255 for v in c))
+    return tuple(round(v * 255) for v in colorsys.hls_to_rgb(h, l, s * factor))
+
+
 def load_tool(name):
     """Vanilla texture with the wooden stick swapped for a blaze rod."""
     img = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
@@ -86,7 +93,7 @@ def load_tool(name):
         for x in range(img.width):
             r, g, b, a = img.getpixel((x, y))
             if a and (r, g, b) in BLAZE_ROD:
-                img.putpixel((x, y), rgba(BLAZE_ROD[(r, g, b)], a))
+                img.putpixel((x, y), rgba(desaturate(BLAZE_ROD[(r, g, b)], BLAZE_SATURATION), a))
     return img
 
 
