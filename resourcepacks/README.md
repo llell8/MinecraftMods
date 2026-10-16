@@ -8,10 +8,11 @@ Minecraft Java 1.21.11 (pack format 75). Purple, white and black, black hole / v
 - Generator: `python3 tools/gen_void.py` (reuses `gen_textures.py` with void palettes)
 
 Same pieces as Phoenix PvP below, re-themed:
-- Instead of flames, a "void pull": dotted particle rings ripple inward toward tools, the mace,
-  armor icons, apples and the elytra, with twinkling white stars (items are never covered)
-- Netherite sword, axe and mace – galaxy heads: deep space with a drifting purple nebula and
-  twinkling stars, a bright violet edge, a white tip, stardust around them and a star for a gem
+- Instead of flames, a "void pull": dotted particle rings ripple inward toward the apples and
+  the elytra, with twinkling white stars (items are never covered)
+- All gear – netherite and diamond tools, both spears, the mace and all armor icons are galaxies:
+  deep space with a drifting purple nebula and twinkling stars, a bright violet edge, stardust
+  around them and a star for a gem (diamond's teal outline and the spear wraps go void-purple)
 - Dark void-rod handles, violet gem
 - Totem – an animated black hole (dark core, white photon ring, spinning accretion disk)
 - Hearts fade from lilac to near-black; hunger icons are small black holes (AppleSkin outline too)
