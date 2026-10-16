@@ -77,16 +77,18 @@ ORANGE_RECOLOURS = [
     ("cobweb.png", "block/cobweb.png", 0.55, 1.0),  # stays bright so webs are easy to spot
     ("wind_charge_entity.png", "entity/projectiles/wind_charge.png", 0.35, 1.0),
 ]
-# Orange items that burn: recoloured, then two flickering fires orbiting them
-# in the empty pixels around their edge. Their own hotter shades (lemon-yellow
+# Orange items that burn: recoloured, then two flickering fires slowly orbiting
+# them a pixel away from their edge, so the fire never touches the item. Their own hotter shades (lemon-yellow
 # head burning down to deep crimson) set them apart from the item's orange.
 # Head to tail:
 ORBIT_FIRE = [(255, 250, 190), (255, 222, 60), (255, 140, 20), (215, 40, 20), (140, 10, 20)]
-# (vanilla file, pack path, ramp start, ramp end)
+# (vanilla file, pack path, ramp start, ramp end, shrink-to size or None)
 BURNING_RECOLOURS = [
-    ("ender_pearl.png", "item/ender_pearl.png", 0.15, 1.0),
-    ("wind_charge.png", "item/wind_charge.png", 0.1, 0.95),
+    ("ender_pearl.png", "item/ender_pearl.png", 0.15, 1.0, 11),  # shrunk to leave room for the ring
+    ("wind_charge.png", "item/wind_charge.png", 0.1, 0.95, None),
 ]
+ORBIT_FRAMES = 16    # half a turn per loop
+ORBIT_FRAMETIME = 3  # ticks per frame: 2.4 s per half turn
 # Wind charge burst particles: their own textures, mapped by absolute
 # brightness (frames are only one or two greys each).
 GUST_PARTICLES = [f"gust_{i}" for i in range(12)] + [f"small_gust_{i}" for i in range(7)]
@@ -332,49 +334,62 @@ def ember_recolour(name, dest, lo, hi, absolute=False):
     save_texture(img, dest)
 
 
-def burning_recolour(name, dest, lo, hi):
+def shrink(img, size):
+    """Scale the item's opaque area down to size x size, centred on the canvas."""
+    item = img.crop(img.getbbox()).resize((size, size), Image.LANCZOS)
+    out = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    offset = ((img.width - size) // 2, (img.height - size) // 2)
+    for y in range(size):
+        for x in range(size):
+            r, g, b, a = item.getpixel((x, y))
+            if a >= 128:
+                out.putpixel((x + offset[0], y + offset[1]), (r, g, b, 255))
+    return out
+
+
+def burning_recolour(name, dest, lo, hi, size):
     base = Image.open(os.path.join(VANILLA, name)).convert("RGBA")
     for p, t in ember_levels(base, lo, hi).items():
         base.putpixel(p, ember_colour(t) + (base.getpixel(p)[3],))
-    strip = Image.new("RGBA", (base.width, base.height * FRAMES))
-    for f in range(FRAMES):
+    if size:
+        base = shrink(base, size)
+    strip = Image.new("RGBA", (base.width, base.height * ORBIT_FRAMES))
+    for f in range(ORBIT_FRAMES):
         strip.paste(orbit_frame(f, base), (0, f * base.height))
     save_texture(strip, dest)
     with open(os.path.join(TEX, dest) + ".mcmeta", "w") as fh:
-        json.dump({"animation": {"frametime": 2}}, fh, indent=2)
+        json.dump({"animation": {"frametime": ORBIT_FRAMETIME}}, fh, indent=2)
         fh.write("\n")
 
 
 def orbit_frame(frame, base):
-    """Two flickering fires circling the item in the empty pixels around its
-    edge, with flame tongues bulging outward near each head. Half a turn per
-    loop; the fires are half a turn apart, so the loop is seamless."""
+    """Two flickering fires circling the item one pixel away from its edge,
+    with flame tongues reaching outward near each head. Half a turn per loop;
+    the fires are half a turn apart, so the loop is seamless."""
     img = base.copy()
     w, h = base.size
     solid = {(x, y) for y in range(h) for x in range(w) if base.getpixel((x, y))[3]}
     cx = sum(x for x, _ in solid) / len(solid)
     cy = sum(y for _, y in solid) / len(solid)
-    head = frame / FRAMES * math.pi
+    head = frame / ORBIT_FRAMES * math.pi
     for y in range(h):
         for x in range(w):
-            if (x, y) in solid:
-                continue
             d = min(max(abs(x - sx), abs(y - sy)) for sx, sy in solid)
-            if d > 2:
+            if d not in (2, 3):  # d == 1 is the gap that keeps the fire off the item
                 continue
             angle = math.atan2(y - cy, x - cx)
             for fire in (head, head + math.pi):
                 behind = (fire - angle) % (2 * math.pi)  # how far behind the head
-                reach = 2.4 if d == 1 else 0.9          # outer tongues only near the head
+                reach = 2.4 if d == 2 else 0.9          # outer tongues only near the head
                 if behind >= reach:
                     continue
-                i = min(len(ORBIT_FIRE) - 1, int(behind / reach * len(ORBIT_FIRE)) + (d - 1))
+                i = min(len(ORBIT_FIRE) - 1, int(behind / reach * len(ORBIT_FIRE)) + (d - 2))
                 flicker = math.sin(frame * 2.1 + x * 3.7 + y * 5.3)
                 if flicker > 0.6:
                     i = max(0, i - 1)
                 elif flicker < -0.7:
                     i = min(len(ORBIT_FIRE) - 1, i + 1)
-                if d == 2 and flicker < -0.2:
+                if d == 3 and flicker < -0.2:
                     continue  # ragged outer edge
                 img.putpixel((x, y), rgba(ORBIT_FIRE[i]))
     return img
@@ -539,8 +554,8 @@ def main():
 
     for name, dest, lo, hi in ORANGE_RECOLOURS:
         ember_recolour(name, dest, lo, hi)
-    for name, dest, lo, hi in BURNING_RECOLOURS:
-        burning_recolour(name, dest, lo, hi)
+    for name, dest, lo, hi, size in BURNING_RECOLOURS:
+        burning_recolour(name, dest, lo, hi, size)
     for name in GUST_PARTICLES:
         ember_recolour(os.path.join("particle", name + ".png"), "particle/" + name + ".png", 0.1, 0.9, absolute=True)
 
