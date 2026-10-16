@@ -13,6 +13,8 @@ Run: python3 resourcepacks/tools/gen_textures.py
   recoloured orange; flickering fires orbit the pearl and wind charge items
 - particle/critical_hit, enchanted_hit, damage: thin fiery crit X, thin blue
   soul-fire enchanted sparkle, plain dark orange hearts when you hit something
+- block/fire_0, fire_1: low fire (squashed frames)
+- models/item: smaller first-person totem and shield
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -135,6 +137,16 @@ PARTICLE_SPRITES = {
         "........",
     ],
 }
+# Low fire: the on-screen burning overlay uses the fire block textures, so each
+# frame is squashed to LOW_FIRE_HEIGHT of its height, anchored at the bottom.
+# (Fire blocks in the world get shorter too, as in most PvP low-fire packs.)
+LOW_FIRE_HEIGHT = 0.6
+FIRE_TEXTURES = ["fire_0", "fire_1"]
+# Smaller, lower first-person totem and shield (display transforms only).
+TOTEM_FIRST_PERSON = {"rotation": [0, -90, 25], "translation": [1.13, 1.2, 1.13], "scale": [0.45, 0.45, 0.45]}
+SHIELD_SCALE = 0.85      # vanilla first person is 1.25
+SHIELD_DROP = 5          # pixels lower on screen (vanilla y + this many down)
+SHIELD_BLOCKING_DROP = 2  # a little lower while blocking, so it stays visible
 # Netherite armor icons get flame tongues rising off their top edge, never
 # covering the armor.
 ARMOR_ITEMS = ["netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"]
@@ -438,6 +450,45 @@ def orbit_frame(frame, base):
     return img
 
 
+def low_fire(name):
+    src = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
+    out = Image.new("RGBA", src.size, (0, 0, 0, 0))
+    size = src.width
+    short = round(size * LOW_FIRE_HEIGHT)
+    for top in range(0, src.height, size):
+        frame = src.crop((0, top, size, top + size)).resize((size, short), Image.LANCZOS)
+        out.paste(frame, (0, top + size - short))
+    save_texture(out, "block/" + name + ".png")
+    with open(os.path.join(VANILLA, name + ".png.mcmeta")) as fh:
+        meta = fh.read()
+    with open(os.path.join(TEX, "block", name + ".png.mcmeta"), "w") as fh:
+        fh.write(meta)
+
+
+def write_model(name, model):
+    path = os.path.join(ROOT, "assets", "minecraft", "models", "item", name + ".json")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as fh:
+        json.dump(model, fh, indent=2)
+        fh.write("\n")
+
+
+def small_offhand_models():
+    write_model("totem_of_undying", {
+        "parent": "minecraft:item/generated",
+        "textures": {"layer0": "minecraft:item/totem_of_undying"},
+        "display": {"firstperson_righthand": TOTEM_FIRST_PERSON, "firstperson_lefthand": TOTEM_FIRST_PERSON},
+    })
+    for name, drop in (("shield", SHIELD_DROP), ("shield_blocking", SHIELD_BLOCKING_DROP)):
+        with open(os.path.join(VANILLA, "model_" + name + ".json")) as fh:
+            model = json.load(fh)
+        for hand in ("firstperson_righthand", "firstperson_lefthand"):
+            view = model["display"][hand]
+            view["scale"] = [SHIELD_SCALE] * 3
+            view["translation"][1] -= drop
+        write_model(name, model)
+
+
 def load_mace():
     img = Image.open(os.path.join(VANILLA, "mace.png")).convert("RGBA")
     for y in range(img.height):
@@ -594,6 +645,10 @@ def main():
     with open(os.path.join(item_dir, "mace.png.mcmeta"), "w") as fh:
         json.dump({"animation": {"frametime": 2}}, fh, indent=2)
         fh.write("\n")
+
+    for name in FIRE_TEXTURES:
+        low_fire(name)
+    small_offhand_models()
 
     for name, dest, lo, hi in ORANGE_RECOLOURS:
         ember_recolour(name, dest, lo, hi)

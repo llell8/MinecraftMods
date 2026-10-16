@@ -25,6 +25,8 @@ Textures so far:
 - Saturation (needs the AppleSkin mod) – gold outline traced around the feathers
 - Hit particles – thin orange X for crits, thin blue soul-fire sparkle for enchanted crits
   (the game tints those blue, so they can't be orange), plain dark orange hearts when you hit something
+- Low fire – the burning overlay (and fire blocks) squashed to 60% height
+- Small totem and shield in first person (smaller and lower; blocking pose only slightly lower)
 - Enchant glint – orange (items and armor)
 
 `tools/vanilla/` holds the vanilla 1.21.11 textures the generator starts from
