@@ -3,7 +3,7 @@
 Run: python3 resourcepacks/tools/gen_textures.py
 - netherite tools and weapons: vanilla texture with a blaze rod handle,
   animated fire on the head and an orange gem where the head meets the handle
-- totem_of_undying.png: phoenix totem with flaming wings and crest
+- totem_of_undying.png: hand-drawn phoenix with shimmering feathers
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
 """
@@ -130,41 +130,56 @@ def load_tool(name):
     return img
 
 
-# Totem of undying -> phoenix: gold becomes deep ember reds so the white-hot
-# eyes and the flames stand out.
-PHOENIX = {
-    (160, 91, 35): (110, 18, 14),
-    (133, 64, 15): (70, 10, 10),
-    (234, 219, 132): (214, 72, 18),
-    (253, 251, 238): (240, 120, 20),
-    (248, 238, 165): (230, 96, 20),
-    (209, 167, 93): (170, 36, 12),
-    (197, 135, 66): (140, 24, 6),
-    (65, 230, 127): (255, 244, 170),
-    (0, 187, 70): (255, 196, 50),
+# Phoenix totem, drawn from scratch: a front-facing phoenix with raised wings,
+# crest, beak and a three-plume tail. Left half only; mirrored onto the right.
+PHOENIX_COLOURS = {
+    "R": (150, 26, 10), "r": (205, 60, 16), "o": (240, 120, 20),
+    "y": (255, 190, 50), "w": (255, 240, 170), "B": (255, 214, 90), "E": (40, 6, 6),
 }
-# Wing feathers fanning up from the left arm (mirrored for the right), with
-# the colour heating up toward the tips.
-WING = {
-    (1, 7): LAVA[1], (2, 7): LAVA[1], (3, 7): LAVA[0],
-    (0, 6): LAVA[2], (1, 6): LAVA[2], (2, 6): LAVA[1],
-    (0, 5): LAVA[3], (1, 5): LAVA[2],
-    (0, 4): LAVA[3],
-}
-# Flames off the wing tips and a crest on the head.
-TOTEM_FIRE_COLUMNS = [0, 1, 2, 5, 6, 7, 8, 9, 10, 13, 14, 15]
+PHOENIX_LEFT = [
+    ".......y",  # crest
+    "y.....yy",
+    "yy....ro",  # head
+    "oyy...Eo",  # eye
+    "rooy..rB",  # beak
+    "Rrooy..r",  # neck
+    ".Rrooyro",  # shoulders
+    "..RRrroy",
+    "...R.roo",  # feather tips
+    ".....row",  # chest
+    "......ry",
+    "......Ro",  # tail fan
+    ".....Rro",
+    "....Rroy",
+    "...Rroyo",
+    "...y.y.y",
+]
+# Feather shimmer: a slow wave runs up the bird, briefly heating the hot
+# colours one shade.
+SHIMMER = {"o": "y", "y": "w"}
 
 
-def load_totem():
-    img = Image.open(os.path.join(VANILLA, "totem_of_undying.png")).convert("RGBA")
-    for y in range(img.height):
-        for x in range(img.width):
-            r, g, b, a = img.getpixel((x, y))
-            if a and (r, g, b) in PHOENIX:
-                img.putpixel((x, y), rgba(PHOENIX[(r, g, b)], a))
-    for (x, y), c in WING.items():
-        img.putpixel((x, y), rgba(c))
-        img.putpixel((img.width - 1 - x, y), rgba(c))
+def phoenix_frame(frame):
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    phase = frame / FRAMES * 2 * math.pi
+    for y, row in enumerate(PHOENIX_LEFT):
+        for x, ch in enumerate(row):
+            if ch == ".":
+                continue
+            if ch in SHIMMER and math.sin(phase + y * 0.7) > 0.85:
+                ch = SHIMMER[ch]
+            c = rgba(PHOENIX_COLOURS[ch])
+            img.putpixel((x, y), c)
+            img.putpixel((15 - x, y), c)
+    # Embers drifting up off the wing tips.
+    rng = random.Random(7)
+    for _ in range(3):
+        sx = rng.choice([1, 2, 3, 12, 13, 14])
+        sy = rng.randint(5, 9)
+        t = (frame + rng.randint(0, FRAMES - 1)) % FRAMES
+        p = (sx, sy - t)
+        if t < FRAMES - 3 and p[1] >= 0 and img.getpixel(p)[3] == 0:
+            img.putpixel(p, rgba(LAVA[4] if t < 2 else LAVA[2], 220 - t * 35))
     return img
 
 
@@ -205,10 +220,9 @@ def main():
             json.dump({"animation": {"frametime": 2}}, fh, indent=2)
             fh.write("\n")
 
-    totem = load_totem()
     strip = Image.new("RGBA", (16, 16 * FRAMES))
     for f in range(FRAMES):
-        strip.paste(render_frame(f, totem, TOTEM_FIRE_COLUMNS, None), (0, f * 16))
+        strip.paste(phoenix_frame(f), (0, f * 16))
     strip.save(os.path.join(item_dir, "totem_of_undying.png"))
     with open(os.path.join(item_dir, "totem_of_undying.png.mcmeta"), "w") as fh:
         json.dump({"animation": {"frametime": 2}}, fh, indent=2)
