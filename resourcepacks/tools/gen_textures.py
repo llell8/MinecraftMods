@@ -10,7 +10,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
 - mace.png: netherite head with a molten crack, blaze rod handle, flames
 - ender pearl, cobweb, wind charge (item + projectile + burst particles):
-  recoloured orange; the pearl and wind charge items burn with animated flames
+  recoloured orange; the pearl and wind charge items have flames rising off them
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -77,11 +77,12 @@ ORANGE_RECOLOURS = [
     ("cobweb.png", "block/cobweb.png", 0.55, 1.0),  # stays bright so webs are easy to spot
     ("wind_charge_entity.png", "entity/projectiles/wind_charge.png", 0.35, 1.0),
 ]
-# Orange items that burn: recoloured, then the same animated flames as the
-# tools rising off their top edge. (vanilla file, pack path, ramp start, end)
+# Orange items that burn: recoloured, then flame tongues rising off their top
+# edge without covering them (like the armor icons), so they stay readable.
+# (vanilla file, pack path, ramp start, ramp end)
 BURNING_RECOLOURS = [
     ("ender_pearl.png", "item/ender_pearl.png", 0.15, 1.0),
-    ("wind_charge.png", "item/wind_charge.png", 0.3, 1.0),
+    ("wind_charge.png", "item/wind_charge.png", 0.1, 0.95),
 ]
 # Wind charge burst particles: their own textures, mapped by absolute
 # brightness (frames are only one or two greys each).
@@ -275,14 +276,17 @@ def phoenix_frame(frame, grid):
     return img
 
 
-def engulf_frame(frame, base):
+def engulf_frame(frame, base, crown=None):
     """A few flame tongues rising off the item's top edge without covering it:
-    smooth waves so neighbouring columns form tongues instead of speckles."""
+    smooth waves so neighbouring columns form tongues instead of speckles.
+    With crown=n, only columns whose top is within n rows of the highest point
+    burn, so round items get a crown of fire rather than flames off their sides."""
     img = base.copy()
     phase = frame / FRAMES * 2 * math.pi
+    highest = min(y for y in range(base.height) for x in range(base.width) if base.getpixel((x, y))[3])
     for x in range(base.width):
         tops = [y for y in range(base.height) if base.getpixel((x, y))[3]]
-        if not tops:
+        if not tops or (crown is not None and tops[0] > highest + crown):
             continue
         h = 1.2 * math.sin(phase + x * 0.9) + 0.5 * math.sin(phase * 2 - x * 0.6) + 1.0
         for k in range(max(0, min(3, round(h)))):
@@ -329,10 +333,9 @@ def burning_recolour(name, dest, lo, hi):
     base = Image.open(os.path.join(VANILLA, name)).convert("RGBA")
     for p, t in ember_levels(base, lo, hi).items():
         base.putpixel(p, ember_colour(t) + (base.getpixel(p)[3],))
-    columns = [x for x in range(base.width) if any(base.getpixel((x, y))[3] for y in range(base.height))]
     strip = Image.new("RGBA", (base.width, base.height * FRAMES))
     for f in range(FRAMES):
-        strip.paste(render_frame(f, base, columns, None), (0, f * base.height))
+        strip.paste(engulf_frame(f, base, crown=1), (0, f * base.height))
     save_texture(strip, dest)
     with open(os.path.join(TEX, dest) + ".mcmeta", "w") as fh:
         json.dump({"animation": {"frametime": 2}}, fh, indent=2)
