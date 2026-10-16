@@ -10,7 +10,7 @@ Textures so far:
 - Netherite sword, axe, pickaxe, shovel, hoe and spear (icon + in-hand) – vanilla
   textures with blaze rod handles, animated fire on the head and an orange gem where the
   head meets the handle
-- Totem of undying – 32x32 dragon-rune style phoenix in the tools' fire colours: serpent body,
+- Totem of undying – 16x16 dragon-rune style phoenix in the tools' fire colours: serpent body,
   solid spread wings, legs with talons, fanned tail feathers
 - Enchant glint – orange (items and armor)
 

@@ -3,7 +3,7 @@
 Run: python3 resourcepacks/tools/gen_textures.py
 - netherite tools and weapons: vanilla texture with a blaze rod handle,
   animated fire on the head and an orange gem where the head meets the handle
-- totem_of_undying.png: 32x32 dragon-rune style phoenix, serpent body with spread wings
+- totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
 """
@@ -12,9 +12,8 @@ import json
 import math
 import os
 import random
-from collections import Counter
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 HERE = os.path.dirname(__file__)
 VANILLA = os.path.join(HERE, "vanilla")
@@ -131,146 +130,53 @@ def load_tool(name):
     return img
 
 
-# Phoenix totem, dragon-rune style: a serpent body winding down the middle
-# with bat-like wings spread wide. Drawn as smooth shapes at PHOENIX_SCALE x
-# resolution, then reduced to 32x32 by majority colour per pixel.
-PHOENIX_SIZE = 32
-PHOENIX_SCALE = 12
-# Same fire palette as the flames on the tools, plus a near-black ember for
-# the legs.
+# Phoenix totem, dragon-rune style, hand-placed at 16x16: a serpent body
+# winding down the middle, bat-like wings spread wide with hanging points,
+# two legs, and a fan of tail feathers. Same fire palette as the tools.
+PHOENIX_SIZE = 16
 PHOENIX_COLOURS = {
     "M": (110, 16, 6), "m": LAVA[0], "r": LAVA[1], "o": LAVA[2], "y": LAVA[3], "w": LAVA[4],
     "L": (60, 12, 8),
 }
+PHOENIX = [
+    "......ywy.......",  # crest
+    "........ooooy...",  # head + snout
+    ".yy.....ro...yy.",  # wing peaks, neck
+    "ymmyyy.ro.yyymmy",
+    "ymmmmyro.yymmmmy",
+    "ymmmmmMroMmmmmmy",
+    "ymmmmmMMroMmmmmy",
+    "ymmmmmMMMroMmmmy",
+    "ymomomMMromomomy",  # finger bones
+    "y..o.oLroLo.o..y",  # hanging points, legs
+    "...y.LroyrL.y...",
+    "....LLroyrLL....",  # feet
+    "...ro.ooyo.or...",  # tail feathers
+    "..ro.rooyor.or..",
+    ".w..ro.oy.or..w.",
+    "....y..ww..y....",
+]
 MEMBRANE_ALPHA = 230
 # Heat shimmer: a band runs down the dragon, briefly heating hot colours.
 SHIMMER = {"o": "y", "y": "w"}
 
 
-def _bezier(p0, p1, p2, p3, n=60):
-    pts = []
-    for i in range(n + 1):
-        t = i / n
-        u = 1 - t
-        pts.append(tuple(u**3 * a + 3 * u * u * t * b + 3 * u * t * t * c + t**3 * e
-                         for a, b, c, e in zip(p0, p1, p2, p3)))
-    return pts
-
-
 def draw_phoenix():
-    """Returns {(x, y): colour key} for the 32x32 phoenix."""
-    k = PHOENIX_SCALE
-    keys = list(PHOENIX_COLOURS)
-    layer = Image.new("L", (PHOENIX_SIZE * k, PHOENIX_SIZE * k), 0)
-    d = ImageDraw.Draw(layer)
-
-    def fill(key):
-        return keys.index(key) + 1
-
-    def stroke(pts, w0, w1, key):
-        for i, (x, y) in enumerate(pts):
-            w = (w0 + (w1 - w0) * i / (len(pts) - 1)) * k
-            d.ellipse([x * k - w, y * k - w, x * k + w, y * k + w], fill=fill(key))
-
-    def wing(mirror):
-        def at(x, y):
-            return ((PHOENIX_SIZE - 0.01 - x) * k if mirror else x * k, y * k)
-        shoulder, wrist, peak, outer = (14.5, 9.5), (8, 6), (3, 3.5), (0.8, 6.5)
-        root = (15, 15.5)  # where the wing's trailing edge meets the body
-        points = [(0.8, 18), (5.5, 20.5), (10.5, 18.5)]  # hanging points
-        # Solid membrane, its trailing edge scalloped gently between points.
-        poly = [shoulder, wrist, peak, outer]
-        prev = outer
-        for tip in points + [root]:
-            mx, my = (prev[0] + tip[0]) / 2, (prev[1] + tip[1]) / 2
-            cx, cy = mx + (wrist[0] - mx) * 0.18, my + (wrist[1] - my) * 0.18
-            for i in range(1, 11):
-                t = i / 10
-                poly.append(((1 - t)**2 * prev[0] + 2 * (1 - t) * t * cx + t * t * tip[0],
-                             (1 - t)**2 * prev[1] + 2 * (1 - t) * t * cy + t * t * tip[1]))
-            prev = tip
-        d.polygon([at(*q) for q in poly], fill=fill("m"))
-        d.polygon([at(*q) for q in [shoulder, (10, 8.5), (9, 16), root]], fill=fill("M"))
-        # Bright leading edge, and finger bones out to the other points.
-        for a, b, w in [(shoulder, wrist, 1.5), (wrist, peak, 1.3), (peak, outer, 1.1), (outer, points[0], 0.9)]:
-            d.line([at(*a), at(*b)], fill=fill("y"), width=int(w * k))
-        for tip in points[1:]:
-            d.line([at(*wrist), at(*tip)], fill=fill("o"), width=k)
-
-    wing(False)
-    wing(True)
-    # Serpent body: an S from the head down to the tail, belly highlight inside.
-    s1 = _bezier((18, 4.5), (14, 6), (11.5, 8.5), (14.5, 11))
-    s2 = _bezier((14.5, 11), (18, 13.5), (20, 14.5), (17, 17.5))
-    s3 = _bezier((17, 17.5), (15.8, 18.6), (15, 18.6), (15, 19.2))
-    stroke(s1, 1.6, 2.0, "r")
-    stroke(s2, 2.0, 2.2, "r")
-    stroke(s3, 2.2, 1.6, "r")
-    stroke([(x + 0.6, y - 0.4) for x, y in s1], 0.7, 0.9, "o")
-    stroke([(x + 0.6, y - 0.2) for x, y in s2], 0.9, 1.0, "o")
-    stroke([(x + 0.5, y) for x, y in s3], 1.0, 0.7, "o")
-    # Tail feathers fanning out from the end of the tail: long two-tone vanes
-    # either side of a bright quill, with notches cut into the edges where
-    # the barbs split.
-    base = (15, 19)
-    for tip, half_width in [((3.5, 28.5), 1.7), ((8.5, 31.5), 1.9), ((15, 32.5), 2.0),
-                            ((21.5, 31.5), 1.9), ((26.5, 28.5), 1.7)]:
-        dx, dy = tip[0] - base[0], tip[1] - base[1]
-        length = math.hypot(dx, dy)
-        ux, uy = dx / length, dy / length
-        nx, ny = -uy, ux
-
-        def at(t, side):
-            # narrow quill near the body, widest about two thirds of the way out
-            w = half_width * math.sin(math.pi * min(1, t ** 1.6)) * side
-            return ((base[0] + dx * t + nx * w) * k, (base[1] + dy * t + ny * w) * k)
-
-        ts = [i / 20 for i in range(21)]
-        spine = [((base[0] + dx * t) * k, (base[1] + dy * t) * k) for t in ts]
-        d.polygon(spine + [at(t, 1) for t in reversed(ts)], fill=fill("o"))
-        d.polygon(spine + [at(t, -1) for t in reversed(ts)], fill=fill("r"))
-        for t, side in [(0.55, 1), (0.7, -1)]:
-            edge = at(t, side)
-            inner = at(t + 0.08, side * 0.35)
-            d.polygon([edge, inner, at(t + 0.12, side)], fill=0)
-        d.line([spine[3], spine[-2]], fill=fill("y"), width=int(0.5 * k))
-        d.line([spine[-6], spine[-1]], fill=fill("w"), width=int(0.6 * k))
-    # Two dark legs hanging below the body over the tail, each ending in
-    # three talons.
-    for hip, knee, foot, toes in [((14, 16), (12, 19), (11, 22.5), [(9.2, 24), (10.6, 24.8), (12.2, 24.4)]),
-                                  ((17, 16), (19, 19), (20, 22.5), [(18.8, 24.4), (20.4, 24.8), (21.8, 24)])]:
-        d.line([(hip[0] * k, hip[1] * k), (knee[0] * k, knee[1] * k), (foot[0] * k, foot[1] * k)],
-               fill=fill("L"), width=int(1.3 * k), joint="curve")
-        for toe in toes:
-            d.line([(foot[0] * k, foot[1] * k), (toe[0] * k, toe[1] * k)], fill=fill("L"), width=int(0.9 * k))
-    # Head, snout, crest flames streaming back.
-    d.ellipse([16 * k, 1.5 * k, 21.5 * k, 6 * k], fill=fill("o"))
-    d.polygon([(20.5 * k, 2.4 * k), (25.5 * k, 3.6 * k), (20.5 * k, 5.4 * k)], fill=fill("o"))
-    d.polygon([(17 * k, 3 * k), (13 * k, 0), (16.5 * k, 0.6 * k), (19.5 * k, 2 * k)], fill=fill("y"))
-    d.polygon([(18 * k, 2 * k), (17.5 * k, 0), (20 * k, 1.6 * k)], fill=fill("w"))
-
-    grid = {}
-    for y in range(PHOENIX_SIZE):
-        for x in range(PHOENIX_SIZE):
-            cell = Counter(layer.getpixel((x * k + i, y * k + j)) for i in range(k) for j in range(k))
-            if k * k - cell[0] < k * k * 0.45:
-                continue
-            del cell[0]
-            grid[(x, y)] = keys[cell.most_common(1)[0][0] - 1]
-    return grid
+    """Returns {(x, y): colour key} for the phoenix."""
+    return {(x, y): ch for y, row in enumerate(PHOENIX) for x, ch in enumerate(row) if ch != "."}
 
 
 def phoenix_frame(frame, grid):
     img = Image.new("RGBA", (PHOENIX_SIZE, PHOENIX_SIZE), (0, 0, 0, 0))
     phase = frame / FRAMES * 2 * math.pi
     for (x, y), key in grid.items():
-        if key in SHIMMER and math.sin(phase - y * 0.25) > 0.85:
+        if key in SHIMMER and math.sin(phase - y * 8 / PHOENIX_SIZE) > 0.85:
             key = SHIMMER[key]
         img.putpixel((x, y), rgba(PHOENIX_COLOURS[key], MEMBRANE_ALPHA if key in "mM" else 255))
     # Embers rising off the wing peaks.
     rng = random.Random(7)
     for _ in range(4):
-        sx = rng.choice([2, 3, 4, 27, 28, 29])
+        sx = rng.choice([1, 2, PHOENIX_SIZE - 3, PHOENIX_SIZE - 2])
         t = (frame + rng.randint(0, FRAMES - 1)) % FRAMES
         p = (sx, 2 - t)
         if t < 3 and p[1] >= 0 and img.getpixel(p)[3] == 0:
