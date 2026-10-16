@@ -3,7 +3,7 @@
 Run: python3 resourcepacks/tools/gen_textures.py
 - netherite tools and weapons: vanilla texture with a blaze rod handle,
   animated fire on the head and an orange gem where the head meets the handle
-- totem_of_undying.png: hand-drawn phoenix with shimmering feathers
+- totem_of_undying.png: hand-drawn phoenix in flight, seen side-on from afar
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
 """
@@ -130,56 +130,53 @@ def load_tool(name):
     return img
 
 
-# Phoenix totem, drawn from scratch: a front-facing phoenix with raised wings,
-# crest, beak and a three-plume tail. Left half only; mirrored onto the right.
+# Phoenix totem, drawn from scratch: a far-off phoenix seen side-on in flight,
+# heading right with one wing raised and two tail plumes trailing behind.
 PHOENIX_COLOURS = {
     "R": (150, 26, 10), "r": (205, 60, 16), "o": (240, 120, 20),
-    "y": (255, 190, 50), "w": (255, 240, 170), "B": (255, 214, 90), "E": (40, 6, 6),
+    "y": (255, 190, 50), "w": (255, 240, 170),
 }
-PHOENIX_LEFT = [
-    ".......y",  # crest
-    "y.....yy",
-    "yy....ro",  # head
-    "oyy...Eo",  # eye
-    "rooy..rB",  # beak
-    "Rrooy..r",  # neck
-    ".Rrooyro",  # shoulders
-    "..RRrroy",
-    "...R.roo",  # feather tips
-    ".....row",  # chest
-    "......ry",
-    "......Ro",  # tail fan
-    ".....Rro",
-    "....Rroy",
-    "...Rroyo",
-    "...y.y.y",
+PHOENIX = [
+    "........y.......",
+    ".......yo.......",
+    "......yoo.......",
+    ".....yoor.......",
+    "....yoorr....yy.",
+    "...yoorrr...yooy",
+    "..yoorrRr..yor..",
+    ".yoorRRRrrooR...",
+    "y.o.r.RRrrrr....",
+    "......RRrrR.....",
+    ".....rRRr.......",
+    "...rr..r........",
+    ".oo....o........",
+    "y.....o.........",
+    ".....y..........",
+    "....y...........",
 ]
-# Feather shimmer: a slow wave runs up the bird, briefly heating the hot
-# colours one shade.
+# Heat shimmer: a band runs from the wing tip down to the tail, briefly
+# heating the hot colours one shade.
 SHIMMER = {"o": "y", "y": "w"}
 
 
 def phoenix_frame(frame):
     img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
     phase = frame / FRAMES * 2 * math.pi
-    for y, row in enumerate(PHOENIX_LEFT):
+    for y, row in enumerate(PHOENIX):
         for x, ch in enumerate(row):
             if ch == ".":
                 continue
-            if ch in SHIMMER and math.sin(phase + y * 0.7) > 0.85:
+            if ch in SHIMMER and math.sin(phase - (y - x) * 0.45) > 0.8:
                 ch = SHIMMER[ch]
-            c = rgba(PHOENIX_COLOURS[ch])
-            img.putpixel((x, y), c)
-            img.putpixel((15 - x, y), c)
-    # Embers drifting up off the wing tips.
+            img.putpixel((x, y), rgba(PHOENIX_COLOURS[ch]))
+    # Embers shed behind the tail plumes, drifting back and up.
     rng = random.Random(7)
     for _ in range(3):
-        sx = rng.choice([1, 2, 3, 12, 13, 14])
-        sy = rng.randint(5, 9)
+        sx, sy = rng.choice([(1, 12), (4, 14), (3, 11)])
         t = (frame + rng.randint(0, FRAMES - 1)) % FRAMES
-        p = (sx, sy - t)
-        if t < FRAMES - 3 and p[1] >= 0 and img.getpixel(p)[3] == 0:
-            img.putpixel(p, rgba(LAVA[4] if t < 2 else LAVA[2], 220 - t * 35))
+        p = (sx - t // 2, sy - t // 3 + 1)
+        if t < 3 and 0 <= p[0] and 0 <= p[1] < 16 and img.getpixel(p)[3] == 0:
+            img.putpixel(p, rgba(LAVA[4] if t < 2 else LAVA[3], 240 - t * 30))
     return img
 
 
