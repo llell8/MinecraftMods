@@ -14,7 +14,7 @@ Textures so far:
 - Totem of undying – 16x16 dragon-rune style phoenix in the tools' fire colours: serpent body,
   solid spread wings, legs with talons, fanned tail feathers
 - Netherite armor – icons with animated flame tongues rising off the top, armor left visible (worn armor is vanilla)
-- Ender pearl, cobweb, wind charge – recoloured orange; two fire comets orbit the pearl and wind
+- Ender pearl, cobweb, wind charge – recoloured orange; two blue soul-fire comets orbit the pearl and wind
   charge items without covering them; orange wind charge projectile and burst particles
 - Golden apple – molten gold with a flame at the stem
 - Enchanted golden apple – its own red-hot texture with a crown of flames
