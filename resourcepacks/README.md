@@ -17,6 +17,10 @@ Textures so far:
 - Ender pearl, cobweb, wind charge – recoloured orange; two flickering yellow-to-crimson fires slowly
   orbit the pearl and wind charge items a pixel away from them (pearl shrunk slightly to fit);
   orange wind charge projectile and burst particles
+- Potions – amber glass bottles with blaze rod corks (drinkable, splash, lingering, empty);
+  symbols on the main PvP potions: heart healing, X harming, sword strength, chevron swiftness,
+  flame fire resistance, plus regeneration, shield turtle master, down-arrow slowness
+  (white = normal/long, gold = strong). Needs 1.21.5+ item definitions.
 - Golden apple – molten gold with a flame at the stem
 - Enchanted golden apple – its own red-hot texture with a crown of flames
 - Hearts – animated flaming hearts: fire gradient, flickering flame tongues and heat shimmer;

@@ -1,0 +1,250 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:component",
+    "component": "minecraft:potion_contents",
+    "cases": [
+      {
+        "when": [
+          "minecraft:healing"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_heart",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:strong_healing"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_heart_strong",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:harming"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_cross",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:strong_harming"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_cross_strong",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:strength",
+          "minecraft:long_strength"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_sword",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:strong_strength"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_sword_strong",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:swiftness",
+          "minecraft:long_swiftness"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_chevrons",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:strong_swiftness"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_chevrons_strong",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:fire_resistance",
+          "minecraft:long_fire_resistance"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_flame",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:regeneration",
+          "minecraft:long_regeneration"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_plus",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:strong_regeneration"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_plus_strong",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:turtle_master",
+          "minecraft:long_turtle_master"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_shield",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:strong_turtle_master"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_shield_strong",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:slowness",
+          "minecraft:long_slowness"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_down",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "minecraft:strong_slowness"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/potion_down_strong",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "minecraft:item/potion",
+      "tints": [
+        {
+          "type": "minecraft:potion",
+          "default": -13083194
+        }
+      ]
+    }
+  }
+}

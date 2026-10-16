@@ -15,6 +15,8 @@ Run: python3 resourcepacks/tools/gen_textures.py
   soul-fire enchanted sparkle, plain dark orange hearts when you hit something
 - block/fire_0, fire_1: low fire (squashed frames)
 - models/item: smaller first-person totem and shield
+- potions: amber glass bottles with blaze rod corks; items/*potion.json pick a
+  symbol model by potion type (white normal/long, gold strong)
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -147,6 +149,42 @@ TOTEM_FIRST_PERSON = {"rotation": [0, -90, 25], "translation": [1.13, 1.2, 1.13]
 SHIELD_SCALE = 0.85      # vanilla first person is 1.25
 SHIELD_DROP = 5          # pixels lower on screen (vanilla y + this many down)
 SHIELD_BLOCKING_DROP = 2  # a little lower while blocking, so it stays visible
+# Potions: warm amber glass with a copper blaze rod cork, and a symbol on the
+# liquid for the main PvP potions (picked with a select on potion_contents;
+# white for normal/long, gold for strong). The liquid keeps its effect colour.
+BOTTLE_COLOURS = {
+    (212, 229, 247): (255, 236, 200), (179, 207, 236): (232, 182, 128),  # glass highlights
+    (139, 173, 208): (200, 128, 78), (93, 143, 194): (130, 56, 28),      # glass shade, edge
+}
+CORK_COLOURS = {  # cork -> blaze rod (toned like the handles)
+    (212, 109, 73): (255, 243, 45), (204, 175, 165): (255, 243, 45),
+    (169, 71, 37): (216, 174, 38), (151, 55, 22): (179, 107, 25),
+}
+BOTTLES = ["potion", "splash_potion", "lingering_potion", "glass_bottle"]
+POTION_SYMBOLS = {  # 3x3, drawn on the liquid at (7, 9) so its colour still shows around it
+    "heart": ["W.W", "WWW", ".W."],
+    "cross": ["W.W", ".W.", "W.W"],
+    "sword": ["..W", "WW.", "W.."],
+    "chevrons": ["W..", ".W.", "W.."],
+    "flame": [".W.", ".WW", "WWW"],
+    "plus": [".W.", "WWW", ".W."],
+    "shield": ["WWW", "WWW", ".W."],
+    "down": ["...", "W.W", ".W."],
+}
+SYMBOL_COLOURS = {"": (255, 255, 255), "_strong": (255, 214, 70)}
+SYMBOL_OUTLINE = (45, 18, 12)  # around the symbol (on the liquid only) so it reads on any colour
+# symbol -> (normal/long potions, strong potions)
+POTION_TYPES = {
+    "heart": (["healing"], ["strong_healing"]),
+    "cross": (["harming"], ["strong_harming"]),
+    "sword": (["strength", "long_strength"], ["strong_strength"]),
+    "chevrons": (["swiftness", "long_swiftness"], ["strong_swiftness"]),
+    "flame": (["fire_resistance", "long_fire_resistance"], []),
+    "plus": (["regeneration", "long_regeneration"], ["strong_regeneration"]),
+    "shield": (["turtle_master", "long_turtle_master"], ["strong_turtle_master"]),
+    "down": (["slowness", "long_slowness"], ["strong_slowness"]),
+}
+POTION_TINT = {"type": "minecraft:potion", "default": -13083194}
 # Netherite armor icons get flame tongues rising off their top edge, never
 # covering the armor.
 ARMOR_ITEMS = ["netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"]
@@ -489,6 +527,57 @@ def small_offhand_models():
         write_model(name, model)
 
 
+def potions():
+    for name in BOTTLES:
+        img = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
+        for y in range(img.height):
+            for x in range(img.width):
+                r, g, b, a = img.getpixel((x, y))
+                if a and (r, g, b) in BOTTLE_COLOURS:
+                    img.putpixel((x, y), rgba(BOTTLE_COLOURS[(r, g, b)], a))
+                elif a and (r, g, b) in CORK_COLOURS:
+                    img.putpixel((x, y), rgba(tone(CORK_COLOURS[(r, g, b)], *ROD_TONE), a))
+        save_texture(img, "item/" + name + ".png")
+    liquid = Image.open(os.path.join(VANILLA, "potion_overlay.png")).convert("RGBA")
+    for symbol, rows in POTION_SYMBOLS.items():
+        marks = {(7 + x, 9 + y) for y, row in enumerate(rows) for x, ch in enumerate(row) if ch == "W"}
+        for suffix, colour in SYMBOL_COLOURS.items():
+            img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+            for x, y in marks:
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    p = (x + dx, y + dy)
+                    if p not in marks and liquid.getpixel(p)[3]:
+                        img.putpixel(p, rgba(SYMBOL_OUTLINE))
+            for p in marks:
+                img.putpixel(p, rgba(colour))
+            save_texture(img, "item/potion_symbol_" + symbol + suffix + ".png")
+    items_dir = os.path.join(ROOT, "assets", "minecraft", "items")
+    os.makedirs(items_dir, exist_ok=True)
+    for bottle in ("potion", "splash_potion", "lingering_potion"):
+        cases = []
+        for symbol, (normal, strong) in POTION_TYPES.items():
+            for suffix, ids in (("", normal), ("_strong", strong)):
+                if not ids:
+                    continue
+                model = bottle + "_" + symbol + suffix
+                write_model(model, {
+                    "parent": "minecraft:item/generated",
+                    "textures": {"layer0": "minecraft:item/potion_overlay", "layer1": "minecraft:item/" + bottle,
+                                 "layer2": "minecraft:item/potion_symbol_" + symbol + suffix},
+                })
+                cases.append({"when": ["minecraft:" + i for i in ids],
+                              "model": {"type": "minecraft:model", "model": "minecraft:item/" + model,
+                                        "tints": [POTION_TINT]}})
+        definition = {"model": {
+            "type": "minecraft:select", "property": "minecraft:component", "component": "minecraft:potion_contents",
+            "cases": cases,
+            "fallback": {"type": "minecraft:model", "model": "minecraft:item/" + bottle, "tints": [POTION_TINT]},
+        }}
+        with open(os.path.join(items_dir, bottle + ".json"), "w") as fh:
+            json.dump(definition, fh, indent=2)
+            fh.write("\n")
+
+
 def load_mace():
     img = Image.open(os.path.join(VANILLA, "mace.png")).convert("RGBA")
     for y in range(img.height):
@@ -649,6 +738,7 @@ def main():
     for name in FIRE_TEXTURES:
         low_fire(name)
     small_offhand_models()
+    potions()
 
     for name, dest, lo, hi in ORANGE_RECOLOURS:
         ember_recolour(name, dest, lo, hi)
