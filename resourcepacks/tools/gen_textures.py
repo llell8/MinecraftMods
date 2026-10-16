@@ -5,7 +5,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
   animated fire on the head and an orange gem where the head meets the handle
 - golden_apple.png / enchanted_golden_apple.png: molten gold gap with a stem
   flame, red-hot egap with a crown of flames (own model + texture)
-- gui/sprites/hud: fiery hearts, phoenix feathers for the hunger bar
+- gui/sprites/hud: animated flaming hearts, phoenix feathers for the hunger bar
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
 - netherite armor icons: flames along the top
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
@@ -63,7 +63,10 @@ HEART_COLOURS = {
     (187, 19, 19): LAVA[0],     # lower edge
     (96, 7, 7): (110, 16, 6),   # hardcore pattern
 }
-HEART_FLAMES = [(2, 0), (6, 0)]
+HEART_FLAME_COLUMNS = [2, 3, 5, 6]
+# Brighter step for each heart colour, used by the heat shimmer.
+HEART_HOTTER = {LAVA[1]: (220, 80, 14), (220, 80, 14): LAVA[2], LAVA[2]: (255, 150, 30),
+                (255, 150, 30): LAVA[3], LAVA[3]: LAVA[4]}
 HEARTS = ["full", "half", "hardcore_full", "hardcore_half"]
 FEATHER = [
     ".........",
@@ -268,9 +271,25 @@ def fiery_heart(name):
                 img.putpixel((x, y), rgba(HEART_COLOURS[(r, g, b)]))
             elif (r, g, b) == (255, 19, 19):
                 img.putpixel((x, y), rgba(HEART_ROWS[y]))
-    for x, y in HEART_FLAMES:
-        if img.getpixel((x, y + 1))[3]:  # only above a lobe that is there
-            img.putpixel((x, y), rgba(LAVA[2]))
+    return img
+
+
+def heart_frame(base, frame):
+    """Flame tongues flickering off the top of the heart and a heat shimmer
+    rising through it."""
+    img = base.copy()
+    phase = frame / FRAMES * 2 * math.pi
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = img.getpixel((x, y))
+            if a and (r, g, b) in HEART_HOTTER and math.sin(phase + y * 0.9 + x * 1.7) > 0.8:
+                img.putpixel((x, y), rgba(HEART_HOTTER[(r, g, b)]))
+    # One-pixel tongues above the lobes; the dip between them stays clear so
+    # the heart keeps its shape.
+    for x in HEART_FLAME_COLUMNS:
+        tops = [y for y in range(base.height) if base.getpixel((x, y))[3]]
+        if tops and tops[0] > 0 and math.sin(phase + x * 2.3) > -0.2:
+            img.putpixel((x, tops[0] - 1), rgba(LAVA[3] if math.sin(phase * 2 + x) > 0 else LAVA[2]))
     return img
 
 
@@ -368,8 +387,15 @@ def main():
     os.makedirs(os.path.join(hud, "heart"), exist_ok=True)
     for name in HEARTS:
         heart = fiery_heart(name)
-        heart.save(os.path.join(hud, "heart", name + ".png"))
-        blink(heart).save(os.path.join(hud, "heart", name + "_blinking.png"))
+        for suffix, look in (("", lambda im: im), ("_blinking", blink)):
+            strip = Image.new("RGBA", (9, 9 * FRAMES))
+            for f in range(FRAMES):
+                strip.paste(look(heart_frame(heart, f)), (0, f * 9))
+            path = os.path.join(hud, "heart", name + suffix + ".png")
+            strip.save(path)
+            with open(path + ".mcmeta", "w") as fh:
+                json.dump({"animation": {"frametime": 2}}, fh, indent=2)
+                fh.write("\n")
     for kind in ["full", "half", "empty"]:
         feather(kind).save(os.path.join(hud, "food_" + kind + ".png"))
         feather(kind + "_hunger").save(os.path.join(hud, "food_" + kind + "_hunger.png"))

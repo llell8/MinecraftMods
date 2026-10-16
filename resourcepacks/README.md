@@ -15,7 +15,8 @@ Textures so far:
 - Netherite armor – animated flames on the icons (worn armor is vanilla)
 - Golden apple – molten gold with a flame at the stem
 - Enchanted golden apple – its own red-hot texture with a crown of flames
-- Hearts – fire gradient (yellow top to red tip) with flame licks; hardcore + damage flash too
+- Hearts – animated flaming hearts: fire gradient, flickering flame tongues and heat shimmer;
+  hardcore + damage flash too
 - Hunger bar – phoenix feathers instead of drumsticks (green when you have Hunger)
 - Enchant glint – orange (items and armor)
 
