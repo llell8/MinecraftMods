@@ -150,14 +150,14 @@ PHOENIX_COLOURS = {
 PHOENIX = [
     "......ywy.......",  # crest
     "........ooooy...",  # head + snout
-    ".yy.....ro...yy.",  # wing peaks, neck
-    "ymmyyy.ro.yyymmy",
-    "ymmmmyro.yymmmmy",
-    "ymmmmmMroMmmmmmy",
-    "ymmmmmMMroMmmmmy",
-    "ymmmmmMMMroMmmmy",
-    "ymomomMMromomomy",  # finger bones
-    "y..o.oLroLo.o..y",  # hanging points, legs
+    ".yw.....ro...wy.",  # wing peaks with white-hot highlights, neck
+    "yrryyy.ro.yyyrry",  # leading edges, bright membrane beneath
+    "yrroryro.yyrorry",
+    "ymmomoMroMomommy",  # three bones per wing; membrane darkens downward
+    "ymmomoMMroomommy",
+    "yMmoMoMMMroMomMy",
+    "yM.oMoMMrooMo.My",  # scallop notches
+    "y..o.yLroLy.o..y",  # hanging points, legs
     "...y.LroyrL.y...",
     "....LLroyrLL....",  # feet
     "...ro.ooyo.or...",  # tail feathers
