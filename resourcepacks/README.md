@@ -12,7 +12,10 @@ Textures so far:
   head meets the handle
 - Totem of undying – 16x16 dragon-rune style phoenix in the tools' fire colours: serpent body,
   solid spread wings, legs with talons, fanned tail feathers
-- Netherite armor – animated flames on the icons; lava glowing between the plates when worn
+- Netherite armor – animated flames on the icons (worn armor is vanilla)
+- Armor trims – hidden (all smithing trim patterns are blank)
+- Golden apple – molten gold with a flame at the stem
+- Enchanted golden apple – its own red-hot texture with a crown of flames
 - Enchant glint – orange (items and armor)
 
 `tools/vanilla/` holds the vanilla 1.21.11 textures the generator starts from.

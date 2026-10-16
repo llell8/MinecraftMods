@@ -3,8 +3,11 @@
 Run: python3 resourcepacks/tools/gen_textures.py
 - netherite tools and weapons: vanilla texture with a blaze rod handle,
   animated fire on the head and an orange gem where the head meets the handle
+- golden_apple.png / enchanted_golden_apple.png: molten gold gap with a stem
+  flame, red-hot egap with a crown of flames (own model + texture)
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
-- netherite armor: flames on the icons, molten seams on the worn armor
+- netherite armor icons: flames along the top
+- trims/: blank textures so smithing armor trims don't show
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
 """
@@ -52,11 +55,29 @@ ROD_END = (149, 51, 0)
 OUTLINE = {(35, 16, 18), (27, 20, 21), (22, 8, 20)}
 # Netherite armor icons get the same flames along their top edge.
 ARMOR_ITEMS = ["netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"]
-# Worn armor (vanilla file -> pack path). Entity textures can't animate, so the
-# armor gets lava glowing between its plates instead of flames.
-WORN_ARMOR = {
-    "humanoid_netherite.png": "entity/equipment/humanoid/netherite.png",
-    "humanoid_leggings_netherite.png": "entity/equipment/humanoid_leggings/netherite.png",
+# Smithing armor trims are hidden: every trim pattern (worn) and the trim
+# overlays on armor icons are replaced with blank textures.
+TRIM_PATTERNS = ["sentry", "dune", "coast", "wild", "ward", "eye", "vex", "tide", "snout", "rib",
+                 "spire", "wayfinder", "shaper", "silence", "raiser", "host", "flow", "bolt"]
+TRIM_ITEMS = ["helmet_trim", "chestplate_trim", "leggings_trim", "boots_trim"]
+# Golden apple recolours (vanilla colour -> new). The gap goes molten gold with
+# a small flame at the stem; the egap gets its own red-hot texture with a full
+# crown of flames so the two are easy to tell apart.
+APPLE_STEM = [(9, 1), (8, 2), (9, 2), (8, 3)]
+GAP_COLOURS = {
+    (117, 40, 2): (130, 36, 4), (178, 100, 17): (190, 90, 14), (84, 36, 9): (90, 24, 6),
+    (219, 162, 19): (232, 150, 20), (254, 255, 230): (255, 250, 215), (236, 203, 69): (245, 180, 50),
+    (234, 238, 87): (255, 214, 70), (246, 248, 146): (255, 236, 140), (84, 18, 9): (90, 16, 6),
+}
+EGAP_COLOURS = {
+    (117, 40, 2): (110, 16, 6), (178, 100, 17): (160, 30, 6), (84, 36, 9): (80, 12, 6),
+    (219, 162, 19): (214, 64, 10), (254, 255, 230): (255, 240, 170), (236, 203, 69): LAVA[2],
+    (234, 238, 87): (255, 150, 30), (246, 248, 146): (255, 200, 80), (84, 18, 9): (70, 10, 6),
+}
+APPLES = {
+    # texture name: (colours, flame columns)
+    "golden_apple": (GAP_COLOURS, [8, 9]),
+    "enchanted_golden_apple": (EGAP_COLOURS, range(3, 13)),
 }
 MAX_OVERLAP = 2  # deepest the flames start inside the head
 
@@ -204,24 +225,16 @@ def render_frame(frame, base, columns, gem):
     return img
 
 
-# Darkest netherite tones (the recesses between plates) -> molten glow.
-MOLTEN = {
-    (36, 31, 32): (186, 46, 8),
-    (23, 17, 17): LAVA[0], (36, 25, 25): LAVA[0], (10, 10, 10): LAVA[0], (17, 17, 17): LAVA[0],
-}
-
-
-def molten_seams(name, dest):
-    """Lava glowing through the gaps between the armor plates."""
-    img = Image.open(os.path.join(VANILLA, name)).convert("RGBA")
+def load_apple(colours):
+    img = Image.open(os.path.join(VANILLA, "golden_apple.png")).convert("RGBA")
     for y in range(img.height):
         for x in range(img.width):
             r, g, b, a = img.getpixel((x, y))
-            if a and (r, g, b) in MOLTEN:
-                img.putpixel((x, y), rgba(MOLTEN[(r, g, b)], a))
-    path = os.path.join(TEX, dest)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    img.save(path)
+            if a and (r, g, b) in colours:
+                img.putpixel((x, y), rgba(colours[(r, g, b)], a))
+    for p in APPLE_STEM:  # the stem burns away into the flame
+        img.putpixel(p, (0, 0, 0, 0))
+    return img
 
 
 def orange_glint(name):
@@ -259,8 +272,32 @@ def main():
         with open(os.path.join(item_dir, name + ".png.mcmeta"), "w") as fh:
             json.dump({"animation": {"frametime": 2}}, fh, indent=2)
             fh.write("\n")
-    for name, dest in WORN_ARMOR.items():
-        molten_seams(name, dest)
+
+    for name, (colours, columns) in APPLES.items():
+        base = load_apple(colours)
+        strip = Image.new("RGBA", (16, 16 * FRAMES))
+        for f in range(FRAMES):
+            strip.paste(render_frame(f, base, columns, None), (0, f * 16))
+        strip.save(os.path.join(item_dir, name + ".png"))
+        with open(os.path.join(item_dir, name + ".png.mcmeta"), "w") as fh:
+            json.dump({"animation": {"frametime": 2}}, fh, indent=2)
+            fh.write("\n")
+    # Vanilla draws the egap with the gap texture; point it at its own.
+    model_dir = os.path.join(ROOT, "assets", "minecraft", "models", "item")
+    os.makedirs(model_dir, exist_ok=True)
+    with open(os.path.join(model_dir, "enchanted_golden_apple.json"), "w") as fh:
+        json.dump({"parent": "minecraft:item/generated",
+                   "textures": {"layer0": "minecraft:item/enchanted_golden_apple"}}, fh, indent=2)
+        fh.write("\n")
+
+    trims = os.path.join(TEX, "trims")
+    for layer in ("humanoid", "humanoid_leggings"):
+        os.makedirs(os.path.join(trims, "entity", layer), exist_ok=True)
+        for pattern in TRIM_PATTERNS:
+            Image.new("RGBA", (64, 32)).save(os.path.join(trims, "entity", layer, pattern + ".png"))
+    os.makedirs(os.path.join(trims, "items"), exist_ok=True)
+    for name in TRIM_ITEMS:
+        Image.new("RGBA", (16, 16)).save(os.path.join(trims, "items", name + ".png"))
 
     phoenix = draw_phoenix()
     size = PHOENIX_SIZE
