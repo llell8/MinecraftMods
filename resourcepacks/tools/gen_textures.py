@@ -3,7 +3,7 @@
 Run: python3 resourcepacks/tools/gen_textures.py
 - netherite tools and weapons: vanilla texture with a blaze rod handle,
   animated fire on the head and an orange gem where the head meets the handle
-- totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
+- totem_of_undying.png: 32x32 dragon-rune style phoenix, serpent body with spread wings
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
 """
@@ -12,8 +12,9 @@ import json
 import math
 import os
 import random
+from collections import Counter
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(__file__)
 VANILLA = os.path.join(HERE, "vanilla")
@@ -130,75 +131,114 @@ def load_tool(name):
     return img
 
 
-# Phoenix totem, drawn from scratch in a dragon-rune style: a serpent body
-# winding down the middle with bat-like wings spread wide.
+# Phoenix totem, dragon-rune style: a serpent body winding down the middle
+# with bat-like wings spread wide. Drawn as smooth shapes at PHOENIX_SCALE x
+# resolution, then reduced to 32x32 by majority colour per pixel.
+PHOENIX_SIZE = 32
+PHOENIX_SCALE = 12
 PHOENIX_COLOURS = {
-    "R": (150, 26, 10), "r": (205, 60, 16), "o": (240, 120, 20),
-    "y": (255, 190, 50), "w": (255, 240, 170), "m": (175, 38, 12),
+    "M": (130, 20, 10), "m": (175, 38, 12), "r": (205, 60, 16),
+    "o": (240, 120, 20), "y": (255, 190, 50), "w": (255, 240, 170),
 }
 MEMBRANE_ALPHA = 230
-# Left wing (cols 0-7), mirrored onto the right: bright leading edge arching
-# up to a peak, membrane below, bony fingers hanging into jagged points.
-PHOENIX_WING = [
-    "........",
-    "........",
-    "........",
-    ".yy.....",  # wing peak
-    "yyyoo...",
-    "yymmyoo.",
-    "ymmmmmoo",
-    "ymymmmmm",
-    "ymmymmmm",
-    "ym.ymmym",
-    "y..yy.yy",  # hanging points
-    "...y....",
-]
-# Serpent body drawn over the wings, head at the top facing right.
-PHOENIX_BODY = [
-    "........yyo.....",  # crest + head
-    "........rooooy..",  # snout
-    "........ro......",
-    ".......ro.......",
-    "......ro........",
-    "......ro........",
-    "......ro........",
-    ".......ro.......",
-    "........ro......",
-    "........rro.....",  # tail thickens
-    "........rro.....",
-    ".......rro......",
-    "......rro.......",
-    ".....rro........",
-    ".....ro.........",
-    ".....yy.........",  # tail flame
-]
 # Heat shimmer: a band runs down the dragon, briefly heating hot colours.
 SHIMMER = {"o": "y", "y": "w"}
 
 
-def phoenix_frame(frame):
+def _bezier(p0, p1, p2, p3, n=60):
+    pts = []
+    for i in range(n + 1):
+        t = i / n
+        u = 1 - t
+        pts.append(tuple(u**3 * a + 3 * u * u * t * b + 3 * u * t * t * c + t**3 * e
+                         for a, b, c, e in zip(p0, p1, p2, p3)))
+    return pts
+
+
+def draw_phoenix():
+    """Returns {(x, y): colour key} for the 32x32 phoenix."""
+    k = PHOENIX_SCALE
+    keys = list(PHOENIX_COLOURS)
+    layer = Image.new("L", (PHOENIX_SIZE * k, PHOENIX_SIZE * k), 0)
+    d = ImageDraw.Draw(layer)
+
+    def fill(key):
+        return keys.index(key) + 1
+
+    def stroke(pts, w0, w1, key):
+        for i, (x, y) in enumerate(pts):
+            w = (w0 + (w1 - w0) * i / (len(pts) - 1)) * k
+            d.ellipse([x * k - w, y * k - w, x * k + w, y * k + w], fill=fill(key))
+
+    def wing(mirror):
+        def at(x, y):
+            return ((PHOENIX_SIZE - 0.01 - x) * k if mirror else x * k, y * k)
+        shoulder, wrist, peak, outer = (14.5, 13), (8, 6), (3, 3.5), (0.8, 6.5)
+        points = [(0.8, 20.5), (5.5, 23.5), (10.5, 21.5)]  # hanging points
+        # Membrane, its trailing edge scalloped in toward the wrist between points.
+        poly = [shoulder, wrist, peak, outer]
+        prev = outer
+        for tip in points + [(15, 17)]:
+            mx, my = (prev[0] + tip[0]) / 2, (prev[1] + tip[1]) / 2
+            cx, cy = mx + (wrist[0] - mx) * 0.42, my + (wrist[1] - my) * 0.42
+            for i in range(1, 11):
+                t = i / 10
+                poly.append(((1 - t)**2 * prev[0] + 2 * (1 - t) * t * cx + t * t * tip[0],
+                             (1 - t)**2 * prev[1] + 2 * (1 - t) * t * cy + t * t * tip[1]))
+            prev = tip
+        d.polygon([at(*q) for q in poly], fill=fill("m"))
+        d.polygon([at(*q) for q in [shoulder, (10, 9), (9, 16), (15, 17)]], fill=fill("M"))
+        # Bright leading edge, and finger bones out to the other points.
+        for a, b, w in [(shoulder, wrist, 1.5), (wrist, peak, 1.3), (peak, outer, 1.1), (outer, points[0], 0.9)]:
+            d.line([at(*a), at(*b)], fill=fill("y"), width=int(w * k))
+        for tip in points[1:]:
+            d.line([at(*wrist), at(*tip)], fill=fill("o"), width=k)
+
+    wing(False)
+    wing(True)
+    # Serpent body: an S from the head down to the tail, belly highlight inside.
+    s1 = _bezier((18, 4.5), (14, 6), (11.5, 9), (14.5, 13.5))
+    s2 = _bezier((14.5, 13.5), (18, 18), (21, 19), (17.5, 23.5))
+    s3 = _bezier((17.5, 23.5), (14.5, 27), (12, 28), (12.5, 31))
+    stroke(s1, 1.6, 2.0, "r")
+    stroke(s2, 2.0, 2.2, "r")
+    stroke(s3, 2.2, 1.0, "r")
+    stroke([(x + 0.6, y - 0.4) for x, y in s1], 0.7, 0.9, "o")
+    stroke([(x + 0.6, y - 0.2) for x, y in s2], 0.9, 1.0, "o")
+    stroke([(x + 0.5, y) for x, y in s3], 1.0, 0.4, "o")
+    # Head, snout, crest flames streaming back, tail flame.
+    d.ellipse([16 * k, 1.5 * k, 21.5 * k, 6 * k], fill=fill("o"))
+    d.polygon([(20.5 * k, 2.4 * k), (25.5 * k, 3.6 * k), (20.5 * k, 5.4 * k)], fill=fill("o"))
+    d.polygon([(17 * k, 3 * k), (13 * k, 0), (16.5 * k, 0.6 * k), (19.5 * k, 2 * k)], fill=fill("y"))
+    d.polygon([(18 * k, 2 * k), (17.5 * k, 0), (20 * k, 1.6 * k)], fill=fill("w"))
+    d.polygon([(11 * k, 29.5 * k), (9.5 * k, 32 * k), (12.5 * k, 31 * k), (14 * k, 32 * k), (14 * k, 29.5 * k)],
+              fill=fill("y"))
+
     grid = {}
-    for y, row in enumerate(PHOENIX_WING):
-        for x, ch in enumerate(row):
-            if ch != ".":
-                grid[(x, y)] = grid[(15 - x, y)] = ch
-    for y, row in enumerate(PHOENIX_BODY):
-        for x, ch in enumerate(row):
-            if ch != ".":
-                grid[(x, y)] = ch
-    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    for y in range(PHOENIX_SIZE):
+        for x in range(PHOENIX_SIZE):
+            cell = Counter(layer.getpixel((x * k + i, y * k + j)) for i in range(k) for j in range(k))
+            if k * k - cell[0] < k * k * 0.45:
+                continue
+            del cell[0]
+            grid[(x, y)] = keys[cell.most_common(1)[0][0] - 1]
+    return grid
+
+
+def phoenix_frame(frame, grid):
+    img = Image.new("RGBA", (PHOENIX_SIZE, PHOENIX_SIZE), (0, 0, 0, 0))
     phase = frame / FRAMES * 2 * math.pi
-    for (x, y), ch in grid.items():
-        if ch in SHIMMER and math.sin(phase - y * 0.5) > 0.85:
-            ch = SHIMMER[ch]
-        img.putpixel((x, y), rgba(PHOENIX_COLOURS[ch], MEMBRANE_ALPHA if ch == "m" else 255))
+    for (x, y), key in grid.items():
+        if key in SHIMMER and math.sin(phase - y * 0.25) > 0.85:
+            key = SHIMMER[key]
+        img.putpixel((x, y), rgba(PHOENIX_COLOURS[key], MEMBRANE_ALPHA if key in "mM" else 255))
     # Embers rising off the wing peaks.
     rng = random.Random(7)
-    for _ in range(3):
-        sx = rng.choice([1, 2, 13, 14])
+    for _ in range(4):
+        sx = rng.choice([2, 3, 4, 27, 28, 29])
         t = (frame + rng.randint(0, FRAMES - 1)) % FRAMES
         p = (sx, 2 - t)
-        if t < 3 and p[1] >= 0:
+        if t < 3 and p[1] >= 0 and img.getpixel(p)[3] == 0:
             img.putpixel(p, rgba(LAVA[4] if t < 2 else LAVA[3], 240 - t * 30))
     return img
 
@@ -240,9 +280,11 @@ def main():
             json.dump({"animation": {"frametime": 2}}, fh, indent=2)
             fh.write("\n")
 
-    strip = Image.new("RGBA", (16, 16 * FRAMES))
+    phoenix = draw_phoenix()
+    size = PHOENIX_SIZE
+    strip = Image.new("RGBA", (size, size * FRAMES))
     for f in range(FRAMES):
-        strip.paste(phoenix_frame(f), (0, f * 16))
+        strip.paste(phoenix_frame(f, phoenix), (0, f * size))
     strip.save(os.path.join(item_dir, "totem_of_undying.png"))
     with open(os.path.join(item_dir, "totem_of_undying.png.mcmeta"), "w") as fh:
         json.dump({"animation": {"frametime": 2}}, fh, indent=2)
