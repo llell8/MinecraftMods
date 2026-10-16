@@ -7,6 +7,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
   flame, red-hot egap with a crown of flames (own model + texture)
 - gui/sprites/hud: animated flaming hearts, phoenix feathers for the hunger bar
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
+- mace.png: netherite head with a molten crack, blaze rod handle, flames
 - netherite armor icons: flames along the top
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -53,6 +54,18 @@ ROD_TONE = (0.85, 0.8, -0.02)
 ROD_EDGE = (174, 60, 0)
 ROD_END = (149, 51, 0)
 OUTLINE = {(35, 16, 18), (27, 20, 21), (22, 8, 20)}
+# Mace: steel head -> netherite with its bright highlight streak glowing as a
+# molten crack; breeze rod handle -> the copper blaze rod.
+MACE_COLOURS = {
+    (30, 34, 41): (35, 16, 18), (46, 51, 59): (50, 39, 39), (66, 71, 82): (68, 52, 60),
+    (85, 92, 105): (79, 60, 62), (102, 108, 122): (93, 86, 93), (124, 132, 145): (112, 103, 112),
+    (153, 161, 174): (134, 123, 134), (191, 206, 231): LAVA[3],
+}
+MACE_ROD = {  # breeze rod colours -> blaze rod colours (toned like the other handles)
+    (35, 66, 105): (174, 60, 0), (80, 99, 144): (179, 107, 25),
+    (122, 130, 196): (216, 174, 38), (181, 165, 202): (255, 243, 45),
+}
+MACE = (range(5, 16), (8, 7))  # flame columns, gem where the handle meets the head
 # Netherite armor icons get the same flames along their top edge.
 ARMOR_ITEMS = ["netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"]
 # HUD: fiery hearts (vanilla shape, fire gradient top to bottom, little flame
@@ -236,6 +249,18 @@ def phoenix_frame(frame, grid):
     return img
 
 
+def load_mace():
+    img = Image.open(os.path.join(VANILLA, "mace.png")).convert("RGBA")
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = img.getpixel((x, y))
+            if a and (r, g, b) in MACE_ROD:
+                img.putpixel((x, y), rgba(tone(MACE_ROD[(r, g, b)], *ROD_TONE), a))
+            elif a and (r, g, b) in MACE_COLOURS:
+                img.putpixel((x, y), rgba(MACE_COLOURS[(r, g, b)], a))
+    return img
+
+
 def render_frame(frame, base, columns, gem):
     img = base.copy()
     flames = Image.new("RGBA", base.size, (0, 0, 0, 0))
@@ -354,6 +379,15 @@ def main():
         with open(os.path.join(item_dir, name + ".png.mcmeta"), "w") as fh:
             json.dump({"animation": {"frametime": 2}}, fh, indent=2)
             fh.write("\n")
+
+    mace = load_mace()
+    strip = Image.new("RGBA", (16, 16 * FRAMES))
+    for f in range(FRAMES):
+        strip.paste(render_frame(f, mace, *MACE), (0, f * 16))
+    strip.save(os.path.join(item_dir, "mace.png"))
+    with open(os.path.join(item_dir, "mace.png.mcmeta"), "w") as fh:
+        json.dump({"animation": {"frametime": 2}}, fh, indent=2)
+        fh.write("\n")
 
     for name in ARMOR_ITEMS:
         base = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")

@@ -10,6 +10,7 @@ Textures so far:
 - Netherite sword, axe, pickaxe, shovel, hoe and spear (icon + in-hand) – vanilla
   textures with blaze rod handles, animated fire on the head and an orange gem where the
   head meets the handle
+- Mace – netherite head with a glowing molten crack, copper blaze rod handle, animated flames
 - Totem of undying – 16x16 dragon-rune style phoenix in the tools' fire colours: serpent body,
   solid spread wings, legs with talons, fanned tail feathers
 - Netherite armor – animated flames on the icons (worn armor is vanilla)
