@@ -58,3 +58,31 @@ jobs:
           body: "Automatic build of ${{ github.sha }}."
           files: |
             phoenix-client/build/libs/*.jar
+
+  blackhole-pack:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: blackhole-pvp-pack
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow numpy
+      - run: python generate.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blackhole-pvp-pack
+          path: blackhole-pvp-pack/BlackHolePvP.zip
+      - name: Publish pack release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: blackhole-pack-latest
+          name: Black Hole PvP pack (latest build)
+          prerelease: true
+          make_latest: false
+          body: "Automatic build of ${{ github.sha }}. Put BlackHolePvP.zip in .minecraft/resourcepacks."
+          files: |
+            blackhole-pvp-pack/BlackHolePvP.zip

@@ -1,0 +1,12 @@
+{
+  "pack": {
+    "description": "\u00a75\u00a7lBlack Hole PvP\u00a7r\n\u00a77Black, white & purple",
+    "pack_format": 46,
+    "supported_formats": {
+      "min_inclusive": 46,
+      "max_inclusive": 99
+    },
+    "min_format": 46,
+    "max_format": 99
+  }
+}
