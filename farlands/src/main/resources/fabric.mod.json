@@ -1,0 +1,23 @@
+{
+	"schemaVersion": 1,
+	"id": "farlands",
+	"version": "${version}",
+	"name": "Farlands",
+	"description": "Something followed you out to the edge of the world. Footsteps, whispers, snuffed torches, and a figure that only stands there when you are not looking.",
+	"authors": [
+		"Me!"
+	],
+	"license": "CC0-1.0",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.farlands.Farlands"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
