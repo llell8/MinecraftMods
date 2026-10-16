@@ -3,6 +3,7 @@
 Run: python3 resourcepacks/tools/gen_textures.py
 - netherite tools and weapons: vanilla texture with a blaze rod handle,
   animated fire on the head and an orange gem where the head meets the handle
+- totem_of_undying.png: phoenix totem with flaming wings and crest
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
 """
@@ -31,20 +32,17 @@ TOOLS = {
     "netherite_spear": (range(7, 14), (8, 7)),
     "netherite_spear_in_hand": (range(0, 9), (7, 7)),
 }
-# Vanilla stick colours on netherite tools -> blaze rod colours.
+# Vanilla stick colours on netherite tools -> blaze rod colours. The rod's
+# brightest highlight is left out so the handle doesn't steal focus.
 BLAZE_ROD = {
     (47, 33, 34): (179, 107, 25),
     (96, 52, 50): (216, 174, 38),
-    (115, 69, 67): (255, 243, 45),
+    (115, 69, 67): (216, 174, 38),
     # netherite grip wrap on the lower handle
     (59, 57, 59): (216, 174, 38),
-    (67, 64, 67): (255, 243, 45),
+    (67, 64, 67): (216, 174, 38),
 }
 BLAZE_SATURATION = 0.7  # tone the blaze rod colours down a bit
-# Everything but the sword drops the rod's bright highlight pixels (same
-# colours, less contrast) so the handle doesn't steal focus from the head.
-LOUD_HANDLES = {"netherite_sword"}
-QUIET_ROD = {(255, 243, 45): (216, 174, 38)}
 # The black outline around the handle becomes the blaze rod's dark edge,
 # and the end cap on the bottom row its darker tip.
 ROD_EDGE = (174, 60, 0)
@@ -101,17 +99,13 @@ def desaturate(c, factor):
 def load_tool(name):
     """Vanilla texture with the wooden stick swapped for a blaze rod."""
     img = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
-    quiet = name not in LOUD_HANDLES
     handle = set()
     for y in range(img.height):
         for x in range(img.width):
             r, g, b, a = img.getpixel((x, y))
             if a and (r, g, b) in BLAZE_ROD:
                 handle.add((x, y))
-                rod = BLAZE_ROD[(r, g, b)]
-                if quiet:
-                    rod = QUIET_ROD.get(rod, rod)
-                img.putpixel((x, y), rgba(desaturate(rod, BLAZE_SATURATION), a))
+                img.putpixel((x, y), rgba(desaturate(BLAZE_ROD[(r, g, b)], BLAZE_SATURATION), a))
     # Outline pixels that only border the handle (not the head) take the rod's
     # edge colour, or its tip colour on the bottom row.
     bottom = max(y for y in range(img.height) for x in range(img.width) if img.getpixel((x, y))[3])
@@ -134,14 +128,53 @@ def load_tool(name):
     return img
 
 
+# Totem of undying -> phoenix: gold becomes deep ember reds so the white-hot
+# eyes and the flames stand out.
+PHOENIX = {
+    (160, 91, 35): (110, 18, 14),
+    (133, 64, 15): (70, 10, 10),
+    (234, 219, 132): (214, 72, 18),
+    (253, 251, 238): (240, 120, 20),
+    (248, 238, 165): (230, 96, 20),
+    (209, 167, 93): (170, 36, 12),
+    (197, 135, 66): (140, 24, 6),
+    (65, 230, 127): (255, 244, 170),
+    (0, 187, 70): (255, 196, 50),
+}
+# Wing feathers fanning up from the left arm (mirrored for the right), with
+# the colour heating up toward the tips.
+WING = {
+    (1, 7): LAVA[1], (2, 7): LAVA[1], (3, 7): LAVA[0],
+    (0, 6): LAVA[2], (1, 6): LAVA[2], (2, 6): LAVA[1],
+    (0, 5): LAVA[3], (1, 5): LAVA[2],
+    (0, 4): LAVA[3],
+}
+# Flames off the wing tips and a crest on the head.
+TOTEM_FIRE_COLUMNS = [0, 1, 2, 5, 6, 7, 8, 9, 10, 13, 14, 15]
+
+
+def load_totem():
+    img = Image.open(os.path.join(VANILLA, "totem_of_undying.png")).convert("RGBA")
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = img.getpixel((x, y))
+            if a and (r, g, b) in PHOENIX:
+                img.putpixel((x, y), rgba(PHOENIX[(r, g, b)], a))
+    for (x, y), c in WING.items():
+        img.putpixel((x, y), rgba(c))
+        img.putpixel((img.width - 1 - x, y), rgba(c))
+    return img
+
+
 def render_frame(frame, base, columns, gem):
     img = base.copy()
     flames = Image.new("RGBA", base.size, (0, 0, 0, 0))
     for p, c in fire(frame, base, columns).items():
         flames.putpixel(p, c)
     img.alpha_composite(flames)
-    pulse = 0.5 + 0.5 * math.sin(frame / FRAMES * 2 * math.pi)
-    img.putpixel(gem, rgba(LAVA[3] if pulse > 0.5 else LAVA[2]))
+    if gem:
+        pulse = 0.5 + 0.5 * math.sin(frame / FRAMES * 2 * math.pi)
+        img.putpixel(gem, rgba(LAVA[3] if pulse > 0.5 else LAVA[2]))
     return img
 
 
@@ -169,6 +202,15 @@ def main():
         with open(os.path.join(item_dir, name + ".png.mcmeta"), "w") as fh:
             json.dump({"animation": {"frametime": 2}}, fh, indent=2)
             fh.write("\n")
+
+    totem = load_totem()
+    strip = Image.new("RGBA", (16, 16 * FRAMES))
+    for f in range(FRAMES):
+        strip.paste(render_frame(f, totem, TOTEM_FIRE_COLUMNS, None), (0, f * 16))
+    strip.save(os.path.join(item_dir, "totem_of_undying.png"))
+    with open(os.path.join(item_dir, "totem_of_undying.png.mcmeta"), "w") as fh:
+        json.dump({"animation": {"frametime": 2}}, fh, indent=2)
+        fh.write("\n")
 
     orange_glint("enchanted_glint_item.png")
     orange_glint("enchanted_glint_armor.png")
