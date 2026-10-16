@@ -22,7 +22,7 @@ S = 16
 LAVA = [(140, 24, 6), (196, 52, 8), (240, 110, 16), (255, 170, 40), (255, 228, 120)]
 GEM = (5, 9)  # where the blade meets the cross-guard
 BLADE_COLUMNS = range(7, 14)  # columns the flames rise from
-MAX_OVERLAP = 3  # deepest the flames start inside the blade
+MAX_OVERLAP = 2  # deepest the flames start inside the blade
 
 
 def rgba(c, a=255):
@@ -38,7 +38,7 @@ def fire(frame, base):
         h = 1.6 + 1.2 * math.sin(phase + x * 1.9) + 0.6 * math.sin(phase * 2 + x * 0.7)
         # Where each flame starts wanders between the blade's edge and
         # MAX_OVERLAP pixels inside it, so the base shifts frame to frame.
-        start = 1.5 + 1.5 * math.sin(phase * 2 + x * 2.7 + 1.0)
+        start = 1.2 + 0.9 * math.sin(phase * 2 + x * 2.7 + 1.0)
         overlap = max(0, min(MAX_OVERLAP, int(round(start))))
         h = max(0, int(round(h))) + overlap
         for k in range(h):
