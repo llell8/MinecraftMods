@@ -12,8 +12,9 @@ few drawing functions before running it with VoidPvP as the output folder:
 - phoenix totem -> an animated black hole
 - feathers (hunger) -> small black-hole orbs, with the AppleSkin outline traced around them
 - orange glint -> violet glint
-- all gear (netherite/diamond tools, spears, mace, armor icons): galaxy heads
-  (drifting nebula, twinkling stars, bright edge, stardust) instead of the void pull
+- netherite sword: galaxy blade (drifting nebula, twinkling stars, bright edge)
+- all gear (netherite/diamond tools, spears, mace, armor icons): stardust twinkling
+  around the head and a pulsing star gem, instead of the void pull
 """
 import math
 import os
@@ -197,7 +198,7 @@ g.engulf_frame = void_engulf
 g.HEART_FLAME_COLUMNS = []  # hearts keep their shimmer but lose the flame tongues
 
 
-# Gear gets a galaxy head: the inside of the blade is deep
+# The netherite sword gets a galaxy head: the inside of the blade is deep
 # space with a purple nebula drifting along it and white stars twinkling,
 # a bright violet edge and a white-hot tip. Instead of the void pull it has a
 # light sprinkle of stardust twinkling around the blade, and a star for a gem.
@@ -209,16 +210,16 @@ SWORD_OUTLINE = {(74, 41, 64), (35, 16, 18), (22, 8, 20)}
 ROD_COLOURS = {ROD_DARK, ROD_MID, ROD_LIGHT, (16, 8, 24), (8, 4, 14)}
 # Which part of each item becomes galaxy: (x range, max y) around the head;
 # handle, outline and gem pixels are always left alone.
-GALAXY_ITEMS = {
+GALAXY_ITEMS = {  # items whose head is recoloured as a galaxy
     "netherite_sword": (range(6, 16), 9),
-    "netherite_axe": (range(6, 15), 8),
-    "mace": (range(5, 16), 10),
 }
 
 
-# Every other piece of gear gets the galaxy too; its area is found by colour
-# (see galaxy_region). Pearls and wind charges keep their accretion disk.
-GALAXY_GEAR = (list(g.TOOLS) + list(g.DIAMOND_TOOLS)
+# All other gear keeps its normal look but gets the same animation: stardust
+# twinkling around the head and (tools/weapons) a pulsing star gem. Its head
+# area is found by colour (see galaxy_region). Pearls and wind charges keep
+# their accretion disk.
+GALAXY_GEAR = (list(g.TOOLS) + list(g.DIAMOND_TOOLS) + ["mace"]
                + g.ARMOR_ITEMS + g.DIAMOND_ARMOR)
 
 
@@ -293,7 +294,9 @@ def _void_trim(base):
 
 def galaxy_item(name):
     base, gem = _galaxy_base(name)
-    base = _void_trim(base)
+    galaxy = name in GALAXY_ITEMS
+    if galaxy:
+        base = _void_trim(base)
     region = galaxy_region(base, name, gem)
     w, h = base.size
     solid = {(x, y) for y in range(h) for x in range(w) if base.getpixel((x, y))[3]}
@@ -306,7 +309,7 @@ def galaxy_item(name):
             and (x * 7 + y * 13) % 5 == 0]
     frames = []
     for f in range(g.FRAMES):
-        img = galaxy_blade(base, f, region)
+        img = galaxy_blade(base, f, region) if galaxy else base.copy()
         for i, (x, y) in enumerate(dust):
             twinkle = math.sin(f / g.FRAMES * 2 * math.pi * 2 + i * 2.1)
             if twinkle > 0.5:

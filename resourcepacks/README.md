@@ -10,9 +10,10 @@ Minecraft Java 1.21.11 (pack format 75). Purple, white and black, black hole / v
 Same pieces as Phoenix PvP below, re-themed:
 - Instead of flames, a "void pull": dotted particle rings ripple inward toward the apples and
   the elytra, with twinkling white stars (items are never covered)
-- All gear – netherite and diamond tools, both spears, the mace and all armor icons are galaxies:
-  deep space with a drifting purple nebula and twinkling stars, a bright violet edge, stardust
-  around them and a star for a gem (diamond's teal outline and the spear wraps go void-purple)
+- Netherite sword – a galaxy blade: deep space with a drifting purple nebula and twinkling stars,
+  a bright violet edge and a white tip
+- All gear (netherite and diamond tools, both spears, the mace, armor icons) – keeps its look with
+  stardust twinkling around it and a pulsing star gem on tools and weapons
 - Dark void-rod handles, violet gem
 - Totem – an animated black hole (dark core, white photon ring, spinning accretion disk)
 - Hearts fade from lilac to near-black; hunger icons are small black holes (AppleSkin outline too)
