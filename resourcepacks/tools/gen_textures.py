@@ -38,9 +38,10 @@ BLAZE_ROD = {
     (115, 69, 67): (255, 243, 45),
 }
 BLAZE_SATURATION = 0.7  # tone the blaze rod colours down a bit
-# The black end cap at the bottom of the stick becomes the blaze rod's orange tip.
-ROD_END = (149, 51, 0)
-ROD_END_TOOLS = {"netherite_axe", "netherite_pickaxe", "netherite_shovel", "netherite_hoe"}
+# The black outline along the handle's side becomes the blaze rod's dark edge.
+ROD_EDGE = (174, 60, 0)
+OUTLINE = {(35, 16, 18), (27, 20, 21), (22, 8, 20)}
+GRIP = {(59, 57, 59), (67, 64, 67)}  # netherite wrap on the lower handle
 MAX_OVERLAP = 2  # deepest the flames start inside the head
 
 
@@ -92,16 +93,29 @@ def desaturate(c, factor):
 def load_tool(name):
     """Vanilla texture with the wooden stick swapped for a blaze rod."""
     img = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
+    handle = set()
     for y in range(img.height):
         for x in range(img.width):
             r, g, b, a = img.getpixel((x, y))
+            if a and (r, g, b) in GRIP:
+                handle.add((x, y))
             if a and (r, g, b) in BLAZE_ROD:
+                handle.add((x, y))
                 img.putpixel((x, y), rgba(desaturate(BLAZE_ROD[(r, g, b)], BLAZE_SATURATION), a))
-    if name in ROD_END_TOOLS:
-        bottom = max(y for y in range(img.height) for x in range(img.width) if img.getpixel((x, y))[3])
+    # Outline pixels that only border the handle (not the head) take the rod's
+    # edge colour; the end cap on the bottom row stays black.
+    bottom = max(y for y in range(img.height) for x in range(img.width) if img.getpixel((x, y))[3])
+    for y in range(bottom):
         for x in range(img.width):
-            if img.getpixel((x, bottom))[3]:
-                img.putpixel((x, bottom), rgba(desaturate(ROD_END, BLAZE_SATURATION)))
+            if img.getpixel((x, y))[:3] not in OUTLINE or not img.getpixel((x, y))[3]:
+                continue
+            near = [(x + dx, y + dy) for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+                    if 0 <= x + dx < img.width and 0 <= y + dy < img.height]
+            touches_head = any(
+                img.getpixel(p)[3] and p not in handle and img.getpixel(p)[:3] not in OUTLINE
+                for p in near)
+            if any(p in handle for p in near) and not touches_head:
+                img.putpixel((x, y), rgba(desaturate(ROD_EDGE, BLAZE_SATURATION)))
     return img
 
 
