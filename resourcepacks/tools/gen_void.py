@@ -12,7 +12,7 @@ few drawing functions before running it with VoidPvP as the output folder:
 - phoenix totem -> an animated black hole
 - feathers (hunger) -> small black-hole orbs, with the AppleSkin outline traced around them
 - orange glint -> violet glint
-- netherite sword: galaxy blade (drifting nebula, twinkling stars, bright edge)
+- netherite sword, axe and mace: galaxy head (drifting nebula, twinkling stars, bright edge)
 """
 import math
 import os
@@ -196,7 +196,7 @@ g.engulf_frame = void_engulf
 g.HEART_FLAME_COLUMNS = []  # hearts keep their shimmer but lose the flame tongues
 
 
-# The netherite sword gets a galaxy blade: the inside of the blade is deep
+# The netherite sword, axe and mace get a galaxy head: the inside of the blade is deep
 # space with a purple nebula drifting along it and white stars twinkling,
 # a bright violet edge and a white-hot tip. Instead of the void pull it has a
 # light sprinkle of stardust twinkling around the blade, and a star for a gem.
@@ -205,13 +205,36 @@ BLADE_EDGE = (225, 205, 255)
 SWORD_OUTLINE = {(74, 41, 64), (35, 16, 18), (22, 8, 20)}
 
 
-def galaxy_blade(base, frame):
+ROD_COLOURS = {ROD_DARK, ROD_MID, ROD_LIGHT, (16, 8, 24), (8, 4, 14)}
+# Which part of each item becomes galaxy: (x range, max y) around the head;
+# handle, outline and gem pixels are always left alone.
+GALAXY_ITEMS = {
+    "netherite_sword": (range(6, 16), 9),
+    "netherite_axe": (range(6, 15), 8),
+    "mace": (range(5, 16), 10),
+}
+
+
+def _galaxy_base(name):
+    """(base image, gem pixel) for an item that gets a galaxy head."""
+    if name == "mace":
+        return g.load_mace(), g.MACE[1]
+    return g.load_tool(name), g.TOOLS[name][1]
+
+
+def galaxy_region(base, name, gem):
+    xs, max_y = GALAXY_ITEMS[name]
+    return [(x, y) for y in range(max_y + 1) for x in xs
+            if (x, y) != gem and base.getpixel((x, y))[3]
+            and base.getpixel((x, y))[:3] not in SWORD_OUTLINE | ROD_COLOURS
+            and (name != "netherite_sword" or x + y >= 12)]
+
+
+def galaxy_blade(base, frame, region):
     img = base.copy()
     phase = frame / g.FRAMES * 2 * math.pi
-    blade = [(x, y) for y in range(10) for x in range(6, 16)
-             if x + y >= 12 and img.getpixel((x, y))[3] and img.getpixel((x, y))[:3] not in SWORD_OUTLINE]
-    for x, y in blade:
-        u = x - y                                    # position along the blade
+    for x, y in region:
+        u = x - y                                    # position along the head
         nebula = 0.5 + 0.5 * math.sin(u * 0.8 - phase)
         colour = g.ramp(SPACE, 0.15 + 0.65 * nebula * (0.6 + 0.4 * math.sin(x * 1.7 + y)))
         if (x * 5 + y * 3) % 7 == 0:                 # star positions
@@ -219,26 +242,28 @@ def galaxy_blade(base, frame):
             if twinkle > 0.2:
                 colour = (255, 255, 255) if twinkle > 0.7 else (210, 190, 255)
         img.putpixel((x, y), g.rgba(colour))
-    # bright edge along the blade's upper side, white tip
-    for x, y in blade:
-        if not any((x + dx, y + dy) in blade for dx, dy in ((-1, 0), (0, -1))):
+    # bright edge along the upper/left side, white tip at the top
+    inside = set(region)
+    for x, y in region:
+        if not any((x + dx, y + dy) in inside for dx, dy in ((-1, 0), (0, -1))):
             img.putpixel((x, y), g.rgba(BLADE_EDGE))
-    tip = min(blade, key=lambda p: p[1] - p[0])
+    tip = min(region, key=lambda p: p[1] - p[0])
     img.putpixel(tip, g.rgba((255, 255, 255)))
     return img
 
 
-def galaxy_sword():
-    name = "netherite_sword"
-    _, gem = g.TOOLS[name]
-    base = g.load_tool(name)
-    frames = []
+def galaxy_item(name):
+    base, gem = _galaxy_base(name)
+    region = galaxy_region(base, name, gem)
     solid = {(x, y) for y in range(16) for x in range(16) if base.getpixel((x, y))[3]}
-    dust = [(x, y) for y in range(12) for x in range(4, 16) if (x, y) not in solid
+    head_x = range(min(x for x, _ in region) - 2, 16)
+    head_y = max(y for _, y in region) + 2
+    dust = [(x, y) for y in range(head_y + 1) for x in head_x if (x, y) not in solid
             and 1 <= min(max(abs(x - sx), abs(y - sy)) for sx, sy in solid) <= 2
             and (x * 7 + y * 13) % 5 == 0]
+    frames = []
     for f in range(g.FRAMES):
-        img = galaxy_blade(base, f)
+        img = galaxy_blade(base, f, region)
         for i, (x, y) in enumerate(dust):
             twinkle = math.sin(f / g.FRAMES * 2 * math.pi * 2 + i * 2.1)
             if twinkle > 0.5:
@@ -265,7 +290,8 @@ g.orange_glint = violet_glint
 
 def main():
     g.main()
-    galaxy_sword()
+    for name in GALAXY_ITEMS:
+        galaxy_item(name)
     # pack.png: the black hole on a deep violet gradient; pack.mcmeta.
     icon = Image.new("RGBA", (64, 64))
     for y in range(64):
