@@ -16,7 +16,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - block/fire_0, fire_1: low fire (squashed frames)
 - models/item: smaller first-person totem and shield
 - potions: amber glass bottles with netherite stoppers
-- diamond tools, spear and armor icons: like netherite but in royal-blue fire
+- diamond tools, spear and armor icons: same flames, handles and gem as netherite
 - elytra (item, broken item, worn wings): phoenix wings on the fire palette
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
@@ -37,9 +37,6 @@ TEX = os.path.join(ROOT, "assets", "minecraft", "textures")
 FRAMES = 8
 
 LAVA = [(140, 24, 6), (196, 52, 8), (240, 110, 16), (255, 170, 40), (255, 228, 120)]
-# Deep royal-blue fire, same five steps dark to bright, for the diamond set
-# (indigo rather than cyan so it doesn't blend into the diamond).
-SOUL = [(30, 14, 96), (52, 38, 170), (76, 82, 232), (140, 160, 255), (225, 230, 255)]
 # texture name -> (columns the flames rise from, gem pixel where head meets handle)
 TOOLS = {
     "netherite_sword": (range(7, 14), (5, 9)),
@@ -167,8 +164,7 @@ CORK_COLOURS = {  # cork -> netherite stopper (same tones as the tools)
     (169, 71, 37): (79, 60, 62), (151, 55, 22): (50, 39, 39),
 }
 BOTTLES = ["potion", "splash_potion", "lingering_potion", "glass_bottle"]
-# Diamond set: same treatment as netherite (blaze rod handles, flames, gem),
-# but in blue soul fire so the two tiers are easy to tell apart.
+# Diamond set: same treatment as netherite (blaze rod handles, flames, gem).
 DIAMOND_TOOLS = {name.replace("netherite", "diamond"): spec for name, spec in TOOLS.items()}
 DIAMOND_ARMOR = ["diamond_helmet", "diamond_chestplate", "diamond_leggings", "diamond_boots"]
 # Elytra: phoenix wings on the fire palette (vanilla feather shading kept);
@@ -695,10 +691,10 @@ def main():
 
     for name, (columns, gem) in DIAMOND_TOOLS.items():
         base = load_tool(name)
-        save_animation([render_frame(f, base, columns, gem, SOUL) for f in range(FRAMES)], "item/" + name + ".png")
+        save_animation([render_frame(f, base, columns, gem) for f in range(FRAMES)], "item/" + name + ".png")
     for name in DIAMOND_ARMOR:
         base = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
-        save_animation([engulf_frame(f, base, flame=SOUL) for f in range(FRAMES)], "item/" + name + ".png")
+        save_animation([engulf_frame(f, base) for f in range(FRAMES)], "item/" + name + ".png")
 
     elytra = ember_image("elytra.png", 0.1, 1.0)
     save_animation([engulf_frame(f, elytra) for f in range(FRAMES)], ELYTRA["elytra.png"])
