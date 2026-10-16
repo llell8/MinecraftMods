@@ -36,12 +36,16 @@ BLAZE_ROD = {
     (47, 33, 34): (179, 107, 25),
     (96, 52, 50): (216, 174, 38),
     (115, 69, 67): (255, 243, 45),
+    # netherite grip wrap on the lower handle
+    (59, 57, 59): (216, 174, 38),
+    (67, 64, 67): (255, 243, 45),
 }
 BLAZE_SATURATION = 0.7  # tone the blaze rod colours down a bit
-# The black outline along the handle's side becomes the blaze rod's dark edge.
+# The black outline around the handle becomes the blaze rod's dark edge,
+# and the end cap on the bottom row its darker tip.
 ROD_EDGE = (174, 60, 0)
+ROD_END = (149, 51, 0)
 OUTLINE = {(35, 16, 18), (27, 20, 21), (22, 8, 20)}
-GRIP = {(59, 57, 59), (67, 64, 67)}  # netherite wrap on the lower handle
 MAX_OVERLAP = 2  # deepest the flames start inside the head
 
 
@@ -97,25 +101,28 @@ def load_tool(name):
     for y in range(img.height):
         for x in range(img.width):
             r, g, b, a = img.getpixel((x, y))
-            if a and (r, g, b) in GRIP:
-                handle.add((x, y))
             if a and (r, g, b) in BLAZE_ROD:
                 handle.add((x, y))
                 img.putpixel((x, y), rgba(desaturate(BLAZE_ROD[(r, g, b)], BLAZE_SATURATION), a))
     # Outline pixels that only border the handle (not the head) take the rod's
-    # edge colour; the end cap on the bottom row stays black.
+    # edge colour, or its tip colour on the bottom row.
     bottom = max(y for y in range(img.height) for x in range(img.width) if img.getpixel((x, y))[3])
-    for y in range(bottom):
-        for x in range(img.width):
-            if img.getpixel((x, y))[:3] not in OUTLINE or not img.getpixel((x, y))[3]:
-                continue
-            near = [(x + dx, y + dy) for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
-                    if 0 <= x + dx < img.width and 0 <= y + dy < img.height]
-            touches_head = any(
-                img.getpixel(p)[3] and p not in handle and img.getpixel(p)[:3] not in OUTLINE
-                for p in near)
-            if any(p in handle for p in near) and not touches_head:
-                img.putpixel((x, y), rgba(desaturate(ROD_EDGE, BLAZE_SATURATION)))
+    edges = {}
+    # Second pass picks up corner pixels that only touch the new edge.
+    for _ in range(2):
+        for y in range(bottom + 1):
+            for x in range(img.width):
+                if (x, y) in edges or img.getpixel((x, y))[:3] not in OUTLINE or not img.getpixel((x, y))[3]:
+                    continue
+                near = [(x + dx, y + dy) for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+                        if 0 <= x + dx < img.width and 0 <= y + dy < img.height]
+                touches_head = any(
+                    img.getpixel(p)[3] and p not in handle and img.getpixel(p)[:3] not in OUTLINE
+                    for p in near)
+                if any(p in handle or p in edges for p in near) and not touches_head:
+                    edges[(x, y)] = ROD_END if y == bottom else ROD_EDGE
+    for p, c in edges.items():
+        img.putpixel(p, rgba(desaturate(c, BLAZE_SATURATION)))
     return img
 
 
