@@ -13,7 +13,7 @@ Textures so far:
 - Mace – netherite head with a glowing molten crack, copper blaze rod handle, animated flames
 - Totem of undying – 16x16 dragon-rune style phoenix in the tools' fire colours: serpent body,
   solid spread wings, legs with talons, fanned tail feathers
-- Netherite armor – animated flames on the icons (worn armor is vanilla)
+- Netherite armor – icons wrapped in light animated flames that leave the armor visible (worn armor is vanilla)
 - Golden apple – molten gold with a flame at the stem
 - Enchanted golden apple – its own red-hot texture with a crown of flames
 - Hearts – animated flaming hearts: fire gradient, flickering flame tongues and heat shimmer;
