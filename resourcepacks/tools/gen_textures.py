@@ -3,7 +3,7 @@
 Run: python3 resourcepacks/tools/gen_textures.py
 - netherite tools and weapons: vanilla texture with a blaze rod handle,
   animated fire on the head and an orange gem where the head meets the handle
-- totem_of_undying.png: hand-drawn phoenix in flight, seen side-on from afar
+- totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
 """
@@ -130,52 +130,75 @@ def load_tool(name):
     return img
 
 
-# Phoenix totem, drawn from scratch: a far-off phoenix seen side-on in flight,
-# heading right with one wing raised and two tail plumes trailing behind.
+# Phoenix totem, drawn from scratch in a dragon-rune style: a serpent body
+# winding down the middle with bat-like wings spread wide.
 PHOENIX_COLOURS = {
     "R": (150, 26, 10), "r": (205, 60, 16), "o": (240, 120, 20),
-    "y": (255, 190, 50), "w": (255, 240, 170),
+    "y": (255, 190, 50), "w": (255, 240, 170), "m": (175, 38, 12),
 }
-PHOENIX = [
-    "........y.......",
-    ".......yo.......",
-    "......yoo.......",
-    ".....yoor.......",
-    "....yoorr....yy.",
-    "...yoorrr...yooy",
-    "..yoorrRr..yor..",
-    ".yoorRRRrrooR...",
-    "y.o.r.RRrrrr....",
-    "......RRrrR.....",
-    ".....rRRr.......",
-    "...rr..r........",
-    ".oo....o........",
-    "y.....o.........",
-    ".....y..........",
-    "....y...........",
+MEMBRANE_ALPHA = 230
+# Left wing (cols 0-7), mirrored onto the right: bright leading edge arching
+# up to a peak, membrane below, bony fingers hanging into jagged points.
+PHOENIX_WING = [
+    "........",
+    "........",
+    "........",
+    ".yy.....",  # wing peak
+    "yyyoo...",
+    "yymmyoo.",
+    "ymmmmmoo",
+    "ymymmmmm",
+    "ymmymmmm",
+    "ym.ymmym",
+    "y..yy.yy",  # hanging points
+    "...y....",
 ]
-# Heat shimmer: a band runs from the wing tip down to the tail, briefly
-# heating the hot colours one shade.
+# Serpent body drawn over the wings, head at the top facing right.
+PHOENIX_BODY = [
+    "........yyo.....",  # crest + head
+    "........rooooy..",  # snout
+    "........ro......",
+    ".......ro.......",
+    "......ro........",
+    "......ro........",
+    "......ro........",
+    ".......ro.......",
+    "........ro......",
+    "........rro.....",  # tail thickens
+    "........rro.....",
+    ".......rro......",
+    "......rro.......",
+    ".....rro........",
+    ".....ro.........",
+    ".....yy.........",  # tail flame
+]
+# Heat shimmer: a band runs down the dragon, briefly heating hot colours.
 SHIMMER = {"o": "y", "y": "w"}
 
 
 def phoenix_frame(frame):
+    grid = {}
+    for y, row in enumerate(PHOENIX_WING):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                grid[(x, y)] = grid[(15 - x, y)] = ch
+    for y, row in enumerate(PHOENIX_BODY):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                grid[(x, y)] = ch
     img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
     phase = frame / FRAMES * 2 * math.pi
-    for y, row in enumerate(PHOENIX):
-        for x, ch in enumerate(row):
-            if ch == ".":
-                continue
-            if ch in SHIMMER and math.sin(phase - (y - x) * 0.45) > 0.8:
-                ch = SHIMMER[ch]
-            img.putpixel((x, y), rgba(PHOENIX_COLOURS[ch]))
-    # Embers shed behind the tail plumes, drifting back and up.
+    for (x, y), ch in grid.items():
+        if ch in SHIMMER and math.sin(phase - y * 0.5) > 0.85:
+            ch = SHIMMER[ch]
+        img.putpixel((x, y), rgba(PHOENIX_COLOURS[ch], MEMBRANE_ALPHA if ch == "m" else 255))
+    # Embers rising off the wing peaks.
     rng = random.Random(7)
     for _ in range(3):
-        sx, sy = rng.choice([(1, 12), (4, 14), (3, 11)])
+        sx = rng.choice([1, 2, 13, 14])
         t = (frame + rng.randint(0, FRAMES - 1)) % FRAMES
-        p = (sx - t // 2, sy - t // 3 + 1)
-        if t < 3 and 0 <= p[0] and 0 <= p[1] < 16 and img.getpixel(p)[3] == 0:
+        p = (sx, 2 - t)
+        if t < 3 and p[1] >= 0:
             img.putpixel(p, rgba(LAVA[4] if t < 2 else LAVA[3], 240 - t * 30))
     return img
 
