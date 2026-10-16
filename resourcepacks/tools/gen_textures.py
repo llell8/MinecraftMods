@@ -9,6 +9,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
 - appleskin/textures/icons.png: AppleSkin saturation outline traced around the feathers
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
 - mace.png: netherite head with a molten crack, blaze rod handle, flames
+- ender pearl, cobweb, wind charge (item + projectile): recoloured orange
 - netherite armor icons: flame tongues rising off the top, armor left visible
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
 - pack.png
@@ -67,6 +68,16 @@ MACE_ROD = {  # breeze rod colours -> blaze rod colours (toned like the other ha
     (122, 130, 196): (216, 174, 38), (181, 165, 202): (255, 243, 45),
 }
 MACE = (range(5, 16), (8, 7))  # flame columns, gem where the handle meets the head
+# Orange recolours by gradient map: each pixel's brightness (relative to the
+# texture's own darkest/brightest) picks a colour along EMBER_RAMP, so the
+# shading survives. (vanilla file, pack path, ramp start, ramp end)
+EMBER_RAMP = [(50, 10, 4), LAVA[0], LAVA[1], LAVA[2], LAVA[3], LAVA[4]]
+ORANGE_RECOLOURS = [
+    ("ender_pearl.png", "item/ender_pearl.png", 0.15, 1.0),
+    ("cobweb.png", "block/cobweb.png", 0.55, 1.0),  # stays bright so webs are easy to spot
+    ("wind_charge.png", "item/wind_charge.png", 0.3, 1.0),
+    ("wind_charge_entity.png", "entity/projectiles/wind_charge.png", 0.35, 1.0),
+]
 # Netherite armor icons get flame tongues rising off their top edge, never
 # covering the armor.
 ARMOR_ITEMS = ["netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"]
@@ -274,6 +285,26 @@ def engulf_frame(frame, base):
     return img
 
 
+def ember_recolour(name, dest, lo, hi):
+    img = Image.open(os.path.join(VANILLA, name)).convert("RGBA")
+    lum = {}
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = img.getpixel((x, y))
+            if a:
+                lum[(x, y)] = 0.3 * r + 0.59 * g + 0.11 * b
+    darkest, brightest = min(lum.values()), max(lum.values())
+    for (x, y), l in lum.items():
+        t = lo + (hi - lo) * (l - darkest) / max(1, brightest - darkest)
+        i = min(len(EMBER_RAMP) - 2, int(t * (len(EMBER_RAMP) - 1)))
+        f = t * (len(EMBER_RAMP) - 1) - i
+        c = tuple(round(a + (b - a) * f) for a, b in zip(EMBER_RAMP[i], EMBER_RAMP[i + 1]))
+        img.putpixel((x, y), c + (img.getpixel((x, y))[3],))
+    path = os.path.join(TEX, dest)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    img.save(path)
+
+
 def load_mace():
     img = Image.open(os.path.join(VANILLA, "mace.png")).convert("RGBA")
     for y in range(img.height):
@@ -430,6 +461,9 @@ def main():
     with open(os.path.join(item_dir, "mace.png.mcmeta"), "w") as fh:
         json.dump({"animation": {"frametime": 2}}, fh, indent=2)
         fh.write("\n")
+
+    for name, dest, lo, hi in ORANGE_RECOLOURS:
+        ember_recolour(name, dest, lo, hi)
 
     for name in ARMOR_ITEMS:
         base = Image.open(os.path.join(VANILLA, name + ".png")).convert("RGBA")
