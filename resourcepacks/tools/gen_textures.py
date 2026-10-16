@@ -187,7 +187,7 @@ BOWS = ["bow", "bow_pulling_0", "bow_pulling_1", "bow_pulling_2"]
 BOW_STRING = (68, 68, 68)
 BOW_STRING_YELLOW = (255, 214, 50)
 BOW_WOOD = {(73, 54, 21), (137, 103, 39), (104, 78, 30), (40, 30, 11)}
-BOW_WOOD_TONE = (1.35, 1.0, -0.035)  # saturation, brightness, hue shift toward orange
+BOW_WOOD_TONE = (1.75, 1.05, -0.035)  # saturation, brightness, hue shift toward orange
 RANGED = {
     "crossbow_standby": "item/crossbow_standby.png", "crossbow_pulling_0": "item/crossbow_pulling_0.png",
     "crossbow_pulling_1": "item/crossbow_pulling_1.png", "crossbow_pulling_2": "item/crossbow_pulling_2.png",
