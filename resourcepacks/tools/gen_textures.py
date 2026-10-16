@@ -32,17 +32,18 @@ TOOLS = {
     "netherite_spear": (range(7, 14), (8, 7)),
     "netherite_spear_in_hand": (range(0, 9), (7, 7)),
 }
-# Vanilla stick colours on netherite tools -> blaze rod colours. The rod's
-# brightest highlight is left out so the handle doesn't steal focus.
+# Vanilla stick colours on netherite tools -> blaze rod colours.
 BLAZE_ROD = {
     (47, 33, 34): (179, 107, 25),
     (96, 52, 50): (216, 174, 38),
-    (115, 69, 67): (216, 174, 38),
+    (115, 69, 67): (255, 243, 45),
     # netherite grip wrap on the lower handle
     (59, 57, 59): (216, 174, 38),
-    (67, 64, 67): (216, 174, 38),
+    (67, 64, 67): (255, 243, 45),
 }
-BLAZE_SATURATION = 0.7  # tone the blaze rod colours down a bit
+# Blaze rod toned down to a dim copper: (saturation, brightness, hue shift).
+# The hue shift pulls the yellow toward orange so it doesn't go olive.
+ROD_TONE = (0.55, 0.62, -0.035)
 # The black outline around the handle becomes the blaze rod's dark edge,
 # and the end cap on the bottom row its darker tip.
 ROD_EDGE = (174, 60, 0)
@@ -91,9 +92,10 @@ def fire(frame, base, columns):
     return px
 
 
-def desaturate(c, factor):
+def tone(c, saturation, brightness, hue_shift):
     h, l, s = colorsys.rgb_to_hls(*(v / 255 for v in c))
-    return tuple(round(v * 255) for v in colorsys.hls_to_rgb(h, l, s * factor))
+    h = (h + hue_shift) % 1.0
+    return tuple(round(v * 255) for v in colorsys.hls_to_rgb(h, l * brightness, s * saturation))
 
 
 def load_tool(name):
@@ -105,7 +107,7 @@ def load_tool(name):
             r, g, b, a = img.getpixel((x, y))
             if a and (r, g, b) in BLAZE_ROD:
                 handle.add((x, y))
-                img.putpixel((x, y), rgba(desaturate(BLAZE_ROD[(r, g, b)], BLAZE_SATURATION), a))
+                img.putpixel((x, y), rgba(tone(BLAZE_ROD[(r, g, b)], *ROD_TONE), a))
     # Outline pixels that only border the handle (not the head) take the rod's
     # edge colour, or its tip colour on the bottom row.
     bottom = max(y for y in range(img.height) for x in range(img.width) if img.getpixel((x, y))[3])
@@ -124,7 +126,7 @@ def load_tool(name):
                 if any(p in handle or p in edges for p in near) and not touches_head:
                     edges[(x, y)] = ROD_END if y == bottom else ROD_EDGE
     for p, c in edges.items():
-        img.putpixel(p, rgba(desaturate(c, BLAZE_SATURATION)))
+        img.putpixel(p, rgba(tone(c, *ROD_TONE)))
     return img
 
 
