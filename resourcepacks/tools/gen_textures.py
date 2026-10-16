@@ -5,6 +5,7 @@ Run: python3 resourcepacks/tools/gen_textures.py
   animated fire on the head and an orange gem where the head meets the handle
 - golden_apple.png / enchanted_golden_apple.png: molten gold gap with a stem
   flame, red-hot egap with a crown of flames (own model + texture)
+- gui/sprites/hud: fiery hearts, phoenix feathers for the hunger bar
 - totem_of_undying.png: dragon-rune style phoenix, serpent body with spread wings
 - netherite armor icons: flames along the top
 - enchanted_glint_item.png / enchanted_glint_armor.png: orange glint
@@ -54,6 +55,31 @@ ROD_END = (149, 51, 0)
 OUTLINE = {(35, 16, 18), (27, 20, 21), (22, 8, 20)}
 # Netherite armor icons get the same flames along their top edge.
 ARMOR_ITEMS = ["netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"]
+# HUD: fiery hearts (vanilla shape, fire gradient top to bottom, little flame
+# licks above the lobes) and phoenix feathers instead of drumsticks.
+HEART_ROWS = {1: LAVA[3], 2: LAVA[3], 3: (255, 150, 30), 4: LAVA[2], 5: (220, 80, 14), 6: LAVA[1], 7: LAVA[1]}
+HEART_COLOURS = {
+    (255, 200, 200): LAVA[4],   # highlight
+    (187, 19, 19): LAVA[0],     # lower edge
+    (96, 7, 7): (110, 16, 6),   # hardcore pattern
+}
+HEART_FLAMES = [(2, 0), (6, 0)]
+HEARTS = ["full", "half", "hardcore_full", "hardcore_half"]
+FEATHER = [
+    ".........",
+    ".wy......",
+    ".yyo.....",
+    ".oyyor...",
+    "..oyyor..",
+    "...ryyr..",
+    "....rrq..",
+    ".......q.",
+    ".........",
+]
+FEATHER_COLOURS = {
+    "w": LAVA[4], "y": LAVA[3], "o": LAVA[2], "r": LAVA[1], "q": (236, 200, 150),
+}
+FEATHER_HUNGER_TINT = (110, 140, 60)
 # Golden apple recolours (vanilla colour -> new). The gap goes molten gold with
 # a small flame at the stem; the egap gets its own red-hot texture with a full
 # crown of flames so the two are easy to tell apart.
@@ -231,6 +257,60 @@ def load_apple(colours):
     return img
 
 
+def fiery_heart(name):
+    img = Image.open(os.path.join(VANILLA, "hud", "heart_" + name + ".png")).convert("RGBA")
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = img.getpixel((x, y))
+            if not a:
+                continue
+            if (r, g, b) in HEART_COLOURS:
+                img.putpixel((x, y), rgba(HEART_COLOURS[(r, g, b)]))
+            elif (r, g, b) == (255, 19, 19):
+                img.putpixel((x, y), rgba(HEART_ROWS[y]))
+    for x, y in HEART_FLAMES:
+        if img.getpixel((x, y + 1))[3]:  # only above a lobe that is there
+            img.putpixel((x, y), rgba(LAVA[2]))
+    return img
+
+
+def blink(img):
+    """Damage flash: the same sprite washed toward white."""
+    out = img.copy()
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = img.getpixel((x, y))
+            if a:
+                out.putpixel((x, y), (r + (255 - r) * 2 // 5, g + (255 - g) * 2 // 5, b + (255 - b) * 2 // 5, a))
+    return out
+
+
+def feather(kind):
+    """kind: full, half, empty; hunger variants tint the feather sickly green."""
+    shape = {(x, y): ch for y, row in enumerate(FEATHER) for x, ch in enumerate(row) if ch != "."}
+    img = Image.new("RGBA", (9, 9), (0, 0, 0, 0))
+    if kind.startswith("empty"):
+        # dark silhouette with a black outline, like the vanilla empty slot
+        inside = (40, 40, 40) if kind == "empty" else (38, 46, 26)
+        for (x, y) in shape:
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    if 0 <= x + dx < 9 and 0 <= y + dy < 9 and (x + dx, y + dy) not in shape:
+                        img.putpixel((x + dx, y + dy), (0, 0, 0, 255))
+        for p in shape:
+            img.putpixel(p, rgba(inside))
+        return img
+    for (x, y), ch in shape.items():
+        if kind.startswith("half") and x + y < 8:
+            continue  # half keeps the quill end
+        c = FEATHER_COLOURS[ch]
+        if kind.endswith("hunger"):
+            t = FEATHER_HUNGER_TINT
+            c = tuple((a + b * 2) // 3 for a, b in zip(c, t))
+        img.putpixel((x, y), rgba(c))
+    return img
+
+
 def orange_glint(name):
     src = Image.open(os.path.join(VANILLA, name)).convert("RGB")
     out = Image.new("RGB", src.size)
@@ -283,6 +363,16 @@ def main():
         json.dump({"parent": "minecraft:item/generated",
                    "textures": {"layer0": "minecraft:item/enchanted_golden_apple"}}, fh, indent=2)
         fh.write("\n")
+
+    hud = os.path.join(TEX, "gui", "sprites", "hud")
+    os.makedirs(os.path.join(hud, "heart"), exist_ok=True)
+    for name in HEARTS:
+        heart = fiery_heart(name)
+        heart.save(os.path.join(hud, "heart", name + ".png"))
+        blink(heart).save(os.path.join(hud, "heart", name + "_blinking.png"))
+    for kind in ["full", "half", "empty"]:
+        feather(kind).save(os.path.join(hud, "food_" + kind + ".png"))
+        feather(kind + "_hunger").save(os.path.join(hud, "food_" + kind + "_hunger.png"))
 
     phoenix = draw_phoenix()
     size = PHOENIX_SIZE
