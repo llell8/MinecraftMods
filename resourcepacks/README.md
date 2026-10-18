@@ -7,23 +7,21 @@ Minecraft Java 1.21.11 (pack format 75). Purple, white and black, black hole / v
 - `VoidPvP/` – pack source, `VoidPvP.zip` – ready to drop into `.minecraft/resourcepacks`
 - Generator: `python3 tools/gen_void.py` (reuses `gen_textures.py` with void palettes)
 
-Same pieces as Phoenix PvP below, re-themed:
-- Instead of flames, a "void pull": dotted particle rings ripple inward toward the apples and
-  the elytra, with twinkling white stars (items are never covered)
-- Netherite sword and axe – galaxy heads: deep space with a drifting purple nebula and twinkling
-  stars, a bright violet edge and a white tip
-- Mace – its head is a small black hole: a void core rimmed by a pulsing white photon ring, with
-  two accretion comets orbiting it
-- All other gear (netherite and diamond tools, both spears, armor icons) – keeps its look with
-  stardust twinkling around it and a pulsing star gem on tools and weapons
-- Dark void-rod handles, violet gem
-- Totem – an animated black hole (dark core, white photon ring, spinning accretion disk)
-- Hearts fade from lilac to near-black; hunger icons are small black holes (AppleSkin outline too)
+- Netherite sword, axe, pickaxe, shovel, hoe and spear – galaxy heads: deep space with a drifting
+  purple nebula and twinkling stars, a bright violet edge and a pulsing star gem (no particles)
+- Diamond tools – void-rod handles and a star gem; armor icons are vanilla
+- Mace – a faceted void crystal head with a light glint sweeping across it
+- Easter egg: rename the netherite sword, axe or mace to `Crushing Swedes` for a Danish-flag version
+- Bow and crossbow – purple wood and a white string that charges green → yellow → red while drawing
+  (a loaded crossbow stays red)
+- Shield – obsidian-purple planks, violet rim and a black hole emblem (normal size; banner shields
+  keep their white face)
+- Hunger – purple meat on a white bone (AppleSkin saturation outline recoloured); hearts are vanilla
+- Totem – an angel: golden halo with a glint, white wings, purple heart-gem
 - Pearl / wind charge orbited by a white-to-purple accretion disk; violet cobwebs and wind
-- Pale lilac gap, deep violet egap; smoky violet potion glass with obsidian stoppers
-- Violet-tinted bow with a white string; crossbow and arrows in violet/white
-- Violet glint, white/violet crit X, dark purple hit hearts, low fire, small totem and shield
-- Easter egg: rename a mace to `Crushing Swedes` and its head shows the Danish flag
+- Elytra – violet wings (no particles on the icon)
+- Smoky violet potion glass, violet arrows, violet glint, white/violet crit X, dark purple hit
+  hearts, low fire, small first-person totem; golden apples are left vanilla
 
 ## Phoenix PvP
 

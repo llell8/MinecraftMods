@@ -1,0 +1,26 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:component",
+    "component": "minecraft:custom_name",
+    "cases": [
+      {
+        "when": [
+          "Crushing Swedes",
+          "crushing swedes",
+          "CRUSHING SWEDES",
+          "Crushing swedes",
+          "crushing Swedes"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/netherite_sword_danish"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "minecraft:item/netherite_sword"
+    }
+  }
+}
