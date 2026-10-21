@@ -58,3 +58,25 @@ jobs:
           body: "Automatic build of ${{ github.sha }}."
           files: |
             phoenix-client/build/libs/*.jar
+
+  phoenix-pvp-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Zips the committed pack/ as-is; run generate.py locally to change textures
+      - run: cd phoenix-pvp-pack/pack && zip -r -X ../Phoenix-PvP.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phoenix-pvp-pack
+          path: phoenix-pvp-pack/Phoenix-PvP.zip
+      - name: Publish Phoenix PvP pack release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: phoenix-pvp-latest
+          name: Phoenix PvP resource pack (latest build)
+          prerelease: true
+          make_latest: false
+          body: "Automatic build of ${{ github.sha }}. Drop the zip into .minecraft/resourcepacks (Minecraft 1.21.11)."
+          files: |
+            phoenix-pvp-pack/Phoenix-PvP.zip
