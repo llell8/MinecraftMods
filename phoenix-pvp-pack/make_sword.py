@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Phoenix diamond sword: the vanilla diamond sword with each blade colour swapped for a fire colour.
+"""Phoenix netherite sword: the vanilla netherite sword with its colours warmed toward fire.
 
-Shape, shading and the stick handle are untouched; only the seven teal shades change.
-Usage: python3 make_sword.py   (reads .vanilla/diamond_sword.png, fetching it if missing)
+Shape and shading are untouched; each vanilla shade is swapped for a warmer one.
+Usage: python3 make_sword.py   (reads .vanilla/netherite_sword.png, fetching it if missing)
 """
 import json
 import urllib.request
@@ -11,19 +11,24 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent
-VANILLA = ROOT / ".vanilla" / "diamond_sword.png"
-URL = "https://raw.githubusercontent.com/misode/mcmeta/1.21.11-assets/assets/minecraft/textures/item/diamond_sword.png"
+VANILLA = ROOT / ".vanilla" / "netherite_sword.png"
+URL = "https://raw.githubusercontent.com/misode/mcmeta/1.21.11-assets/assets/minecraft/textures/item/netherite_sword.png"
 PACK = ROOT / "pack"
 
-# vanilla teal -> phoenix fire, darkest to brightest
+# vanilla netherite -> phoenix netherite. The greys only warm up a little so it still reads as
+# netherite; the purple trim becomes an ember edge and the blade's light edge a dull glow.
 SWAP = {
-    (8, 37, 32): (44, 6, 4),        # outline
-    (14, 63, 54): (104, 14, 8),     # inner outline
-    (21, 99, 85): (156, 26, 10),    # guard shadow
-    (30, 138, 119): (206, 56, 14),  # blade shadow
-    (43, 199, 172): (242, 112, 22), # blade
-    (51, 235, 203): (255, 172, 46), # blade light
-    (164, 253, 240): (255, 238, 160),  # edge glint
+    (22, 8, 20): (24, 8, 8),          # outline
+    (35, 16, 18): (38, 14, 12),       # handle/blade shadow
+    (59, 57, 59): (62, 54, 52),       # blade dark
+    (74, 41, 64): (122, 34, 18),      # purple trim -> ember trim
+    (96, 52, 50): (124, 58, 30),      # grip
+    (79, 60, 62): (84, 60, 56),       # blade core
+    (81, 68, 78): (88, 70, 64),       # blade mid
+    (115, 69, 67): (170, 92, 36),     # grip highlight
+    (93, 86, 93): (102, 88, 80),      # blade
+    (112, 103, 112): (122, 104, 92),  # blade light
+    (134, 123, 134): (182, 124, 84),  # edge glint
 }
 
 
@@ -38,7 +43,7 @@ def main():
             r, g, b, a = px[x, y]
             if a and (r, g, b) in SWAP:
                 px[x, y] = SWAP[r, g, b] + (a,)
-    out = PACK / "assets/minecraft/textures/item/diamond_sword.png"
+    out = PACK / "assets/minecraft/textures/item/netherite_sword.png"
     out.parent.mkdir(parents=True, exist_ok=True)
     sword.save(out, optimize=True)
 

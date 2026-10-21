@@ -5,9 +5,9 @@ one texture at a time on top of vanilla.
 
 ## So far
 
-- **Diamond sword:** the vanilla sword with each of its seven teal shades swapped
-  for a fire color, from a dark ember outline to a pale gold edge. The shape and
-  the stick handle are unchanged.
+- **Netherite sword:** still reads as vanilla netherite. The grey blade is only
+  warmed slightly, the purple trim becomes an ember red, and the blade's light edge
+  and grip pick up a dull fire glow. The shape and shading are unchanged.
 
 ## Install
 
