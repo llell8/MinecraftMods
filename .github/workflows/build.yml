@@ -58,3 +58,27 @@ jobs:
           body: "Automatic build of ${{ github.sha }}."
           files: |
             phoenix-client/build/libs/*.jar
+
+  vermilion-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow && python3 vermilion-pack/generate.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vermilion-pvp-pack
+          path: vermilion-pack/Vermilion-PvP.zip
+      - name: Publish Vermilion pack release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: vermilion-pack-latest
+          name: Vermilion PvP pack (latest build)
+          prerelease: true
+          make_latest: false
+          body: "Automatic build of ${{ github.sha }}. Drop the zip into .minecraft/resourcepacks."
+          files: |
+            vermilion-pack/Vermilion-PvP.zip

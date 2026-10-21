@@ -1,0 +1,12 @@
+{
+  "pack": {
+    "description": "§cVermilion §6PvP §7• orange glint, short swords, low fire",
+    "pack_format": 42,
+    "supported_formats": [
+      42,
+      99
+    ],
+    "min_format": 42,
+    "max_format": 99
+  }
+}
