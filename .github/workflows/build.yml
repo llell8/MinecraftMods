@@ -58,3 +58,26 @@ jobs:
           body: "Automatic build of ${{ github.sha }}."
           files: |
             phoenix-client/build/libs/*.jar
+
+  phoenix-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Zip resource pack
+        working-directory: phoenix-pack
+        run: zip -r ../PhoenixPvP.zip pack.mcmeta pack.png assets
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phoenix-pvp-pack
+          path: PhoenixPvP.zip
+      - name: Publish pack release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: phoenix-pack-latest
+          name: Phoenix PvP resource pack (latest build)
+          prerelease: true
+          make_latest: false
+          body: "Automatic build of ${{ github.sha }}. Drop PhoenixPvP.zip into .minecraft/resourcepacks."
+          files: |
+            PhoenixPvP.zip
